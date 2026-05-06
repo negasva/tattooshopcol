@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TattooShop Colombia</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #141414;
+    --surface: #1c1c1c;
+    --surface2: #222222;
+    --border: #2e2e2e;
+    --border-light: #3a3a3a;
+    --text: #e8e8e8;
+    --text-muted: #888;
+    --text-dim: #555;
+    --accent: #FFD400;
+    --accent-dim: rgba(255,212,0,0.12);
+    --accent-hover: #ffe033;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 2px; }
+
+  /* NOISE TEXTURE overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.35;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// ─── TWEAK DEFAULTS ──────────────────────────────────────────────
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accentColor": "#FFD400",
+  "bgDarkness": "#141414",
+  "cardStyle": "minimal",
+  "heroLayout": "stacked",
+  "fontStyle": "display",
+  "gridCols": "3"
+}/*EDITMODE-END*/;
+
+// ─── DATA ────────────────────────────────────────────────────────
+const PRODUCTS = {
+  kits: [
+    {
+      id: 'k1', slug: 'kit-iniciacion-profesional',
+      name: 'Kit Iniciación Pro', category: 'Kits',
+      price: 289000, featured: true,
+      tag: 'Más vendido',
+      specs: '12 piezas — Completo',
+      icon: '✦',
+    },
+    {
+      id: 'k2', slug: 'kit-rotary-completo',
+      name: 'Kit Rotary Completo', category: 'Kits',
+      price: 520000, featured: true,
+      tag: 'Premium',
+      specs: '18 piezas — Pro',
+      icon: '✦',
+    },
+  ],
+  maquinas: [
+    {
+      id: 'm1', slug: 'maquina-rotary-dragonfly',
+      name: 'Dragonfly X2 Rotary', category: 'Máquinas',
+      price: 680000, featured: true,
+      tag: 'Top rated',
+      specs: '4.0mm — Inalámbrica',
+      icon: '⚙',
+    },
+    {
+      id: 'm2', slug: 'maquina-pen-wireless',
+      name: 'Pen Inalámbrica Pro', category: 'Máquinas',
+      price: 420000, featured: true,
+      tag: 'Nueva',
+      specs: '3.5mm — Batería 8h',
+      icon: '⚙',
+    },
+  ],
+  insumos: [
+    {
+      id: 'i1', slug: 'tintas-set-world-famous',
+      name: 'Set Tintas World Famous', category: 'Insumos',
+      price: 195000, featured: true,
+      tag: 'Oferta',
+      specs: '20 colores — 30ml c/u',
+      icon: '◈',
+    },
+    {
+      id: 'i2', slug: 'agujas-cartridge-mixed',
+      name: 'Agujas Cartridge Mixed', category: 'Insumos',
+      price: 98000, featured: true,
+      tag: 'Pack',
+      specs: '50 unidades — Surtidas',
+      icon: '◈',
+    },
+  ],
+};
+
+const ALL_PRODUCTS = [...PRODUCTS.kits, ...PRODUCTS.maquinas, ...PRODUCTS.insumos];
+
+const fmt = (n) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n);
+
+// ─── SVG PLACEHOLDERS ────────────────────────────────────────────
+function ProductPlaceholder({ icon, category, accent }) {
+  const gradId = `g-${Math.random().toString(36).slice(2)}`;
+  const colors = {
+    'Kits': ['#1e1e1e', '#2a2a2a'],
+    'Máquinas': ['#1a1e22', '#222831'],
+    'Insumos': ['#1e1a1e', '#2a222a'],
+  };
+  const [c1, c2] = colors[category] || ['#1e1e1e', '#2a2a2a'];
+  return (
+    <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'100%',display:'block'}}>
+      <defs>
+        <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={c1}/>
+          <stop offset="100%" stopColor={c2}/>
+        </linearGradient>
+      </defs>
+      <rect width="400" height="300" fill={`url(#${gradId})`}/>
+      {/* Grid lines */}
+      {[0,1,2,3,4,5].map(i => (
+        <line key={`h${i}`} x1="0" y1={i*60} x2="400" y2={i*60} stroke="#ffffff" strokeOpacity="0.03" strokeWidth="1"/>
+      ))}
+      {[0,1,2,3,4,5,6].map(i => (
+        <line key={`v${i}`} x1={i*70} y1="0" x2={i*70} y2="300" stroke="#ffffff" strokeOpacity="0.03" strokeWidth="1"/>
+      ))}
+      {/* Center icon */}
+      <text x="200" y="165" textAnchor="middle" fontSize="64" fill={accent} opacity="0.25" fontFamily="sans-serif">{icon}</text>
+      {/* Category label */}
+      <text x="200" y="220" textAnchor="middle" fontSize="11" fill={accent} opacity="0.4" fontFamily="monospace" letterSpacing="3">{category.toUpperCase()}</text>
+      {/* Corner marks */}
+      <rect x="8" y="8" width="16" height="1" fill={accent} opacity="0.2"/>
+      <rect x="8" y="8" width="1" height="16" fill={accent} opacity="0.2"/>
+      <rect x="376" y="8" width="16" height="1" fill={accent} opacity="0.2"/>
+      <rect x="391" y="8" width="1" height="16" fill={accent} opacity="0.2"/>
+      <rect x="8" y="291" width="16" height="1" fill={accent} opacity="0.2"/>
+      <rect x="8" y="276" width="1" height="16" fill={accent} opacity="0.2"/>
+      <rect x="376" y="291" width="16" height="1" fill={accent} opacity="0.2"/>
+      <rect x="391" y="276" width="1" height="16" fill={accent} opacity="0.2"/>
+    </svg>
+  );
+}
+
+// ─── CART DRAWER ─────────────────────────────────────────────────
+function CartDrawer({ cart, onClose, onRemove, onQty, accent }) {
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  return (
+    <>
+      <div onClick={onClose} style={{
+        position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:800,backdropFilter:'blur(4px)'
+      }}/>
+      <div style={{
+        position:'fixed',top:0,right:0,bottom:0,width:'clamp(320px,40vw,480px)',
+        background:'#181818',zIndex:900,display:'flex',flexDirection:'column',
+        borderLeft:'1px solid #2e2e2e',boxShadow:'-20px 0 60px rgba(0,0,0,0.6)'
+      }}>
+        {/* Header */}
+        <div style={{padding:'28px 28px 20px',borderBottom:'1px solid #2e2e2e',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div>
+            <span style={{fontFamily:'var(--font-mono)',fontSize:11,color:accent,letterSpacing:2,textTransform:'uppercase'}}>Carrito</span>
+            <div style={{fontFamily:'var(--font-display)',fontSize:28,lineHeight:1,marginTop:4,color:'var(--text)'}}>
+              {cart.length} {cart.length === 1 ? 'ítem' : 'ítems'}
+            </div>
+          </div>
+          <button onClick={onClose} style={{background:'none',border:'1px solid #2e2e2e',color:'var(--text)',cursor:'pointer',width:40,height:40,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,transition:'border-color .2s'}}
+            onMouseEnter={e=>e.currentTarget.style.borderColor=accent}
+            onMouseLeave={e=>e.currentTarget.style.borderColor='#2e2e2e'}>✕</button>
+        </div>
+
+        {/* Items */}
+        <div style={{flex:1,overflowY:'auto',padding:'0 28px'}}>
+          {cart.length === 0 ? (
+            <div style={{paddingTop:60,textAlign:'center',color:'var(--text-muted)'}}>
+              <div style={{fontSize:40,marginBottom:16,opacity:0.3}}>∅</div>
+              <p style={{fontFamily:'var(--font-mono)',fontSize:12,letterSpacing:1}}>Tu carrito está vacío</p>
+            </div>
+          ) : cart.map((item, idx) => (
+            <div key={item.id} style={{padding:'20px 0',borderBottom:'1px solid #2a2a2a',display:'flex',gap:16,alignItems:'center'}}>
+              <div style={{width:64,height:64,background:'#1e1e1e',flexShrink:0,overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                <span style={{fontSize:24,opacity:0.3}}>{item.icon}</span>
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontFamily:'var(--font-mono)',fontSize:10,color:'var(--text-muted)',letterSpacing:1,marginBottom:3}}>{item.category.toUpperCase()}</div>
+                <div style={{fontSize:14,fontWeight:500,color:'var(--text)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{item.name}</div>
+                <div style={{color:accent,fontFamily:'var(--font-mono)',fontSize:13,marginTop:4}}>{fmt(item.price)}</div>
+              </div>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
+                <div style={{display:'flex',alignItems:'center',gap:0,border:'1px solid #2e2e2e'}}>
+                  <button onClick={()=>onQty(item.id,-1)} style={{width:28,height:28,background:'none',border:'none',color:'var(--text)',cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>−</button>
+                  <span style={{width:28,textAlign:'center',fontFamily:'var(--font-mono)',fontSize:12}}>{item.qty}</span>
+                  <button onClick={()=>onQty(item.id,1)} style={{width:28,height:28,background:'none',border:'none',color:'var(--text)',cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
+                </div>
+                <button onClick={()=>onRemove(item.id)} style={{background:'none',border:'none',color:'#555',cursor:'pointer',fontSize:11,fontFamily:'var(--font-mono)',transition:'color .2s'}}
+                  onMouseEnter={e=>e.currentTarget.style.color='#e55'}
+                  onMouseLeave={e=>e.currentTarget.style.color='#555'}>eliminar</button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        {cart.length > 0 && (
+          <div style={{padding:'24px 28px',borderTop:'1px solid #2e2e2e'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:6}}>
+              <span style={{fontFamily:'var(--font-mono)',fontSize:11,color:'var(--text-muted)',letterSpacing:1}}>SUBTOTAL</span>
+              <span style={{fontFamily:'var(--font-display)',fontSize:26,color:accent}}>{fmt(total)}</span>
+            </div>
+            <p style={{fontFamily:'var(--font-mono)',fontSize:10,color:'var(--text-dim)',marginBottom:20}}>Envío calculado al pagar · IVA incluido</p>
+            <button style={{
+              width:'100%',padding:'16px',background:accent,color:'#111',border:'none',
+              fontFamily:'var(--font-display)',fontSize:22,letterSpacing:1,cursor:'pointer',
+              transition:'background .2s,transform .1s'
+            }}
+              onMouseEnter={e=>e.currentTarget.style.background='#ffe033'}
+              onMouseLeave={e=>e.currentTarget.style.background=accent}
+              onMouseDown={e=>e.currentTarget.style.transform='scale(0.98)'}
+              onMouseUp={e=>e.currentTarget.style.transform='scale(1)'}
+            >PAGAR AHORA</button>
+            <button onClick={onClose} style={{
+              width:'100%',marginTop:10,padding:'12px',background:'none',
+              color:'var(--text-muted)',border:'1px solid #2e2e2e',
+              fontFamily:'var(--font-mono)',fontSize:12,letterSpacing:1,cursor:'pointer',
+              transition:'border-color .2s,color .2s'
+            }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=accent;e.currentTarget.style.color=accent;}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor='#2e2e2e';e.currentTarget.style.color='var(--text-muted)';}}
+            >SEGUIR COMPRANDO</button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+// ─── PRODUCT CARD ─────────────────────────────────────────────────
+function ProductCard({ product, idx, onAdd, cardStyle, gridCols, accent }) {
+  const [hovered, setHovered] = useState(false);
+  const [added, setAdded] = useState(false);
+
+  const handleAdd = () => {
+    onAdd(product);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1400);
+  };
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: hovered ? 'var(--surface2)' : 'var(--surface)',
+        border: `1px solid ${hovered ? accent + '33' : 'var(--border)'}`,
+        transition: 'all .25s ease',
+        cursor: 'default',
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* Tag */}
+      {product.tag && (
+        <div style={{
+          position:'absolute',top:12,left:12,zIndex:2,
+          background: accent, color: '#111',
+          fontFamily:'var(--font-mono)',fontSize:9,
+          letterSpacing:2,padding:'3px 8px',
+          textTransform:'uppercase',
+        }}>{product.tag}</div>
+      )}
+
+      {/* Index */}
+      <div style={{
+        position:'absolute',top:12,right:14,zIndex:2,
+        fontFamily:'var(--font-mono)',fontSize:11,
+        color: hovered ? accent : 'var(--text-dim)',
+        transition:'color .25s'
+      }}>0{idx+1}</div>
+
+      {/* Image area */}
+      <div style={{aspectRatio:'4/3',overflow:'hidden',position:'relative'}}>
+        <div style={{
+          position:'absolute',inset:0,
+          transform: hovered ? 'scale(1.04)' : 'scale(1)',
+          transition: 'transform .5s ease',
+        }}>
+          <ProductPlaceholder icon={product.icon} category={product.category} accent={accent}/>
+        </div>
+      </div>
+
+      {/* Info */}
+      <div style={{padding: cardStyle === 'minimal' ? '16px' : '20px', flex:1, display:'flex', flexDirection:'column', gap:6}}>
+        <div style={{fontFamily:'var(--font-mono)',fontSize:10,color:'var(--text-muted)',letterSpacing:2,textTransform:'uppercase'}}>
+          {product.category} — {product.specs}
+        </div>
+        <div style={{
+          fontFamily:'var(--font-display)',
+          fontSize: parseInt(gridCols) >= 4 ? 20 : 24,
+          lineHeight:1.1,
+          color:'var(--text)',
+          letterSpacing:0.5,
+        }}>{product.name}</div>
+        <div style={{marginTop:'auto',paddingTop:10,display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+          <span style={{fontFamily:'var(--font-display)',fontSize:20,color:accent}}>{fmt(product.price)}</span>
+          <button
+            onClick={handleAdd}
+            style={{
+              background: added ? accent : 'transparent',
+              color: added ? '#111' : accent,
+              border: `1px solid ${accent}`,
+              fontFamily:'var(--font-mono)',fontSize:10,
+              letterSpacing:1.5,padding:'8px 14px',
+              cursor:'pointer',transition:'all .2s',
+              textTransform:'uppercase',whiteSpace:'nowrap',
+            }}
+            onMouseEnter={e=>{if(!added){e.currentTarget.style.background=accent;e.currentTarget.style.color='#111';}}}
+            onMouseLeave={e=>{if(!added){e.currentTarget.style.background='transparent';e.currentTarget.style.color=accent;}}}
+          >{added ? '✓ Agregado' : '+ Carrito'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── HERO LOGO SVG ────────────────────────────────────────────────
+function LogoMark({ accent }) {
+  return (
+    <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style={{width:80,height:80}}>
+      <circle cx="60" cy="60" r="55" fill="none" stroke={accent} strokeWidth="2" opacity="0.6"/>
+      <circle cx="60" cy="60" r="44" fill="none" stroke={accent} strokeWidth="0.5" opacity="0.3"/>
+      {/* Needle/pen shape */}
+      <line x1="60" y1="20" x2="60" y2="90" stroke={accent} strokeWidth="2.5" strokeLinecap="round"/>
+      <polygon points="60,90 55,75 65,75" fill={accent}/>
+      <line x1="38" y1="45" x2="82" y2="45" stroke={accent} strokeWidth="1.5" strokeLinecap="round" opacity="0.7"/>
+      <line x1="44" y1="36" x2="76" y2="36" stroke={accent} strokeWidth="0.8" strokeLinecap="round" opacity="0.4"/>
+    </svg>
+  );
+}
+
+// ─── MAIN APP ─────────────────────────────────────────────────────
+function App() {
+  const { tweaks: rawTweaks, setTweak } = useTweaks(TWEAK_DEFAULTS);
+  const tweaks = rawTweaks || TWEAK_DEFAULTS;
+  const accent = tweaks.accentColor;
+  const gridCols = parseInt(tweaks.gridCols);
+
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [cart, setCart] = useState([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterDone, setNewsletterDone] = useState(false);
+  const [navScrolled, setNavScrolled] = useState(false);
+
+  // Nav scroll detection
+  useEffect(() => {
+    const onScroll = () => setNavScrolled(window.scrollY > 60);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const filtered = activeFilter === 'all'
+    ? ALL_PRODUCTS
+    : ALL_PRODUCTS.filter(p => p.category.toLowerCase() === activeFilter.toLowerCase());
+
+  const addToCart = (product) => {
+    setCart(prev => {
+      const existing = prev.find(i => i.id === product.id);
+      if (existing) return prev.map(i => i.id === product.id ? {...i, qty: i.qty+1} : i);
+      return [...prev, {...product, qty:1}];
+    });
+    setCartOpen(true);
+  };
+
+  const removeFromCart = (id) => setCart(prev => prev.filter(i => i.id !== id));
+  const changeQty = (id, delta) => setCart(prev => {
+    return prev.map(i => i.id === id ? {...i, qty: Math.max(1, i.qty+delta)} : i).filter(i => i.qty > 0);
+  });
+
+  const cartCount = cart.reduce((s,i) => s + i.qty, 0);
+
+  const categories = [
+    { key: 'kits', label: 'Kits', count: PRODUCTS.kits.length },
+    { key: 'máquinas', label: 'Máquinas', count: PRODUCTS.maquinas.length },
+    { key: 'insumos', label: 'Insumos', count: PRODUCTS.insumos.length },
+  ];
+
+  const handleNewsletter = (e) => {
+    e.preventDefault();
+    if (newsletterEmail) { setNewsletterDone(true); setNewsletterEmail(''); }
+  };
+
+  // ── CSS in JS styles based on tweaks
+  const heroIsStacked = tweaks.heroLayout === 'stacked';
+  const isSans = tweaks.fontStyle === 'sans';
+
+  return (
+    <div style={{minHeight:'100vh',background:tweaks.bgDarkness}}>
+
+      {/* ── NAV ── */}
+      <nav style={{
+        position:'sticky',top:0,zIndex:700,
+        background: navScrolled ? 'rgba(18,18,18,0.97)' : 'transparent',
+        backdropFilter: navScrolled ? 'blur(12px)' : 'none',
+        borderBottom: navScrolled ? '1px solid #2e2e2e' : '1px solid transparent',
+        transition:'all .35s ease',
+        padding:'0 clamp(20px,5vw,80px)',
+        display:'flex',alignItems:'center',justifyContent:'space-between',
+        height:64,
+      }}>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <LogoMark accent={accent}/>
+          <div>
+            <div style={{
+              fontFamily: isSans ? 'var(--font-body)' : 'var(--font-display)',
+              fontSize: isSans ? 16 : 22,
+              fontWeight: isSans ? 700 : 400,
+              color:'var(--text)',
+              letterSpacing:1,
+              lineHeight:1,
+            }}>TATTOOSHOP</div>
+            <div style={{fontFamily:'var(--font-mono)',fontSize:9,color:accent,letterSpacing:3}}>COLOMBIA</div>
+          </div>
+        </div>
+
+        <div style={{display:'flex',alignItems:'center',gap:28}}>
+          {['Kits','Máquinas','Insumos'].map(cat => (
+            <button key={cat}
+              onClick={() => {
+                setActiveFilter(cat.toLowerCase());
+                document.getElementById('productos')?.scrollIntoView({behavior:'smooth',block:'start'});
+              }}
+              style={{
+                background:'none',border:'none',color:'var(--text-muted)',
+                fontFamily:'var(--font-mono)',fontSize:11,letterSpacing:1.5,
+                cursor:'pointer',textTransform:'uppercase',padding:'4px 0',
+                borderBottom:'1px solid transparent',transition:'all .2s',
+              }}
+              onMouseEnter={e=>{e.currentTarget.style.color=accent;e.currentTarget.style.borderBottomColor=accent;}}
+              onMouseLeave={e=>{e.currentTarget.style.color='var(--text-muted)';e.currentTarget.style.borderBottomColor='transparent';}}
+            >{cat}</button>
+          ))}
+          <button
+            onClick={() => setCartOpen(true)}
+            style={{
+              background: cartCount > 0 ? accent : 'transparent',
+              color: cartCount > 0 ? '#111' : 'var(--text)',
+              border:`1px solid ${cartCount > 0 ? accent : '#2e2e2e'}`,
+              fontFamily:'var(--font-mono)',fontSize:11,letterSpacing:1,
+              padding:'8px 16px',cursor:'pointer',transition:'all .25s',
+              display:'flex',alignItems:'center',gap:8,
+            }}
+            onMouseEnter={e=>{if(cartCount===0){e.currentTarget.style.borderColor=accent;e.currentTarget.style.color=accent;}}}
+            onMouseLeave={e=>{if(cartCount===0){e.currentTarget.style.borderColor='#2e2e2e';e.currentTarget.style.color='var(--text)';}}}
+          >
+            <span>CARRITO</span>
+            {cartCount > 0 && <span style={{fontWeight:700}}>{cartCount}</span>}
+          </button>
+        </div>
+      </nav>
+
+      {/* ── HERO ── */}
+      <section style={{
+        padding:'clamp(60px,10vh,120px) clamp(20px,5vw,80px) 0',
+        display:'flex',flexDirection:'column',
+        borderBottom:'1px solid var(--border)',
+        position:'relative',overflow:'hidden',
+      }}>
+        {/* BG grid lines */}
+        <div style={{position:'absolute',inset:0,pointerEvents:'none'}}>
+          {[1,2,3,4,5,6,7,8,9,10,11].map(i=>(
+            <div key={i} style={{
+              position:'absolute',top:0,bottom:0,left:`${i*9.09}%`,
+              borderLeft:'1px solid rgba(255,255,255,0.025)',
+            }}/>
+          ))}
+        </div>
+
+        {/* Eyebrow */}
+        <div style={{
+          fontFamily:'var(--font-mono)',fontSize:11,color:accent,
+          letterSpacing:4,marginBottom:28,
+          display:'flex',alignItems:'center',gap:16,
+        }}>
+          <span>EST. 2018</span>
+          <span style={{flex:1,height:1,background:'var(--border)',maxWidth:80}}/>
+          <span>BOGOTÁ, COL</span>
+        </div>
+
+        {/* GIANT LOGOTYPE */}
+        <div style={{
+          fontFamily: isSans ? 'var(--font-body)' : 'var(--font-display)',
+          fontSize:'clamp(72px,14vw,200px)',
+          lineHeight:0.88,
+          fontWeight: isSans ? 800 : 400,
+          letterSpacing: isSans ? -4 : 0,
+          color:'var(--text)',
+          textTransform:'uppercase',
+          position:'relative',zIndex:1,
+          textWrap:'balance',
+        }}>
+          TATTOO
+          <span style={{color:accent}}>SHOP</span>
+          <br/>
+          <span style={{fontSize:'clamp(40px,7vw,100px)',color:'var(--text-muted)'}}>COLOMBIA</span>
+        </div>
+
+        {/* Subtitle */}
+        <div style={{marginTop:32,marginBottom:40,display:'flex',alignItems:'center',gap:24,flexWrap:'wrap'}}>
+          <p style={{
+            fontFamily:'var(--font-body)',fontSize:16,
+            color:'var(--text-muted)',fontStyle:'italic',
+            maxWidth:380,lineHeight:1.6,
+          }}>Todo lo que necesitas para tatuar — profesional, rápido, a tu puerta.</p>
+          <div style={{height:1,flex:1,background:'var(--border)',minWidth:40}}/>
+          <div style={{fontFamily:'var(--font-mono)',fontSize:10,color:'var(--text-dim)',letterSpacing:2,textAlign:'right'}}>
+            ENVÍO<br/>NACIONAL
+          </div>
+        </div>
+
+        {/* CATEGORY TILES */}
+        <div style={{
+          display:'grid',
+          gridTemplateColumns:'repeat(3,1fr)',
+          gap:1,
+          marginLeft:'-clamp(20px,5vw,80px)',
+          marginRight:'-clamp(20px,5vw,80px)',
+          borderTop:'1px solid var(--border)',
+        }}>
+          {categories.map((cat,i) => (
+            <button
+              key={cat.key}
+              onClick={() => {
+                setActiveFilter(cat.key);
+                document.getElementById('productos')?.scrollIntoView({behavior:'smooth',block:'start'});
+              }}
+              style={{
+                background:'transparent',border:'none',
+                borderRight: i < 2 ? '1px solid var(--border)' : 'none',
+                padding:'clamp(28px,5vw,56px) clamp(20px,4vw,48px)',
+                cursor:'pointer',textAlign:'left',
+                transition:'background .25s',
+                position:'relative',overflow:'hidden',
+              }}
+              onMouseEnter={e=>{e.currentTarget.style.background=accent+'14';}}
+              onMouseLeave={e=>{e.currentTarget.style.background='transparent';}}
+            >
+              <div style={{
+                fontFamily:'var(--font-mono)',fontSize:10,
+                color:accent,letterSpacing:3,marginBottom:12,
+                display:'flex',alignItems:'center',gap:8,
+              }}>
+                <span>0{i+1}</span>
+                <span style={{height:1,width:20,background:accent,opacity:0.5}}/>
+              </div>
+              <div style={{
+                fontFamily: isSans ? 'var(--font-body)' : 'var(--font-display)',
+                fontSize:'clamp(32px,5vw,64px)',
+                lineHeight:0.9,color:'var(--text)',
+                fontWeight: isSans ? 700 : 400,
+                letterSpacing: isSans ? -1 : 0,
+              }}>{cat.label.toUpperCase()}</div>
+              <div style={{
+                position:'absolute',bottom:20,right:24,
+                fontFamily:'var(--font-mono)',fontSize:10,
+                color:'var(--text-dim)',letterSpacing:1,
+              }}>{cat.count} productos →</div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* ── TICKER ── */}
+      <div style={{
+        borderBottom:'1px solid var(--border)',
+        padding:'12px 0',
+        overflow:'hidden',
+        background:'var(--surface)',
+      }}>
+        <div style={{
+          display:'flex',gap:48,
+          animation:'ticker 20s linear infinite',
+          whiteSpace:'nowrap',
+        }}>
+          {[...Array(4)].map((_,i) => (
+            <span key={i} style={{display:'flex',gap:48,fontFamily:'var(--font-mono)',fontSize:11,color:'var(--text-muted)',letterSpacing:2}}>
+              <span>ENVÍO A TODO COLOMBIA</span>
+              <span style={{color:accent}}>✦</span>
+              <span>PRODUCTOS PROFESIONALES</span>
+              <span style={{color:accent}}>✦</span>
+              <span>PAGO CONTRAENTREGA</span>
+              <span style={{color:accent}}>✦</span>
+              <span>GARANTÍA INCLUIDA</span>
+              <span style={{color:accent}}>✦</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── PRODUCTS ── */}
+      <section id="productos" style={{padding:'clamp(48px,8vh,96px) clamp(20px,5vw,80px)'}}>
+        {/* Section header */}
+        <div style={{
+          display:'flex',alignItems:'flex-end',
+          justifyContent:'space-between',
+          borderBottom:'1px solid var(--border)',
+          paddingBottom:24,marginBottom:40,
+          flexWrap:'wrap',gap:16,
+        }}>
+          <div>
+            <div style={{fontFamily:'var(--font-mono)',fontSize:10,color:accent,letterSpacing:3,marginBottom:8}}>CATÁLOGO</div>
+            <h2 style={{
+              fontFamily: isSans ? 'var(--font-body)' : 'var(--font-display)',
+              fontSize:'clamp(36px,5vw,72px)',
+              fontWeight: isSans ? 800 : 400,
+              lineHeight:0.9,color:'var(--text)',
+            }}>PRODUCTOS<br/><span style={{color:accent}}>DESTACADOS</span></h2>
+          </div>
+          {/* Filter buttons */}
+          <div style={{display:'flex',gap:1,flexWrap:'wrap'}}>
+            {[{key:'all',label:'Todos'}, ...categories.map(c=>({key:c.key,label:c.label}))].map(f => (
+              <button key={f.key}
+                onClick={() => setActiveFilter(f.key)}
+                style={{
+                  background: activeFilter === f.key ? accent : 'var(--surface)',
+                  color: activeFilter === f.key ? '#111' : 'var(--text-muted)',
+                  border:'1px solid var(--border)',
+                  fontFamily:'var(--font-mono)',fontSize:10,letterSpacing:1.5,
+                  padding:'10px 18px',cursor:'pointer',
+                  textTransform:'uppercase',transition:'all .2s',
+                  borderRadius:0,
+                }}
+                onMouseEnter={e=>{if(activeFilter!==f.key){e.currentTarget.style.color=accent;e.currentTarget.style.borderColor=accent;}}}
+                onMouseLeave={e=>{if(activeFilter!==f.key){e.currentTarget.style.color='var(--text-muted)';e.currentTarget.style.borderColor='var(--border)';}}}
+              >{f.label}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Grid */}
+        <div style={{
+          display:'grid',
+          gridTemplateColumns:`repeat(${gridCols},minmax(0,1fr))`,
+          gap:'1px',
+          background:'var(--border)',
+        }}>
+          {filtered.map((p, i) => (
+            <ProductCard
+              key={p.id}
+              product={p}
+              idx={i}
+              onAdd={addToCart}
+              cardStyle={tweaks.cardStyle}
+              gridCols={tweaks.gridCols}
+              accent={accent}
+            />
+          ))}
+        </div>
+
+        {/* Count */}
+        <div style={{
+          marginTop:24,fontFamily:'var(--font-mono)',fontSize:11,
+          color:'var(--text-dim)',letterSpacing:1,
+          display:'flex',justifyContent:'flex-end',
+        }}>
+          {filtered.length} de {ALL_PRODUCTS.length} productos
+        </div>
+      </section>
+
+      {/* ── ABOUT STRIP ── */}
+      <section style={{
+        borderTop:'1px solid var(--border)',
+        display:'grid',gridTemplateColumns:'1fr 1fr',
+      }}>
+        <div style={{padding:'clamp(48px,8vw,96px) clamp(24px,5vw,80px)',borderRight:'1px solid var(--border)'}}>
+          <div style={{fontFamily:'var(--font-mono)',fontSize:10,color:accent,letterSpacing:3,marginBottom:20}}>SOBRE NOSOTROS</div>
+          <h3 style={{
+            fontFamily: isSans ? 'var(--font-body)' : 'var(--font-display)',
+            fontSize:'clamp(28px,4vw,52px)',lineHeight:0.95,
+            fontWeight: isSans ? 700 : 400,
+            color:'var(--text)',marginBottom:24,
+          }}>SUMINISTROS<br/>PARA ARTISTAS<br/><span style={{color:accent}}>REALES.</span></h3>
+          <p style={{color:'var(--text-muted)',lineHeight:1.7,maxWidth:400,fontSize:14}}>
+            Desde 2018 somos el proveedor de confianza de tatuadores profesionales en Colombia. 
+            Trabajamos directamente con fabricantes certificados para garantizar insumos de alta calidad 
+            a precios justos. Envío a todas las ciudades del país.
+          </p>
+        </div>
+        <div style={{
+          padding:'clamp(48px,8vw,96px) clamp(24px,5vw,80px)',
+          display:'flex',flexDirection:'column',justifyContent:'center',
+          background:'var(--surface)',
+        }}>
+          {[
+            {n:'500+', label:'Clientes activos'},
+            {n:'48h', label:'Tiempo de entrega promedio'},
+            {n:'100%', label:'Garantía en productos'},
+          ].map((s,i) => (
+            <div key={i} style={{
+              paddingBottom: i<2 ? 28 : 0,
+              marginBottom: i<2 ? 28 : 0,
+              borderBottom: i<2 ? '1px solid var(--border)' : 'none',
+              display:'flex',alignItems:'baseline',gap:16,
+            }}>
+              <span style={{fontFamily:'var(--font-display)',fontSize:'clamp(36px,5vw,64px)',color:accent}}>{s.n}</span>
+              <span style={{fontFamily:'var(--font-mono)',fontSize:12,color:'var(--text-muted)',letterSpacing:1}}>{s.label.toUpperCase()}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer style={{borderTop:'1px solid var(--border)',background:'var(--surface)'}}>
+        {/* Newsletter */}
+        <div style={{
+          padding:'clamp(40px,6vw,80px) clamp(20px,5vw,80px)',
+          borderBottom:'1px solid var(--border)',
+          display:'flex',alignItems:'center',justifyContent:'space-between',
+          gap:40,flexWrap:'wrap',
+        }}>
+          <div>
+            <div style={{fontFamily:'var(--font-mono)',fontSize:10,color:accent,letterSpacing:3,marginBottom:12}}>NEWSLETTER</div>
+            <h4 style={{fontFamily: isSans ? 'var(--font-body)' : 'var(--font-display)',fontSize:'clamp(24px,3vw,42px)',fontWeight: isSans ? 700:400,lineHeight:0.95,color:'var(--text)'}}>
+              OFERTAS EXCLUSIVAS<br/>PARA TATUADORES
+            </h4>
+          </div>
+          {newsletterDone ? (
+            <div style={{fontFamily:'var(--font-mono)',fontSize:13,color:accent,letterSpacing:2}}>✓ ¡Suscrito! Gracias.</div>
+          ) : (
+            <form onSubmit={handleNewsletter} style={{display:'flex',gap:0,minWidth:300,flex:1,maxWidth:480}}>
+              <input
+                type="email" placeholder="tu@email.com"
+                value={newsletterEmail}
+                onChange={e=>setNewsletterEmail(e.target.value)}
+                style={{
+                  flex:1,background:'#1a1a1a',border:'1px solid var(--border)',
+                  borderRight:'none',color:'var(--text)',padding:'14px 18px',
+                  fontFamily:'var(--font-mono)',fontSize:12,outline:'none',
+                }}
+              />
+              <button type="submit" style={{
+                background:accent,color:'#111',border:'none',padding:'14px 24px',
+                fontFamily:'var(--font-display)',fontSize:18,cursor:'pointer',
+                transition:'background .2s',whiteSpace:'nowrap',
+              }}
+                onMouseEnter={e=>e.currentTarget.style.background='#ffe033'}
+                onMouseLeave={e=>e.currentTarget.style.background=accent}
+              >SUSCRIBIR</button>
+            </form>
+          )}
+        </div>
+
+        {/* Footer cols */}
+        <div style={{
+          padding:'clamp(40px,6vw,72px) clamp(20px,5vw,80px)',
+          display:'grid',
+          gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',
+          gap:'40px 60px',
+          borderBottom:'1px solid var(--border)',
+        }}>
+          {/* Brand */}
+          <div style={{gridColumn:'span 1'}}>
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16}}>
+              <LogoMark accent={accent}/>
+              <div>
+                <div style={{fontFamily: isSans ? 'var(--font-body)':'var(--font-display)',fontSize:isSans?14:18,fontWeight:isSans?700:400,color:'var(--text)'}}>TATTOOSHOP</div>
+                <div style={{fontFamily:'var(--font-mono)',fontSize:8,color:accent,letterSpacing:3}}>COLOMBIA</div>
+              </div>
+            </div>
+            <p style={{fontFamily:'var(--font-mono)',fontSize:11,color:'var(--text-dim)',lineHeight:1.7,letterSpacing:0.5}}>
+              Tu proveedor profesional<br/>de insumos para tatuaje<br/>en Colombia.
+            </p>
+          </div>
+
+          {/* Navigation */}
+          <div>
+            <div style={{fontFamily:'var(--font-mono)',fontSize:9,color:accent,letterSpacing:3,marginBottom:18}}>CATÁLOGO</div>
+            {['Kits de Inicio','Máquinas Rotary','Máquinas Coil','Agujas y Cartridges','Tintas','Insumos Descartables'].map(l=>(
+              <div key={l} style={{marginBottom:10}}>
+                <a href="#" style={{color:'var(--text-muted)',fontFamily:'var(--font-mono)',fontSize:12,textDecoration:'none',letterSpacing:0.5,transition:'color .2s'}}
+                  onMouseEnter={e=>e.currentTarget.style.color=accent}
+                  onMouseLeave={e=>e.currentTarget.style.color='var(--text-muted)'}>{l}</a>
+              </div>
+            ))}
+          </div>
+
+          {/* Shipping & FAQ */}
+          <div>
+            <div style={{fontFamily:'var(--font-mono)',fontSize:9,color:accent,letterSpacing:3,marginBottom:18}}>INFORMACIÓN</div>
+            {['Política de Envíos','Devoluciones y Garantía','Preguntas Frecuentes','Métodos de Pago','Sobre Nosotros','Términos y Condiciones'].map(l=>(
+              <div key={l} style={{marginBottom:10}}>
+                <a href="#" style={{color:'var(--text-muted)',fontFamily:'var(--font-mono)',fontSize:12,textDecoration:'none',letterSpacing:0.5,transition:'color .2s'}}
+                  onMouseEnter={e=>e.currentTarget.style.color=accent}
+                  onMouseLeave={e=>e.currentTarget.style.color='var(--text-muted)'}>{l}</a>
+              </div>
+            ))}
+          </div>
+
+          {/* Contact & Social */}
+          <div>
+            <div style={{fontFamily:'var(--font-mono)',fontSize:9,color:accent,letterSpacing:3,marginBottom:18}}>CONTACTO</div>
+            <div style={{marginBottom:20}}>
+              <p style={{fontFamily:'var(--font-mono)',fontSize:11,color:'var(--text-muted)',lineHeight:1.8}}>
+                Cra 7 #45-23<br/>Bogotá, Colombia<br/>Lun-Vie 8am-6pm
+              </p>
+            </div>
+            <a href="https://wa.me/573000000000" style={{
+              display:'inline-flex',alignItems:'center',gap:8,
+              background:accent,color:'#111',textDecoration:'none',
+              padding:'10px 16px',fontFamily:'var(--font-mono)',fontSize:11,
+              letterSpacing:1,marginBottom:24,transition:'background .2s',
+            }}
+              onMouseEnter={e=>e.currentTarget.style.background='#ffe033'}
+              onMouseLeave={e=>e.currentTarget.style.background=accent}
+            >
+              <span>💬</span> WHATSAPP
+            </a>
+            <div style={{fontFamily:'var(--font-mono)',fontSize:9,color:accent,letterSpacing:3,marginBottom:12}}>REDES SOCIALES</div>
+            <div style={{display:'flex',gap:12,flexWrap:'wrap'}}>
+              {['Instagram','TikTok','Facebook','YouTube'].map(s=>(
+                <a key={s} href="#" style={{
+                  color:'var(--text-muted)',fontFamily:'var(--font-mono)',fontSize:10,
+                  textDecoration:'none',border:'1px solid var(--border)',
+                  padding:'6px 10px',letterSpacing:1,transition:'all .2s',
+                }}
+                  onMouseEnter={e=>{e.currentTarget.style.color=accent;e.currentTarget.style.borderColor=accent;}}
+                  onMouseLeave={e=>{e.currentTarget.style.color='var(--text-muted)';e.currentTarget.style.borderColor='var(--border)';}}
+                >{s}</a>
+              ))}
+            </div>
+          </div>
+
+          {/* Payments */}
+          <div>
+            <div style={{fontFamily:'var(--font-mono)',fontSize:9,color:accent,letterSpacing:3,marginBottom:18}}>PAGAMOS CON</div>
+            {['PSE / Bancolombia','Nequi / Daviplata','Contraentrega','Tarjeta Crédito/Débito','Efecty / Baloto'].map(p=>(
+              <div key={p} style={{
+                marginBottom:8,padding:'8px 12px',
+                border:'1px solid var(--border)',
+                fontFamily:'var(--font-mono)',fontSize:10,
+                color:'var(--text-muted)',letterSpacing:0.5,
+              }}>{p}</div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div style={{
+          padding:'20px clamp(20px,5vw,80px)',
+          display:'flex',alignItems:'center',justifyContent:'space-between',
+          flexWrap:'wrap',gap:12,
+        }}>
+          <div style={{fontFamily:'var(--font-mono)',fontSize:10,color:'var(--text-dim)',letterSpacing:1}}>
+            TattooShop Colombia ©2026 — Todos los derechos reservados
+          </div>
+          <div style={{fontFamily:'var(--font-mono)',fontSize:10,color:'var(--text-dim)',letterSpacing:1}}>
+            Hecho con <span style={{color:accent}}>✦</span> en Colombia
+          </div>
+        </div>
+      </footer>
+
+      {/* ── CART DRAWER ── */}
+      {cartOpen && (
+        <CartDrawer
+          cart={cart}
+          onClose={() => setCartOpen(false)}
+          onRemove={removeFromCart}
+          onQty={changeQty}
+          accent={accent}
+        />
+      )}
+
+      {/* ── TWEAKS PANEL ── */}
+      <TweaksPanel>
+        <TweakSection title="Visual">
+          <TweakColor id="accentColor" label="Color acento" value={tweaks.accentColor} onChange={v=>setTweak('accentColor',v)} options={['#FFD400','#E8FF3A','#FFA800','#00E5FF','#FF4D4D']}/>
+          <TweakSelect id="bgDarkness" label="Fondo" value={tweaks.bgDarkness} onChange={v=>setTweak('bgDarkness',v)}
+            options={[{label:'Muy oscuro (#111)',value:'#111111'},{label:'Oscuro (#141414)',value:'#141414'},{label:'Grafito (#1a1a1a)',value:'#1a1a1a'},{label:'Carbón (#1f1f1f)',value:'#1f1f1f'}]}/>
+        </TweakSection>
+        <TweakSection title="Tipografía">
+          <TweakRadio id="fontStyle" label="Estilo fuente" value={tweaks.fontStyle} onChange={v=>setTweak('fontStyle',v)} options={[{label:'Display',value:'display'},{label:'Sans',value:'sans'}]}/>
+        </TweakSection>
+        <TweakSection title="Catálogo">
+          <TweakRadio id="gridCols" label="Columnas" value={tweaks.gridCols} onChange={v=>setTweak('gridCols',v)} options={[{label:'2',value:'2'},{label:'3',value:'3'},{label:'4',value:'4'}]}/>
+          <TweakRadio id="cardStyle" label="Tarjetas" value={tweaks.cardStyle} onChange={v=>setTweak('cardStyle',v)} options={[{label:'Minimal',value:'minimal'},{label:'Editorial',value:'editorial'}]}/>
+        </TweakSection>
+        <TweakSection title="Hero">
+          <TweakRadio id="heroLayout" label="Hero layout" value={tweaks.heroLayout} onChange={v=>setTweak('heroLayout',v)} options={[{label:'Apilado',value:'stacked'},{label:'Split',value:'split'}]}/>
+        </TweakSection>
+      </TweaksPanel>
+
+      <style>{`
+        @keyframes ticker {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        input::placeholder { color: #444; }
+        input:focus { outline: 1px solid ${accent}; }
+        @media (max-width: 768px) {
+          nav > div:last-child > button:not(:last-child) { display: none; }
+          section[id="productos"] > div:first-child { flex-direction: column; align-items: flex-start; }
+          footer > div:nth-child(2) { grid-template-columns: 1fr 1fr; }
+          footer > div:last-child > div:first-child { font-size: 9px; }
+        }
+        @media (max-width: 600px) {
+          div[style*="gridTemplateColumns:'repeat(3,1fr)'"] { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

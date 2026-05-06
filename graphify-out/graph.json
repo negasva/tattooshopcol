@@ -305,15 +305,6 @@
       "norm_label": "handlenewsletter()"
     },
     {
-      "label": "handleAdd()",
-      "file_type": "code",
-      "source_file": "app/components/TattooShopHome.tsx",
-      "source_location": "L594",
-      "id": "components_tattooshophome_handleadd",
-      "community": 2,
-      "norm_label": "handleadd()"
-    },
-    {
       "label": "WhatsAppButton.tsx",
       "file_type": "code",
       "source_file": "app/components/WhatsAppButton.tsx",
@@ -537,6 +528,15 @@
       "id": "tattooshopcol_readme_future_enhancements",
       "community": 1,
       "norm_label": "future enhancements"
+    },
+    {
+      "label": "handleAdd()",
+      "file_type": "code",
+      "source_file": "app/components/TattooShopHome.tsx",
+      "source_location": "L594",
+      "community": 2,
+      "norm_label": "handleadd()",
+      "id": "components_tattooshophome_handleadd"
     },
     {
       "label": "RootLayout()",
@@ -1189,5 +1189,5 @@
       "source_file": "app/components/TattooShopHome.tsx"
     }
   ],
-  "built_at_commit": "50b37b40bb33d97271b17f843525b4f7bd3312de"
+  "built_at_commit": "e1b017577e3267827857fc8c249fda85184fdd07"
 }

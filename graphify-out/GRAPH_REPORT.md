@@ -1,7 +1,7 @@
 # Graph Report - tattooshopcol  (2026-05-06)
 
 ## Corpus Check
-- 18 files · ~4,978 words
+- 18 files · ~5,697 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `50b37b40`
+- Built from commit: `e1b01757`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
