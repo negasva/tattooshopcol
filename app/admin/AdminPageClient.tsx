@@ -16,7 +16,7 @@ export default function AdminPageClient() {
   const [authenticated, setAuthenticated] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    category: '',
+    category_id: '',
     price: 0,
     price_original: 0,
     discount_percent: 0,
@@ -41,8 +41,8 @@ export default function AdminPageClient() {
       const { data, error } = await supabase.from('categories').select('*').order('name');
       if (error) throw error;
       setCategories(data || []);
-      if (data && data.length > 0 && !formData.category) {
-        setFormData((prev) => ({ ...prev, category: data[0].id }));
+      if (data && data.length > 0 && !formData.category_id) {
+        setFormData((prev) => ({ ...prev, category_id: data[0].id }));
       }
     } catch (error) {
       console.error('Error loading categories:', error);
@@ -87,7 +87,7 @@ export default function AdminPageClient() {
 
       const dataToSave = {
         name: formData.name,
-        category: formData.category,
+        category_id: formData.category_id,
         price: finalPrice,
         price_original: formData.price_original || formData.price,
         discount_percent: formData.discount_percent,
@@ -117,7 +117,7 @@ export default function AdminPageClient() {
         ]);
         if (error) throw error;
       }
-      setFormData({ name: '', category: categories[0]?.id || '', price: 0, price_original: 0, discount_percent: 0, specs: '', tag: '', inventory: 0, image_url: '' });
+      setFormData({ name: '', category_id: categories[0]?.id || '', price: 0, price_original: 0, discount_percent: 0, specs: '', tag: '', inventory: 0, image_url: '' });
       loadProducts();
       alert(editingId ? 'Producto actualizado' : 'Producto agregado');
     } catch (error) {
@@ -142,7 +142,7 @@ export default function AdminPageClient() {
   const handleEdit = (product: Product) => {
     setFormData({
       name: product.name,
-      category: product.category,
+      category_id: (product as any).category_id || '',
       price: product.price,
       price_original: (product as any).price_original || product.price,
       discount_percent: (product as any).discount_percent || 0,
@@ -238,8 +238,8 @@ export default function AdminPageClient() {
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Categoría</label>
                 <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  value={formData.category_id}
+                  onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
                   required
                   style={{
                     width: '100%',
@@ -421,7 +421,7 @@ export default function AdminPageClient() {
                   type="button"
                   onClick={() => {
                     setEditingId(null);
-                    setFormData({ name: '', category: categories[0]?.id || '', price: 0, price_original: 0, discount_percent: 0, specs: '', tag: '', inventory: 0, image_url: '' });
+                    setFormData({ name: '', category_id: categories[0]?.id || '', price: 0, price_original: 0, discount_percent: 0, specs: '', tag: '', inventory: 0, image_url: '' });
                   }}
                   style={{
                     flex: 1,
@@ -466,7 +466,7 @@ export default function AdminPageClient() {
                   {products.map((product) => (
                     <tr key={product.id} style={{ borderBottom: '1px solid var(--border)' }}>
                       <td style={{ padding: '16px', color: 'var(--text)' }}>{product.name}</td>
-                      <td style={{ padding: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>{getCategoryName(product.category)}</td>
+                      <td style={{ padding: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>{getCategoryName((product as any).category_id || '')}</td>
                       <td style={{ padding: '16px', textAlign: 'right', color: 'var(--text-muted)' }}>
                         ${((product as any).price_original || product.price).toLocaleString('es-CO')}
                       </td>
