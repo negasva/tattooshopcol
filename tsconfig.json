@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "useDefineForClassFields": true,
     "lib": [
       "ES2020",
       "DOM",
@@ -16,7 +15,6 @@
     "resolveJsonModule": true,
     "moduleResolution": "bundler",
     "allowJs": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./*"
@@ -29,8 +27,8 @@
         "name": "next"
       }
     ],
-    "noEmit": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "noEmit": true
   },
   "include": [
     "next-env.d.ts",

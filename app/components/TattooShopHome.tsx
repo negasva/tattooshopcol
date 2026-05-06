@@ -190,7 +190,7 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
             zIndex: 2,
             background: accent,
             color: '#111',
-            fontFamily: 'var(--font-mono)',
+            fontFamily: '"DM Mono", monospace',
             fontSize: '9px',
             letterSpacing: '2px',
             padding: '3px 8px',
@@ -207,7 +207,7 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
           top: 12,
           right: 14,
           zIndex: 2,
-          fontFamily: 'var(--font-mono)',
+          fontFamily: '"DM Mono", monospace',
           fontSize: '11px',
           color: hovered ? accent : 'var(--text-dim)',
           transition: 'color 0.25s',
@@ -230,12 +230,12 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
       </div>
 
       <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '2px', textTransform: 'uppercase' }}>
+        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '2px', textTransform: 'uppercase' }}>
           {product.category} — {product.specs}
         </div>
         <div
           style={{
-            fontFamily: 'var(--font-display)',
+            fontFamily: '"Bebas Neue", sans-serif',
             fontSize: '24px',
             lineHeight: 1.1,
             color: 'var(--text)',
@@ -245,14 +245,14 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
           {product.name}
         </div>
         <div style={{ marginTop: 'auto', paddingTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: accent }}>{fmt(product.price)}</span>
+          <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', color: accent }}>{fmt(product.price)}</span>
           <button
             onClick={handleAdd}
             style={{
               background: added ? accent : 'transparent',
               color: added ? '#111' : accent,
               border: `1px solid ${accent}`,
-              fontFamily: 'var(--font-mono)',
+              fontFamily: '"DM Mono", monospace',
               fontSize: '10px',
               letterSpacing: '1.5px',
               padding: '8px 14px',
@@ -314,8 +314,8 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent }: { cart: CartItem
       >
         <div style={{ padding: '28px 28px 20px', borderBottom: '1px solid #2e2e2e', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: accent, letterSpacing: '2px', textTransform: 'uppercase' }}>Carrito</span>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '28px', lineHeight: 1, marginTop: '4px', color: 'var(--text)' }}>
+            <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '2px', textTransform: 'uppercase' }}>Carrito</span>
+            <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '28px', lineHeight: 1, marginTop: '4px', color: 'var(--text)' }}>
               {cart.length} {cart.length === 1 ? 'ítem' : 'ítems'}
             </div>
           </div>
@@ -349,7 +349,7 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent }: { cart: CartItem
           {cart.length === 0 ? (
             <div style={{ paddingTop: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
               <div style={{ fontSize: '40px', marginBottom: '16px', opacity: 0.3 }}>∅</div>
-              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '1px' }}>Tu carrito está vacío</p>
+              <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', letterSpacing: '1px' }}>Tu carrito está vacío</p>
             </div>
           ) : (
             cart.map((item) => (
@@ -358,13 +358,13 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent }: { cart: CartItem
                   <span style={{ fontSize: '24px', opacity: 0.3 }}>{item.icon}</span>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '3px' }}>
+                  <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '3px' }}>
                     {item.category.toUpperCase()}
                   </div>
                   <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {item.name}
                   </div>
-                  <div style={{ color: accent, fontFamily: 'var(--font-mono)', fontSize: '13px', marginTop: '4px' }}>{fmt(item.price)}</div>
+                  <div style={{ color: accent, fontFamily: '"DM Mono", monospace', fontSize: '13px', marginTop: '4px' }}>{fmt(item.price)}</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1px solid #2e2e2e' }}>
@@ -374,7 +374,7 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent }: { cart: CartItem
                     >
                       −
                     </button>
-                    <span style={{ width: '28px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>{item.qty}</span>
+                    <span style={{ width: '28px', textAlign: 'center', fontFamily: '"DM Mono", monospace', fontSize: '12px' }}>{item.qty}</span>
                     <button
                       onClick={() => onQty(item.id, 1)}
                       style={{ width: '28px', height: '28px', background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -384,7 +384,7 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent }: { cart: CartItem
                   </div>
                   <button
                     onClick={() => onRemove(item.id)}
-                    style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '11px', fontFamily: 'var(--font-mono)', transition: 'color 0.2s' }}
+                    style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '11px', fontFamily: '"DM Mono", monospace', transition: 'color 0.2s' }}
                     onMouseEnter={(e) => {
                       (e.currentTarget as HTMLButtonElement).style.color = '#e55';
                     }}
@@ -403,10 +403,10 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent }: { cart: CartItem
         {cart.length > 0 && (
           <div style={{ padding: '24px 28px', borderTop: '1px solid #2e2e2e' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1px' }}>SUBTOTAL</span>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: '26px', color: accent }}>{fmt(total)}</span>
+              <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1px' }}>SUBTOTAL</span>
+              <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '26px', color: accent }}>{fmt(total)}</span>
             </div>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-dim)', marginBottom: '20px' }}>Envío calculado al pagar · IVA incluido</p>
+            <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-dim)', marginBottom: '20px' }}>Envío calculado al pagar · IVA incluido</p>
             <button
               style={{
                 width: '100%',
@@ -414,7 +414,7 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent }: { cart: CartItem
                 background: accent,
                 color: '#111',
                 border: 'none',
-                fontFamily: 'var(--font-display)',
+                fontFamily: '"Bebas Neue", sans-serif',
                 fontSize: '22px',
                 letterSpacing: '1px',
                 cursor: 'pointer',
@@ -444,7 +444,7 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent }: { cart: CartItem
                 background: 'none',
                 color: 'var(--text-muted)',
                 border: '1px solid #2e2e2e',
-                fontFamily: 'var(--font-mono)',
+                fontFamily: '"DM Mono", monospace',
                 fontSize: '12px',
                 letterSpacing: '1px',
                 cursor: 'pointer',
@@ -536,8 +536,8 @@ export default function TattooShopHome() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <LogoMark accent={accent} />
           <div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--text)', letterSpacing: '1px', lineHeight: 1 }}>TATTOOSHOP</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: accent, letterSpacing: '3px' }}>COLOMBIA</div>
+            <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px', color: 'var(--text)', letterSpacing: '1px', lineHeight: 1 }}>TATTOOSHOP</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px' }}>COLOMBIA</div>
           </div>
         </div>
 
@@ -553,7 +553,7 @@ export default function TattooShopHome() {
                 background: 'none',
                 border: 'none',
                 color: 'var(--text-muted)',
-                fontFamily: 'var(--font-mono)',
+                fontFamily: '"DM Mono", monospace',
                 fontSize: '11px',
                 letterSpacing: '1.5px',
                 cursor: 'pointer',
@@ -580,7 +580,7 @@ export default function TattooShopHome() {
               background: cartCount > 0 ? accent : 'transparent',
               color: cartCount > 0 ? '#111' : 'var(--text)',
               border: `1px solid ${cartCount > 0 ? accent : '#2e2e2e'}`,
-              fontFamily: 'var(--font-mono)',
+              fontFamily: '"DM Mono", monospace',
               fontSize: '11px',
               letterSpacing: '1px',
               padding: '8px 16px',
@@ -635,7 +635,7 @@ export default function TattooShopHome() {
           ))}
         </div>
 
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: accent, letterSpacing: '4px', marginBottom: '28px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '4px', marginBottom: '28px', display: 'flex', alignItems: 'center', gap: '16px' }}>
           <span>EST. 2018</span>
           <span style={{ flex: 1, height: '1px', background: 'var(--border)', maxWidth: '80px' }} />
           <span>BOGOTÁ, COL</span>
@@ -643,7 +643,7 @@ export default function TattooShopHome() {
 
         <div
           style={{
-            fontFamily: 'var(--font-display)',
+            fontFamily: '"Bebas Neue", sans-serif',
             fontSize: 'clamp(72px,14vw,200px)',
             lineHeight: 0.88,
             color: 'var(--text)',
@@ -659,11 +659,11 @@ export default function TattooShopHome() {
         </div>
 
         <div style={{ marginTop: '32px', marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '16px', color: 'var(--text-muted)', fontStyle: 'italic', maxWidth: '380px', lineHeight: 1.6 }}>
+          <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '16px', color: 'var(--text-muted)', fontStyle: 'italic', maxWidth: '380px', lineHeight: 1.6 }}>
             Todo lo que necesitas para tatuar — profesional, rápido, a tu puerta.
           </p>
           <div style={{ height: '1px', flex: 1, background: 'var(--border)', minWidth: '40px' }} />
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '2px', textAlign: 'right' }}>
+          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '2px', textAlign: 'right' }}>
             ENVÍO<br />
             NACIONAL
           </div>
@@ -704,14 +704,14 @@ export default function TattooShopHome() {
                 (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
               }}
             >
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>0{i + 1}</span>
                 <span style={{ height: '1px', width: '20px', background: accent, opacity: 0.5 }} />
               </div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,5vw,64px)', lineHeight: 0.9, color: 'var(--text)' }}>
+              <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(32px,5vw,64px)', lineHeight: 0.9, color: 'var(--text)' }}>
                 {cat.label.toUpperCase()}
               </div>
-              <div style={{ position: 'absolute', bottom: '20px', right: '24px', fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>
+              <div style={{ position: 'absolute', bottom: '20px', right: '24px', fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>
                 {cat.count} productos →
               </div>
             </button>
@@ -730,7 +730,7 @@ export default function TattooShopHome() {
           }}
         >
           {[...Array(4)].map((_, i) => (
-            <span key={i} style={{ display: 'flex', gap: '48px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '2px' }}>
+            <span key={i} style={{ display: 'flex', gap: '48px', fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '2px' }}>
               <span>ENVÍO A TODO COLOMBIA</span>
               <span style={{ color: accent }}>✦</span>
               <span>PRODUCTOS PROFESIONALES</span>
@@ -759,8 +759,8 @@ export default function TattooShopHome() {
           }}
         >
           <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '8px' }}>CATÁLOGO</div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(36px,5vw,72px)', lineHeight: 0.9, color: 'var(--text)' }}>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '8px' }}>CATÁLOGO</div>
+            <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(36px,5vw,72px)', lineHeight: 0.9, color: 'var(--text)' }}>
               PRODUCTOS<br />
               <span style={{ color: accent }}>DESTACADOS</span>
             </h2>
@@ -775,7 +775,7 @@ export default function TattooShopHome() {
                   background: activeFilter === f.key ? accent : 'var(--surface)',
                   color: activeFilter === f.key ? '#111' : 'var(--text-muted)',
                   border: '1px solid var(--border)',
-                  fontFamily: 'var(--font-mono)',
+                  fontFamily: '"DM Mono", monospace',
                   fontSize: '10px',
                   letterSpacing: '1.5px',
                   padding: '10px 18px',
@@ -815,7 +815,7 @@ export default function TattooShopHome() {
           ))}
         </div>
 
-        <div style={{ marginTop: '24px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-dim)', letterSpacing: '1px', display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ marginTop: '24px', fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-dim)', letterSpacing: '1px', display: 'flex', justifyContent: 'flex-end' }}>
           {filtered.length} de {ALL_PRODUCTS.length} productos
         </div>
       </section>
@@ -823,8 +823,8 @@ export default function TattooShopHome() {
       {/* ABOUT */}
       <section style={{ borderTop: '1px solid var(--border)', display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
         <div style={{ padding: 'clamp(48px,8vw,96px) clamp(24px,5vw,80px)', borderRight: '1px solid var(--border)' }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '20px' }}>SOBRE NOSOTROS</div>
-          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(28px,4vw,52px)', lineHeight: 0.95, color: 'var(--text)', marginBottom: '24px' }}>
+          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '20px' }}>SOBRE NOSOTROS</div>
+          <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(28px,4vw,52px)', lineHeight: 0.95, color: 'var(--text)', marginBottom: '24px' }}>
             SUMINISTROS<br />
             PARA ARTISTAS<br />
             <span style={{ color: accent }}>REALES.</span>
@@ -850,8 +850,8 @@ export default function TattooShopHome() {
                 gap: '16px',
               }}
             >
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(36px,5vw,64px)', color: accent }}>{s.n}</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '1px' }}>{s.label.toUpperCase()}</span>
+              <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(36px,5vw,64px)', color: accent }}>{s.n}</span>
+              <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '1px' }}>{s.label.toUpperCase()}</span>
             </div>
           ))}
         </div>
@@ -861,14 +861,14 @@ export default function TattooShopHome() {
       <footer style={{ borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
         <div style={{ padding: 'clamp(40px,6vw,80px) clamp(20px,5vw,80px)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '40px', flexWrap: 'wrap' }}>
           <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '12px' }}>NEWSLETTER</div>
-            <h4 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(24px,3vw,42px)', lineHeight: 0.95, color: 'var(--text)' }}>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '12px' }}>NEWSLETTER</div>
+            <h4 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(24px,3vw,42px)', lineHeight: 0.95, color: 'var(--text)' }}>
               OFERTAS EXCLUSIVAS<br />
               PARA TATUADORES
             </h4>
           </div>
           {newsletterDone ? (
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: accent, letterSpacing: '2px' }}>✓ ¡Suscrito! Gracias.</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: accent, letterSpacing: '2px' }}>✓ ¡Suscrito! Gracias.</div>
           ) : (
             <form onSubmit={handleNewsletter} style={{ display: 'flex', gap: 0, minWidth: '300px', flex: 1, maxWidth: '480px' }}>
               <input
@@ -876,11 +876,11 @@ export default function TattooShopHome() {
                 placeholder="tu@email.com"
                 value={newsletterEmail}
                 onChange={(e) => setNewsletterEmail(e.target.value)}
-                style={{ flex: 1, background: '#1a1a1a', border: '1px solid var(--border)', borderRight: 'none', color: 'var(--text)', padding: '14px 18px', fontFamily: 'var(--font-mono)', fontSize: '12px', outline: 'none' }}
+                style={{ flex: 1, background: '#1a1a1a', border: '1px solid var(--border)', borderRight: 'none', color: 'var(--text)', padding: '14px 18px', fontFamily: '"DM Mono", monospace', fontSize: '12px', outline: 'none' }}
               />
               <button
                 type="submit"
-                style={{ background: accent, color: '#111', border: 'none', padding: '14px 24px', fontFamily: 'var(--font-display)', fontSize: '18px', cursor: 'pointer', transition: 'background 0.2s', whiteSpace: 'nowrap' }}
+                style={{ background: accent, color: '#111', border: 'none', padding: '14px 24px', fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', cursor: 'pointer', transition: 'background 0.2s', whiteSpace: 'nowrap' }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLButtonElement).style.background = '#ffe033';
                 }}
@@ -899,11 +899,11 @@ export default function TattooShopHome() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
               <LogoMark accent={accent} />
               <div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--text)' }}>TATTOOSHOP</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: accent, letterSpacing: '3px' }}>COLOMBIA</div>
+                <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: 'var(--text)' }}>TATTOOSHOP</div>
+                <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '8px', color: accent, letterSpacing: '3px' }}>COLOMBIA</div>
               </div>
             </div>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-dim)', lineHeight: 1.7, letterSpacing: '0.5px' }}>
+            <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-dim)', lineHeight: 1.7, letterSpacing: '0.5px' }}>
               Tu proveedor profesional<br />
               de insumos para tatuaje<br />
               en Colombia.
@@ -911,12 +911,12 @@ export default function TattooShopHome() {
           </div>
 
           <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>CATÁLOGO</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>CATÁLOGO</div>
             {['Kits de Inicio', 'Máquinas Rotary', 'Máquinas Coil', 'Agujas y Cartridges', 'Tintas', 'Insumos Descartables'].map((l) => (
               <div key={l} style={{ marginBottom: '10px' }}>
                 <a
                   href="#"
-                  style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '12px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s' }}
+                  style={{ color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '12px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s' }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLAnchorElement).style.color = accent;
                   }}
@@ -931,12 +931,12 @@ export default function TattooShopHome() {
           </div>
 
           <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>INFORMACIÓN</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>INFORMACIÓN</div>
             {['Política de Envíos', 'Devoluciones y Garantía', 'Preguntas Frecuentes', 'Métodos de Pago', 'Sobre Nosotros', 'Términos y Condiciones'].map((l) => (
               <div key={l} style={{ marginBottom: '10px' }}>
                 <a
                   href="#"
-                  style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '12px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s' }}
+                  style={{ color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '12px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s' }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLAnchorElement).style.color = accent;
                   }}
@@ -951,9 +951,9 @@ export default function TattooShopHome() {
           </div>
 
           <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>CONTACTO</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>CONTACTO</div>
             <div style={{ marginBottom: '20px' }}>
-              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.8 }}>
+              <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.8 }}>
                 Cra 7 #45-23<br />
                 Bogotá, Colombia<br />
                 Lun-Vie 8am-6pm
@@ -969,7 +969,7 @@ export default function TattooShopHome() {
                 color: '#111',
                 textDecoration: 'none',
                 padding: '10px 16px',
-                fontFamily: 'var(--font-mono)',
+                fontFamily: '"DM Mono", monospace',
                 fontSize: '11px',
                 letterSpacing: '1px',
                 marginBottom: '24px',
@@ -984,7 +984,7 @@ export default function TattooShopHome() {
             >
               <span>💬</span> WHATSAPP
             </a>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '12px' }}>REDES SOCIALES</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '12px' }}>REDES SOCIALES</div>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               {['Instagram', 'TikTok', 'Facebook', 'YouTube'].map((s) => (
                 <a
@@ -992,7 +992,7 @@ export default function TattooShopHome() {
                   href="#"
                   style={{
                     color: 'var(--text-muted)',
-                    fontFamily: 'var(--font-mono)',
+                    fontFamily: '"DM Mono", monospace',
                     fontSize: '10px',
                     textDecoration: 'none',
                     border: '1px solid var(--border)',
@@ -1016,7 +1016,7 @@ export default function TattooShopHome() {
           </div>
 
           <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>PAGAMOS CON</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>PAGAMOS CON</div>
             {['PSE / Bancolombia', 'Nequi / Daviplata', 'Contraentrega', 'Tarjeta Crédito/Débito', 'Efecty / Baloto'].map((p) => (
               <div
                 key={p}
@@ -1024,7 +1024,7 @@ export default function TattooShopHome() {
                   marginBottom: '8px',
                   padding: '8px 12px',
                   border: '1px solid var(--border)',
-                  fontFamily: 'var(--font-mono)',
+                  fontFamily: '"DM Mono", monospace',
                   fontSize: '10px',
                   color: 'var(--text-muted)',
                   letterSpacing: '0.5px',
@@ -1037,8 +1037,8 @@ export default function TattooShopHome() {
         </div>
 
         <div style={{ padding: '20px clamp(20px,5vw,80px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>TattooShop Colombia ©2026 — Todos los derechos reservados</div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>
+          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>TattooShop Colombia ©2026 — Todos los derechos reservados</div>
+          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>
             Hecho con <span style={{ color: accent }}>✦</span> en Colombia
           </div>
         </div>
