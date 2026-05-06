@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface Product {
   id: string;
@@ -11,70 +11,85 @@ interface Product {
   specs: string;
   icon: string;
   slug: string;
+  featured?: boolean;
 }
 
-const PRODUCTS: Product[] = [
-  {
-    id: 'k1',
-    slug: 'kit-iniciacion-profesional',
-    name: 'Kit Iniciación Pro',
-    category: 'Kits',
-    price: 289000,
-    tag: 'Más vendido',
-    specs: '12 piezas — Completo',
-    icon: '',
-  },
-  {
-    id: 'k2',
-    slug: 'kit-rotary-completo',
-    name: 'Kit Rotary Completo',
-    category: 'Kits',
-    price: 520000,
-    tag: 'Premium',
-    specs: '18 piezas — Pro',
-    icon: '',
-  },
-  {
-    id: 'm1',
-    slug: 'maquina-rotary-dragonfly',
-    name: 'Dragonfly X2 Rotary',
-    category: 'Máquinas',
-    price: 680000,
-    tag: 'Top rated',
-    specs: '4.0mm — Inalámbrica',
-    icon: '',
-  },
-  {
-    id: 'm2',
-    slug: 'maquina-pen-wireless',
-    name: 'Pen Inalámbrica Pro',
-    category: 'Máquinas',
-    price: 420000,
-    tag: 'Nueva',
-    specs: '3.5mm — Batería 8h',
-    icon: '',
-  },
-  {
-    id: 'i1',
-    slug: 'tintas-set-world-famous',
-    name: 'Set Tintas World Famous',
-    category: 'Insumos',
-    price: 195000,
-    tag: 'Oferta',
-    specs: '20 colores — 30ml c/u',
-    icon: '',
-  },
-  {
-    id: 'i2',
-    slug: 'agujas-cartridge-mixed',
-    name: 'Agujas Cartridge Mixed',
-    category: 'Insumos',
-    price: 98000,
-    tag: 'Pack',
-    specs: '50 unidades — Surtidas',
-    icon: '',
-  },
-];
+const PRODUCTS = {
+  kits: [
+    {
+      id: 'k1',
+      slug: 'kit-iniciacion-profesional',
+      name: 'Kit Iniciación Pro',
+      category: 'Kits' as const,
+      price: 289000,
+      featured: true,
+      tag: 'Más vendido',
+      specs: '12 piezas — Completo',
+      icon: '✦',
+    },
+    {
+      id: 'k2',
+      slug: 'kit-rotary-completo',
+      name: 'Kit Rotary Completo',
+      category: 'Kits' as const,
+      price: 520000,
+      featured: true,
+      tag: 'Premium',
+      specs: '18 piezas — Pro',
+      icon: '✦',
+    },
+  ],
+  maquinas: [
+    {
+      id: 'm1',
+      slug: 'maquina-rotary-dragonfly',
+      name: 'Dragonfly X2 Rotary',
+      category: 'Máquinas' as const,
+      price: 680000,
+      featured: true,
+      tag: 'Top rated',
+      specs: '4.0mm — Inalámbrica',
+      icon: '⚙',
+    },
+    {
+      id: 'm2',
+      slug: 'maquina-pen-wireless',
+      name: 'Pen Inalámbrica Pro',
+      category: 'Máquinas' as const,
+      price: 420000,
+      featured: true,
+      tag: 'Nueva',
+      specs: '3.5mm — Batería 8h',
+      icon: '⚙',
+    },
+  ],
+  insumos: [
+    {
+      id: 'i1',
+      slug: 'tintas-set-world-famous',
+      name: 'Set Tintas World Famous',
+      category: 'Insumos' as const,
+      price: 195000,
+      featured: true,
+      tag: 'Oferta',
+      specs: '20 colores — 30ml c/u',
+      icon: '◈',
+    },
+    {
+      id: 'i2',
+      slug: 'agujas-cartridge-mixed',
+      name: 'Agujas Cartridge Mixed',
+      category: 'Insumos' as const,
+      price: 98000,
+      featured: true,
+      tag: 'Pack',
+      specs: '50 unidades — Surtidas',
+      icon: '◈',
+    },
+  ],
+};
+
+const ALL_PRODUCTS = [...PRODUCTS.kits, ...PRODUCTS.maquinas, ...PRODUCTS.insumos];
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-CO', {
@@ -87,512 +102,58 @@ interface CartItem extends Product {
   qty: number;
 }
 
-export default function TattooShopHome() {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [cartOpen, setCartOpen] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('all');
-  const [navScrolled, setNavScrolled] = useState(false);
-  const [newsletterEmail, setNewsletterEmail] = useState('');
-  const [newsletterDone, setNewsletterDone] = useState(false);
-
-  const accent = '#FFD400';
-  const cartCount = cart.reduce((s, i) => s + i.qty, 0);
-
-  useEffect(() => {
-    const onScroll = () => setNavScrolled(window.scrollY > 60);
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  const filtered =
-    activeFilter === 'all'
-      ? PRODUCTS
-      : PRODUCTS.filter((p) => p.category.toLowerCase() === activeFilter.toLowerCase());
-
-  const addToCart = (product: Product) => {
-    setCart((prev) => {
-      const existing = prev.find((i) => i.id === product.id);
-      if (existing) {
-        return prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + 1 } : i));
-      }
-      return [...prev, { ...product, qty: 1 }];
-    });
-    setCartOpen(true);
+function ProductPlaceholder({ icon, category, accent }: { icon: string; category: string; accent: string }) {
+  const gradId = `g-${Math.random().toString(36).slice(2)}`;
+  const colors: { [key: string]: [string, string] } = {
+    Kits: ['#1e1e1e', '#2a2a2a'],
+    Máquinas: ['#1a1e22', '#222831'],
+    Insumos: ['#1e1a1e', '#2a222a'],
   };
-
-  const removeFromCart = (id: string) => setCart((prev) => prev.filter((i) => i.id !== id));
-  const changeQty = (id: string, delta: number) => {
-    setCart((prev) => {
-      return prev
-        .map((i) => (i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i))
-        .filter((i) => i.qty > 0);
-    });
-  };
-
-  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
-
-  const handleNewsletter = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newsletterEmail) {
-      setNewsletterDone(true);
-      setNewsletterEmail('');
-      setTimeout(() => setNewsletterDone(false), 2000);
-    }
-  };
+  const [c1, c2] = colors[category] || ['#1e1e1e', '#2a2a2a'];
 
   return (
-    <div style={{ minHeight: '100vh', background: '#141414' }}>
-      {/* NAV */}
-      <nav
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 700,
-          background: navScrolled ? 'rgba(18,18,18,0.97)' : 'transparent',
-          backdropFilter: navScrolled ? 'blur(12px)' : 'none',
-          borderBottom: navScrolled ? '1px solid #2e2e2e' : '1px solid transparent',
-          transition: 'all .35s ease',
-          padding: '0 clamp(20px,5vw,80px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          height: 64,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 50, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>
-            <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 512 512" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M256 160c16-63.1 48-72 48-72s-8.9 32-72 48c-63.1 16-72 48-72 48s32-8.9 48-72c16-63.1 48-72 48-72s-8.9 32-72 48c-63.1 16-72 48-72 48s32-8.9 48-72zm0 192c-16 63.1-48 72-48 72s8.9-32 72-48c63.1-16 72-48 72-48s-32 8.9-48 72c-16 63.1-48 72-48 72s8.9-32 72-48c63.1-16 72-48 72-48s-32 8.9-48 72z"></path></svg>
-          </div>
-          <div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: '#e8e8e8', letterSpacing: 1, lineHeight: 1 }}>
-              TATTOOSHOP
-            </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: accent, letterSpacing: 3 }}>COLOMBIA</div>
-          </div>
-        </div>
+    <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%', display: 'block' }}>
+      <defs>
+        <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={c1} />
+          <stop offset="100%" stopColor={c2} />
+        </linearGradient>
+      </defs>
+      <rect width="400" height="300" fill={`url(#${gradId})`} />
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <line key={`h${i}`} x1="0" y1={i * 60} x2="400" y2={i * 60} stroke="#ffffff" strokeOpacity="0.03" strokeWidth="1" />
+      ))}
+      {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+        <line key={`v${i}`} x1={i * 70} y1="0" x2={i * 70} y2="300" stroke="#ffffff" strokeOpacity="0.03" strokeWidth="1" />
+      ))}
+      <text x="200" y="165" textAnchor="middle" fontSize="64" fill={accent} opacity="0.25" fontFamily="sans-serif">
+        {icon}
+      </text>
+      <text x="200" y="220" textAnchor="middle" fontSize="11" fill={accent} opacity="0.4" fontFamily="monospace" letterSpacing="3">
+        {category.toUpperCase()}
+      </text>
+      <rect x="8" y="8" width="16" height="1" fill={accent} opacity="0.2" />
+      <rect x="8" y="8" width="1" height="16" fill={accent} opacity="0.2" />
+      <rect x="376" y="8" width="16" height="1" fill={accent} opacity="0.2" />
+      <rect x="391" y="8" width="1" height="16" fill={accent} opacity="0.2" />
+      <rect x="8" y="291" width="16" height="1" fill={accent} opacity="0.2" />
+      <rect x="8" y="276" width="1" height="16" fill={accent} opacity="0.2" />
+      <rect x="376" y="291" width="16" height="1" fill={accent} opacity="0.2" />
+      <rect x="391" y="276" width="1" height="16" fill={accent} opacity="0.2" />
+    </svg>
+  );
+}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-          {['Kits', 'Máquinas', 'Insumos'].map((cat) => (
-            <button
-              key={cat}
-              onClick={() => {
-                setActiveFilter(cat.toLowerCase());
-                document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#888',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 11,
-                letterSpacing: 1.5,
-                cursor: 'pointer',
-                textTransform: 'uppercase',
-                padding: '4px 0',
-                borderBottom: '1px solid transparent',
-                transition: 'all .2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = accent;
-                e.currentTarget.style.borderBottomColor = accent;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#888';
-                e.currentTarget.style.borderBottomColor = 'transparent';
-              }}
-            >
-              {cat}
-            </button>
-          ))}
-          <button
-            onClick={() => setCartOpen(true)}
-            style={{
-              background: cartCount > 0 ? accent : 'transparent',
-              color: cartCount > 0 ? '#111' : '#e8e8e8',
-              border: `1px solid ${cartCount > 0 ? accent : '#2e2e2e'}`,
-              fontFamily: 'var(--font-mono)',
-              fontSize: 11,
-              letterSpacing: 1,
-              padding: '8px 16px',
-              cursor: 'pointer',
-              transition: 'all .25s',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-            onMouseEnter={(e) => {
-              if (cartCount === 0) {
-                e.currentTarget.style.borderColor = accent;
-                e.currentTarget.style.color = accent;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (cartCount === 0) {
-                e.currentTarget.style.borderColor = '#2e2e2e';
-                e.currentTarget.style.color = '#e8e8e8';
-              }
-            }}
-          >
-            <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 448 512" height="1.2em" width="1.2em" xmlns="http://www.w3.org/2000/svg"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-5.5-2.8-23.2-8.5-44.2-27.1-16.4-14.6-27.4-32.7-30.6-38.2-3.2-5.6-.3-8.6 2.4-11.3 2.5-2.4 5.5-6.5 8.3-9.7 2.8-3.3 3.7-5.6 5.5-9.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 13.3 5.7 23.7 9.1 31.7 11.7 13.3 4.2 25.5 3.6 35.2 2.1 10.8-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"></path></svg>
-            <span>CARRITO</span>
-            {cartCount > 0 && <span style={{ fontWeight: 700 }}>{cartCount}</span>}
-          </button>
-        </div>
-      </nav>
-
-      {/* HERO */}
-      <section style={{ padding: 'clamp(80px, 15vw, 160px) clamp(20px,5vw,80px)', textAlign: 'center', borderBottom: '1px solid #2e2e2e' }}>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(48px,12vw,96px)', lineHeight: 1.1, color: '#e8e8e8', letterSpacing: 2, marginBottom: 8 }}>
-          TATTOOSHOP
-        </div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: accent, letterSpacing: 4, textTransform: 'uppercase', marginBottom: 60 }}>
-          COLOMBIA
-        </div>
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, justifyContent: 'center', maxWidth: 960, margin: '0 auto' }}>
-          {['Kits', 'Máquinas', 'Insumos'].map((cat) => (
-            <button
-              key={cat}
-              onClick={() => {
-                setActiveFilter(cat.toLowerCase());
-                document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              style={{
-                flex: '1 1 120px',
-                padding: '40px 24px',
-                background: '#1c1c1c',
-                border: '1px solid #2e2e2e',
-                cursor: 'pointer',
-                transition: 'all .3s',
-                fontFamily: 'var(--font-display)',
-                fontSize: 28,
-                color: '#e8e8e8',
-                letterSpacing: 1,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#222';
-                e.currentTarget.style.borderColor = accent;
-                e.currentTarget.style.color = accent;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#1c1c1c';
-                e.currentTarget.style.borderColor = '#2e2e2e';
-                e.currentTarget.style.color = '#e8e8e8';
-              }}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* PRODUCTOS */}
-      <section id="productos" style={{ padding: 'clamp(60px,10vw,120px) clamp(20px,5vw,80px)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, maxWidth: 1400, margin: '0 auto' }}>
-          {filtered.map((product, idx) => (
-            <ProductCard key={product.id} product={product} idx={idx} onAdd={addToCart} accent={accent} />
-          ))}
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer style={{ padding: 'clamp(60px,10vw,120px) clamp(20px,5vw,80px)', borderTop: '1px solid #2e2e2e' }}>
-        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-          {/* Newsletter */}
-          <div style={{ marginBottom: 80, paddingBottom: 80, borderBottom: '1px solid #2e2e2e' }}>
-            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 32, color: '#e8e8e8', marginBottom: 20 }}>
-              Newsletter
-            </h3>
-            <p style={{ color: '#888', marginBottom: 20, maxWidth: 500 }}>
-              Recibe las últimas novedades, ofertas y lanzamientos directo en tu inbox.
-            </p>
-            <form onSubmit={handleNewsletter} style={{ display: 'flex', gap: 12, maxWidth: 400 }}>
-              <input
-                type="email"
-                placeholder="tu@email.com"
-                value={newsletterEmail}
-                onChange={(e) => setNewsletterEmail(e.target.value)}
-                style={{
-                  flex: 1,
-                  padding: '12px 16px',
-                  background: '#1c1c1c',
-                  border: '1px solid #2e2e2e',
-                  color: '#e8e8e8',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 12,
-                  outline: 'none',
-                }}
-              />
-              <button
-                type="submit"
-                style={{
-                  padding: '12px 24px',
-                  background: accent,
-                  color: '#111',
-                  border: 'none',
-                  fontFamily: 'var(--font-display)',
-                  fontSize: 16,
-                  cursor: 'pointer',
-                  transition: 'all .2s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#ffe033')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = accent)}
-              >
-                {newsletterDone ? 'Suscrito' : 'Suscribirse'}
-              </button>
-            </form>
-          </div>
-
-          {/* Grid Footer */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 40 }}>
-            <div>
-              <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: accent, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 16 }}>
-                Catálogo
-              </h4>
-              <ul style={{ listStyle: 'none' }}>
-                {['Kits', 'Máquinas', 'Insumos'].map((cat) => (
-                  <li key={cat} style={{ marginBottom: 8 }}>
-                    <button
-                      onClick={() => setActiveFilter(cat.toLowerCase())}
-                      style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 14, transition: 'color .2s' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = accent)}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = '#888')}
-                    >
-                      {cat}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: accent, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 16 }}>
-                Información
-              </h4>
-              <ul style={{ listStyle: 'none' }}>
-                {['Sobre nosotros', 'Envíos', 'Política de privacidad', 'FAQ'].map((item) => (
-                  <li key={item} style={{ marginBottom: 8 }}>
-                    <a href="#" style={{ color: '#888', textDecoration: 'none', fontSize: 14, transition: 'color .2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = accent)} onMouseLeave={(e) => (e.currentTarget.style.color = '#888')}>
-                      {item}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: accent, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 16 }}>
-                Contacto
-              </h4>
-              <p style={{ color: '#888', fontSize: 14, marginBottom: 12 }}>+57 300 123 4567</p>
-              <a
-                href="https://wa.me/573001234567"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'inline-block',
-                  padding: '8px 16px',
-                  background: '#25D366',
-                  color: 'white',
-                  borderRadius: '4px',
-                  textDecoration: 'none',
-                  fontSize: 12,
-                  fontFamily: 'var(--font-mono)',
-                  transition: 'opacity .2s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
-                onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-              >
-                <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 448 512" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: 8 }}><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-5.5-2.8-23.2-8.5-44.2-27.1-16.4-14.6-27.4-32.7-30.6-38.2-3.2-5.6-.3-8.6 2.4-11.3 2.5-2.4 5.5-6.5 8.3-9.7 2.8-3.3 3.7-5.6 5.5-9.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 13.3 5.7 23.7 9.1 31.7 11.7 13.3 4.2 25.5 3.6 35.2 2.1 10.8-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"></path></svg>
-                WhatsApp
-              </a>
-            </div>
-
-            <div>
-              <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: accent, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 16 }}>
-                Redes
-              </h4>
-              <ul style={{ listStyle: 'none', display: 'flex', gap: 12 }}>
-                {['Instagram', 'TikTok', 'Facebook'].map((social) => (
-                  <li key={social}>
-                    <a href="#" style={{ color: '#888', textDecoration: 'none', fontSize: 14, transition: 'color .2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = accent)} onMouseLeave={(e) => (e.currentTarget.style.color = '#888')}>
-                      {social}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {/* Copyright */}
-          <div style={{ marginTop: 60, paddingTop: 20, borderTop: '1px solid #2e2e2e', textAlign: 'center', color: '#555', fontSize: 12, fontFamily: 'var(--font-mono)' }}>
-            © 2026 TattooShop Colombia. Todos los derechos reservados.
-          </div>
-        </div>
-      </footer>
-
-      {/* CART DRAWER */}
-      {cartOpen && (
-        <>
-          <div
-            onClick={() => setCartOpen(false)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,0.7)',
-              zIndex: 800,
-              backdropFilter: 'blur(4px)',
-            }}
-          />
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              right: 0,
-              bottom: 0,
-              width: 'clamp(320px,40vw,480px)',
-              background: '#181818',
-              zIndex: 900,
-              display: 'flex',
-              flexDirection: 'column',
-              borderLeft: '1px solid #2e2e2e',
-              boxShadow: '-20px 0 60px rgba(0,0,0,0.6)',
-            }}
-          >
-            {/* Header */}
-            <div style={{ padding: '28px', borderBottom: '1px solid #2e2e2e', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: accent, letterSpacing: 2, textTransform: 'uppercase' }}>Carrito</div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, lineHeight: 1, marginTop: 4, color: '#e8e8e8' }}>
-                  {cart.length}
-                </div>
-              </div>
-              <button
-                onClick={() => setCartOpen(false)}
-                style={{
-                  background: 'none',
-                  border: '1px solid #2e2e2e',
-                  color: '#e8e8e8',
-                  cursor: 'pointer',
-                  width: 40,
-                  height: 40,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 18,
-                  transition: 'border-color .2s',
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Items */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '0 28px' }}>
-              {cart.length === 0 ? (
-                <div style={{ paddingTop: 60, textAlign: 'center', color: '#888' }}>
-                  <div style={{ fontSize: 40, marginBottom: 16, opacity: 0.3 }}>
-                    <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M6 18L18 6M6 6l12 12"></path></svg>
-                  </div>
-                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: 1 }}>Tu carrito está vacío</p>
-                </div>
-              ) : (
-                cart.map((item) => (
-                  <div key={item.id} style={{ padding: '20px 0', borderBottom: '1px solid #2a2a2a', display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-                    <div style={{ fontSize: 24, opacity: 0.3, minWidth: 32 }}>{item.icon}</div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#888', letterSpacing: 1, marginBottom: 3, textTransform: 'uppercase' }}>
-                        {item.category}
-                      </div>
-                      <div style={{ fontSize: 14, fontWeight: 500, color: '#e8e8e8' }}>{item.name}</div>
-                      <div style={{ color: accent, fontFamily: 'var(--font-mono)', fontSize: 13, marginTop: 4 }}>{fmt(item.price)}</div>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1px solid #2e2e2e' }}>
-                        <button onClick={() => changeQty(item.id, -1)} style={{ width: 28, height: 28, background: 'none', border: 'none', color: '#e8e8e8', cursor: 'pointer', fontSize: 16 }}>
-                          −
-                        </button>
-                        <span style={{ width: 28, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 12 }}>{item.qty}</span>
-                        <button onClick={() => changeQty(item.id, 1)} style={{ width: 28, height: 28, background: 'none', border: 'none', color: '#e8e8e8', cursor: 'pointer', fontSize: 16 }}>
-                          +
-                        </button>
-                      </div>
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 11, fontFamily: 'var(--font-mono)', transition: 'color .2s' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = '#e55')}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = '#555')}
-                      >
-                        eliminar
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Footer */}
-            {cart.length > 0 && (
-              <div style={{ padding: '24px 28px', borderTop: '1px solid #2e2e2e' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#888', letterSpacing: 1, textTransform: 'uppercase' }}>SUBTOTAL</span>
-                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 26, color: accent }}>{fmt(total)}</span>
-                </div>
-                <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#555', marginBottom: 20 }}>Envío calculado al pagar · IVA incluido</p>
-                <button
-                  style={{
-                    width: '100%',
-                    padding: '16px',
-                    background: accent,
-                    color: '#111',
-                    border: 'none',
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 22,
-                    letterSpacing: 1,
-                    cursor: 'pointer',
-                    transition: 'background .2s,transform .1s',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#ffe033')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = accent)}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-                    <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 448 512" height="0.8em" width="0.8em" xmlns="http://www.w3.org/2000/svg"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-5.5-2.8-23.2-8.5-44.2-27.1-16.4-14.6-27.4-32.7-30.6-38.2-3.2-5.6-.3-8.6 2.4-11.3 2.5-2.4 5.5-6.5 8.3-9.7 2.8-3.3 3.7-5.6 5.5-9.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 13.3 5.7 23.7 9.1 31.7 11.7 13.3 4.2 25.5 3.6 35.2 2.1 10.8-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"></path></svg>
-                    PAGAR POR WHATSAPP
-                  </div>
-                </button>
-                <button
-                  onClick={() => setCartOpen(false)}
-                  style={{
-                    width: '100%',
-                    marginTop: 10,
-                    padding: '12px',
-                    background: 'none',
-                    color: '#888',
-                    border: '1px solid #2e2e2e',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 12,
-                    letterSpacing: 1,
-                    cursor: 'pointer',
-                    transition: 'border-color .2s,color .2s',
-                    textTransform: 'uppercase',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = accent;
-                    e.currentTarget.style.color = accent;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#2e2e2e';
-                    e.currentTarget.style.color = '#888';
-                  }}
-                >
-                  SEGUIR COMPRANDO
-                </button>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-    </div>
+function LogoMark({ accent }: { accent: string }) {
+  return (
+    <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style={{ width: 80, height: 80 }}>
+      <circle cx="60" cy="60" r="55" fill="none" stroke={accent} strokeWidth="2" opacity="0.6" />
+      <circle cx="60" cy="60" r="44" fill="none" stroke={accent} strokeWidth="0.5" opacity="0.3" />
+      <line x1="60" y1="20" x2="60" y2="90" stroke={accent} strokeWidth="2.5" strokeLinecap="round" />
+      <polygon points="60,90 55,75 65,75" fill={accent} />
+      <line x1="38" y1="45" x2="82" y2="45" stroke={accent} strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
+      <line x1="44" y1="36" x2="76" y2="36" stroke={accent} strokeWidth="0.8" strokeLinecap="round" opacity="0.4" />
+    </svg>
   );
 }
 
@@ -611,16 +172,15 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        background: hovered ? '#222222' : '#1c1c1c',
-        border: `1px solid ${hovered ? accent + '33' : '#2e2e2e'}`,
-        transition: 'all .25s ease',
+        background: hovered ? 'var(--surface2)' : 'var(--surface)',
+        border: `1px solid ${hovered ? accent + '33' : 'var(--border)'}`,
+        transition: 'all 0.25s ease',
         cursor: 'default',
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
-      {/* Tag */}
       {product.tag && (
         <div
           style={{
@@ -631,8 +191,8 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
             background: accent,
             color: '#111',
             fontFamily: 'var(--font-mono)',
-            fontSize: 9,
-            letterSpacing: 2,
+            fontSize: '9px',
+            letterSpacing: '2px',
             padding: '3px 8px',
             textTransform: 'uppercase',
           }}
@@ -641,7 +201,6 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
         </div>
       )}
 
-      {/* Index */}
       <div
         style={{
           position: 'absolute',
@@ -649,47 +208,44 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
           right: 14,
           zIndex: 2,
           fontFamily: 'var(--font-mono)',
-          fontSize: 11,
-          color: hovered ? accent : '#555',
-          transition: 'color .25s',
+          fontSize: '11px',
+          color: hovered ? accent : 'var(--text-dim)',
+          transition: 'color 0.25s',
         }}
       >
         0{idx + 1}
       </div>
 
-      {/* Image area */}
-      <div
-        style={{
-          aspectRatio: '4/3',
-          overflow: 'hidden',
-          position: 'relative',
-          background: '#1a1e22',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
+      <div style={{ aspectRatio: '4/3', overflow: 'hidden', position: 'relative' }}>
         <div
           style={{
-            fontSize: 56,
-            opacity: hovered ? 0.4 : 0.25,
-            transition: 'opacity .25s',
+            position: 'absolute',
+            inset: 0,
+            transform: hovered ? 'scale(1.04)' : 'scale(1)',
+            transition: 'transform 0.5s ease',
           }}
         >
-          {product.icon}
+          <ProductPlaceholder icon={product.icon} category={product.category} accent={accent} />
         </div>
       </div>
 
-      {/* Info */}
-      <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#888', letterSpacing: 2, textTransform: 'uppercase' }}>
+      <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '2px', textTransform: 'uppercase' }}>
           {product.category} — {product.specs}
         </div>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, lineHeight: 1.1, color: '#e8e8e8', letterSpacing: 0.5 }}>
+        <div
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '24px',
+            lineHeight: 1.1,
+            color: 'var(--text)',
+            letterSpacing: '0.5px',
+          }}
+        >
           {product.name}
         </div>
-        <div style={{ marginTop: 'auto', paddingTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: accent }}>{fmt(product.price)}</span>
+        <div style={{ marginTop: 'auto', paddingTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: accent }}>{fmt(product.price)}</span>
           <button
             onClick={handleAdd}
             style={{
@@ -697,33 +253,28 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
               color: added ? '#111' : accent,
               border: `1px solid ${accent}`,
               fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              letterSpacing: 1.5,
+              fontSize: '10px',
+              letterSpacing: '1.5px',
               padding: '8px 14px',
               cursor: 'pointer',
-              transition: 'all .2s',
+              transition: 'all 0.2s',
               textTransform: 'uppercase',
               whiteSpace: 'nowrap',
             }}
             onMouseEnter={(e) => {
               if (!added) {
-                e.currentTarget.style.background = accent;
-                e.currentTarget.style.color = '#111';
+                (e.currentTarget as HTMLButtonElement).style.background = accent;
+                (e.currentTarget as HTMLButtonElement).style.color = '#111';
               }
             }}
             onMouseLeave={(e) => {
               if (!added) {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = accent;
+                (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                (e.currentTarget as HTMLButtonElement).style.color = accent;
               }
             }}
           >
-            {added ? 'Agregado' : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 448 512" height="1.2em" width="1.2em" xmlns="http://www.w3.org/2000/svg"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-5.5-2.8-23.2-8.5-44.2-27.1-16.4-14.6-27.4-32.7-30.6-38.2-3.2-5.6-.3-8.6 2.4-11.3 2.5-2.4 5.5-6.5 8.3-9.7 2.8-3.3 3.7-5.6 5.5-9.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 13.3 5.7 23.7 9.1 31.7 11.7 13.3 4.2 25.5 3.6 35.2 2.1 10.8-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"></path></svg>
-                Carrito
-              </div>
-            )}
+            {added ? '✓ Agregado' : '+ Carrito'}
           </button>
         </div>
       </div>
@@ -731,7 +282,770 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
   );
 }
 
-function useTweaks(defaults: Record<string, string>) {
-  const [tweaks] = useState(defaults);
-  return { tweaks, setTweak: () => {} };
+function CartDrawer({ cart, onClose, onRemove, onQty, accent }: { cart: CartItem[]; onClose: () => void; onRemove: (id: string) => void; onQty: (id: string, delta: number) => void; accent: string }) {
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.7)',
+          zIndex: 800,
+          backdropFilter: 'blur(4px)',
+        }}
+      />
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: 'clamp(320px,40vw,480px)',
+          background: '#181818',
+          zIndex: 900,
+          display: 'flex',
+          flexDirection: 'column',
+          borderLeft: '1px solid #2e2e2e',
+          boxShadow: '-20px 0 60px rgba(0,0,0,0.6)',
+        }}
+      >
+        <div style={{ padding: '28px 28px 20px', borderBottom: '1px solid #2e2e2e', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: accent, letterSpacing: '2px', textTransform: 'uppercase' }}>Carrito</span>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '28px', lineHeight: 1, marginTop: '4px', color: 'var(--text)' }}>
+              {cart.length} {cart.length === 1 ? 'ítem' : 'ítems'}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: '1px solid #2e2e2e',
+              color: 'var(--text)',
+              cursor: 'pointer',
+              width: '40px',
+              height: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '18px',
+              transition: 'border-color 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.borderColor = accent;
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.borderColor = '#2e2e2e';
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 28px' }}>
+          {cart.length === 0 ? (
+            <div style={{ paddingTop: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: '40px', marginBottom: '16px', opacity: 0.3 }}>∅</div>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '1px' }}>Tu carrito está vacío</p>
+            </div>
+          ) : (
+            cart.map((item) => (
+              <div key={item.id} style={{ padding: '20px 0', borderBottom: '1px solid #2a2a2a', display: 'flex', gap: '16px', alignItems: 'center' }}>
+                <div style={{ width: '64px', height: '64px', background: '#1e1e1e', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: '24px', opacity: 0.3 }}>{item.icon}</span>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '3px' }}>
+                    {item.category.toUpperCase()}
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {item.name}
+                  </div>
+                  <div style={{ color: accent, fontFamily: 'var(--font-mono)', fontSize: '13px', marginTop: '4px' }}>{fmt(item.price)}</div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1px solid #2e2e2e' }}>
+                    <button
+                      onClick={() => onQty(item.id, -1)}
+                      style={{ width: '28px', height: '28px', background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      −
+                    </button>
+                    <span style={{ width: '28px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>{item.qty}</span>
+                    <button
+                      onClick={() => onQty(item.id, 1)}
+                      style={{ width: '28px', height: '28px', background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      +
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => onRemove(item.id)}
+                    style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '11px', fontFamily: 'var(--font-mono)', transition: 'color 0.2s' }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.color = '#e55';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.color = '#555';
+                    }}
+                  >
+                    eliminar
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {cart.length > 0 && (
+          <div style={{ padding: '24px 28px', borderTop: '1px solid #2e2e2e' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1px' }}>SUBTOTAL</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: '26px', color: accent }}>{fmt(total)}</span>
+            </div>
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-dim)', marginBottom: '20px' }}>Envío calculado al pagar · IVA incluido</p>
+            <button
+              style={{
+                width: '100%',
+                padding: '16px',
+                background: accent,
+                color: '#111',
+                border: 'none',
+                fontFamily: 'var(--font-display)',
+                fontSize: '22px',
+                letterSpacing: '1px',
+                cursor: 'pointer',
+                transition: 'background 0.2s,transform 0.1s',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = '#ffe033';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = accent;
+              }}
+              onMouseDown={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.98)';
+              }}
+              onMouseUp={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
+              }}
+            >
+              PAGAR AHORA
+            </button>
+            <button
+              onClick={onClose}
+              style={{
+                width: '100%',
+                marginTop: '10px',
+                padding: '12px',
+                background: 'none',
+                color: 'var(--text-muted)',
+                border: '1px solid #2e2e2e',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '12px',
+                letterSpacing: '1px',
+                cursor: 'pointer',
+                transition: 'border-color 0.2s,color 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = accent;
+                (e.currentTarget as HTMLButtonElement).style.color = accent;
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = '#2e2e2e';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
+              }}
+            >
+              SEGUIR COMPRANDO
+            </button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+export default function TattooShopHome() {
+  const accent = '#FFD400';
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [navScrolled, setNavScrolled] = useState(false);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterDone, setNewsletterDone] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setNavScrolled(window.scrollY > 60);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const filtered = activeFilter === 'all' ? ALL_PRODUCTS : ALL_PRODUCTS.filter((p) => p.category.toLowerCase() === activeFilter.toLowerCase());
+
+  const addToCart = (product: Product) => {
+    setCart((prev) => {
+      const existing = prev.find((i) => i.id === product.id);
+      if (existing) return prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + 1 } : i));
+      return [...prev, { ...product, qty: 1 }];
+    });
+    setCartOpen(true);
+  };
+
+  const removeFromCart = (id: string) => setCart((prev) => prev.filter((i) => i.id !== id));
+  const changeQty = (id: string, delta: number) =>
+    setCart((prev) => prev.map((i) => (i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i)).filter((i) => i.qty > 0));
+
+  const cartCount = cart.reduce((s, i) => s + i.qty, 0);
+
+  const categories = [
+    { key: 'kits', label: 'Kits', count: PRODUCTS.kits.length },
+    { key: 'máquinas', label: 'Máquinas', count: PRODUCTS.maquinas.length },
+    { key: 'insumos', label: 'Insumos', count: PRODUCTS.insumos.length },
+  ];
+
+  const handleNewsletter = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newsletterEmail) {
+      setNewsletterDone(true);
+      setNewsletterEmail('');
+    }
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      {/* NAV */}
+      <nav
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 700,
+          background: navScrolled ? 'rgba(18,18,18,0.97)' : 'transparent',
+          backdropFilter: navScrolled ? 'blur(12px)' : 'none',
+          borderBottom: navScrolled ? '1px solid #2e2e2e' : '1px solid transparent',
+          transition: 'all 0.35s ease',
+          padding: '0 clamp(20px,5vw,80px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          height: '64px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <LogoMark accent={accent} />
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--text)', letterSpacing: '1px', lineHeight: 1 }}>TATTOOSHOP</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: accent, letterSpacing: '3px' }}>COLOMBIA</div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
+          {['Kits', 'Máquinas', 'Insumos'].map((cat) => (
+            <button
+              key={cat}
+              onClick={() => {
+                setActiveFilter(cat.toLowerCase());
+                document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-muted)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '11px',
+                letterSpacing: '1.5px',
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+                padding: '4px 0',
+                borderBottom: '1px solid transparent',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.color = accent;
+                (e.currentTarget as HTMLButtonElement).style.borderBottomColor = accent;
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
+                (e.currentTarget as HTMLButtonElement).style.borderBottomColor = 'transparent';
+              }}
+            >
+              {cat}
+            </button>
+          ))}
+          <button
+            onClick={() => setCartOpen(true)}
+            style={{
+              background: cartCount > 0 ? accent : 'transparent',
+              color: cartCount > 0 ? '#111' : 'var(--text)',
+              border: `1px solid ${cartCount > 0 ? accent : '#2e2e2e'}`,
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              letterSpacing: '1px',
+              padding: '8px 16px',
+              cursor: 'pointer',
+              transition: 'all 0.25s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+            onMouseEnter={(e) => {
+              if (cartCount === 0) {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = accent;
+                (e.currentTarget as HTMLButtonElement).style.color = accent;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (cartCount === 0) {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = '#2e2e2e';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)';
+              }
+            }}
+          >
+            <span>CARRITO</span>
+            {cartCount > 0 && <span style={{ fontWeight: 700 }}>{cartCount}</span>}
+          </button>
+        </div>
+      </nav>
+
+      {/* HERO */}
+      <section
+        style={{
+          padding: 'clamp(60px,10vh,120px) clamp(20px,5vw,80px) 0',
+          display: 'flex',
+          flexDirection: 'column',
+          borderBottom: '1px solid var(--border)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => (
+            <div
+              key={i}
+              style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                left: `${i * 9.09}%`,
+                borderLeft: '1px solid rgba(255,255,255,0.025)',
+              }}
+            />
+          ))}
+        </div>
+
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: accent, letterSpacing: '4px', marginBottom: '28px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <span>EST. 2018</span>
+          <span style={{ flex: 1, height: '1px', background: 'var(--border)', maxWidth: '80px' }} />
+          <span>BOGOTÁ, COL</span>
+        </div>
+
+        <div
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(72px,14vw,200px)',
+            lineHeight: 0.88,
+            color: 'var(--text)',
+            textTransform: 'uppercase',
+            position: 'relative',
+            zIndex: 1,
+          }}
+        >
+          TATTOO
+          <span style={{ color: accent }}>SHOP</span>
+          <br />
+          <span style={{ fontSize: 'clamp(40px,7vw,100px)', color: 'var(--text-muted)' }}>COLOMBIA</span>
+        </div>
+
+        <div style={{ marginTop: '32px', marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '16px', color: 'var(--text-muted)', fontStyle: 'italic', maxWidth: '380px', lineHeight: 1.6 }}>
+            Todo lo que necesitas para tatuar — profesional, rápido, a tu puerta.
+          </p>
+          <div style={{ height: '1px', flex: 1, background: 'var(--border)', minWidth: '40px' }} />
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '2px', textAlign: 'right' }}>
+            ENVÍO<br />
+            NACIONAL
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3,1fr)',
+            gap: '1px',
+            marginLeft: '-clamp(20px,5vw,80px)',
+            marginRight: '-clamp(20px,5vw,80px)',
+            borderTop: '1px solid var(--border)',
+          }}
+        >
+          {categories.map((cat, i) => (
+            <button
+              key={cat.key}
+              onClick={() => {
+                setActiveFilter(cat.key);
+                document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                borderRight: i < 2 ? '1px solid var(--border)' : 'none',
+                padding: 'clamp(28px,5vw,56px) clamp(20px,4vw,48px)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'background 0.25s',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = accent + '14';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+              }}
+            >
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>0{i + 1}</span>
+                <span style={{ height: '1px', width: '20px', background: accent, opacity: 0.5 }} />
+              </div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,5vw,64px)', lineHeight: 0.9, color: 'var(--text)' }}>
+                {cat.label.toUpperCase()}
+              </div>
+              <div style={{ position: 'absolute', bottom: '20px', right: '24px', fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>
+                {cat.count} productos →
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* TICKER */}
+      <div style={{ borderBottom: '1px solid var(--border)', padding: '12px 0', overflow: 'hidden', background: 'var(--surface)' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: '48px',
+            animation: 'ticker 20s linear infinite',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {[...Array(4)].map((_, i) => (
+            <span key={i} style={{ display: 'flex', gap: '48px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '2px' }}>
+              <span>ENVÍO A TODO COLOMBIA</span>
+              <span style={{ color: accent }}>✦</span>
+              <span>PRODUCTOS PROFESIONALES</span>
+              <span style={{ color: accent }}>✦</span>
+              <span>PAGO CONTRAENTREGA</span>
+              <span style={{ color: accent }}>✦</span>
+              <span>GARANTÍA INCLUIDA</span>
+              <span style={{ color: accent }}>✦</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* PRODUCTS */}
+      <section id="productos" style={{ padding: 'clamp(48px,8vh,96px) clamp(20px,5vw,80px)' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid var(--border)',
+            paddingBottom: '24px',
+            marginBottom: '40px',
+            flexWrap: 'wrap',
+            gap: '16px',
+          }}
+        >
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '8px' }}>CATÁLOGO</div>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(36px,5vw,72px)', lineHeight: 0.9, color: 'var(--text)' }}>
+              PRODUCTOS<br />
+              <span style={{ color: accent }}>DESTACADOS</span>
+            </h2>
+          </div>
+
+          <div style={{ display: 'flex', gap: '1px', flexWrap: 'wrap' }}>
+            {[{ key: 'all', label: 'Todos' }, ...categories.map((c) => ({ key: c.key, label: c.label }))].map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setActiveFilter(f.key)}
+                style={{
+                  background: activeFilter === f.key ? accent : 'var(--surface)',
+                  color: activeFilter === f.key ? '#111' : 'var(--text-muted)',
+                  border: '1px solid var(--border)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  letterSpacing: '1.5px',
+                  padding: '10px 18px',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  if (activeFilter !== f.key) {
+                    (e.currentTarget as HTMLButtonElement).style.color = accent;
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = accent;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeFilter !== f.key) {
+                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)';
+                  }
+                }}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3,minmax(0,1fr))',
+            gap: '1px',
+            background: 'var(--border)',
+          }}
+        >
+          {filtered.map((p, i) => (
+            <ProductCard key={p.id} product={p} idx={i} onAdd={addToCart} accent={accent} />
+          ))}
+        </div>
+
+        <div style={{ marginTop: '24px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-dim)', letterSpacing: '1px', display: 'flex', justifyContent: 'flex-end' }}>
+          {filtered.length} de {ALL_PRODUCTS.length} productos
+        </div>
+      </section>
+
+      {/* ABOUT */}
+      <section style={{ borderTop: '1px solid var(--border)', display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+        <div style={{ padding: 'clamp(48px,8vw,96px) clamp(24px,5vw,80px)', borderRight: '1px solid var(--border)' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '20px' }}>SOBRE NOSOTROS</div>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(28px,4vw,52px)', lineHeight: 0.95, color: 'var(--text)', marginBottom: '24px' }}>
+            SUMINISTROS<br />
+            PARA ARTISTAS<br />
+            <span style={{ color: accent }}>REALES.</span>
+          </h3>
+          <p style={{ color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: '400px', fontSize: '14px' }}>
+            Desde 2018 somos el proveedor de confianza de tatuadores profesionales en Colombia. Trabajamos directamente con fabricantes certificados para garantizar insumos de alta calidad a precios justos. Envío a todas las ciudades del país.
+          </p>
+        </div>
+        <div style={{ padding: 'clamp(48px,8vw,96px) clamp(24px,5vw,80px)', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--surface)' }}>
+          {[
+            { n: '500+', label: 'Clientes activos' },
+            { n: '48h', label: 'Tiempo de entrega promedio' },
+            { n: '100%', label: 'Garantía en productos' },
+          ].map((s, i) => (
+            <div
+              key={i}
+              style={{
+                paddingBottom: i < 2 ? '28px' : 0,
+                marginBottom: i < 2 ? '28px' : 0,
+                borderBottom: i < 2 ? '1px solid var(--border)' : 'none',
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: '16px',
+              }}
+            >
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(36px,5vw,64px)', color: accent }}>{s.n}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '1px' }}>{s.label.toUpperCase()}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer style={{ borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
+        <div style={{ padding: 'clamp(40px,6vw,80px) clamp(20px,5vw,80px)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '40px', flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '12px' }}>NEWSLETTER</div>
+            <h4 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(24px,3vw,42px)', lineHeight: 0.95, color: 'var(--text)' }}>
+              OFERTAS EXCLUSIVAS<br />
+              PARA TATUADORES
+            </h4>
+          </div>
+          {newsletterDone ? (
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: accent, letterSpacing: '2px' }}>✓ ¡Suscrito! Gracias.</div>
+          ) : (
+            <form onSubmit={handleNewsletter} style={{ display: 'flex', gap: 0, minWidth: '300px', flex: 1, maxWidth: '480px' }}>
+              <input
+                type="email"
+                placeholder="tu@email.com"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                style={{ flex: 1, background: '#1a1a1a', border: '1px solid var(--border)', borderRight: 'none', color: 'var(--text)', padding: '14px 18px', fontFamily: 'var(--font-mono)', fontSize: '12px', outline: 'none' }}
+              />
+              <button
+                type="submit"
+                style={{ background: accent, color: '#111', border: 'none', padding: '14px 24px', fontFamily: 'var(--font-display)', fontSize: '18px', cursor: 'pointer', transition: 'background 0.2s', whiteSpace: 'nowrap' }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = '#ffe033';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = accent;
+                }}
+              >
+                SUSCRIBIR
+              </button>
+            </form>
+          )}
+        </div>
+
+        <div style={{ padding: 'clamp(40px,6vw,72px) clamp(20px,5vw,80px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '40px 60px', borderBottom: '1px solid var(--border)' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+              <LogoMark accent={accent} />
+              <div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--text)' }}>TATTOOSHOP</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: accent, letterSpacing: '3px' }}>COLOMBIA</div>
+              </div>
+            </div>
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-dim)', lineHeight: 1.7, letterSpacing: '0.5px' }}>
+              Tu proveedor profesional<br />
+              de insumos para tatuaje<br />
+              en Colombia.
+            </p>
+          </div>
+
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>CATÁLOGO</div>
+            {['Kits de Inicio', 'Máquinas Rotary', 'Máquinas Coil', 'Agujas y Cartridges', 'Tintas', 'Insumos Descartables'].map((l) => (
+              <div key={l} style={{ marginBottom: '10px' }}>
+                <a
+                  href="#"
+                  style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '12px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s' }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLAnchorElement).style.color = accent;
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)';
+                  }}
+                >
+                  {l}
+                </a>
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>INFORMACIÓN</div>
+            {['Política de Envíos', 'Devoluciones y Garantía', 'Preguntas Frecuentes', 'Métodos de Pago', 'Sobre Nosotros', 'Términos y Condiciones'].map((l) => (
+              <div key={l} style={{ marginBottom: '10px' }}>
+                <a
+                  href="#"
+                  style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '12px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s' }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLAnchorElement).style.color = accent;
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)';
+                  }}
+                >
+                  {l}
+                </a>
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>CONTACTO</div>
+            <div style={{ marginBottom: '20px' }}>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.8 }}>
+                Cra 7 #45-23<br />
+                Bogotá, Colombia<br />
+                Lun-Vie 8am-6pm
+              </p>
+            </div>
+            <a
+              href="https://wa.me/573000000000"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: accent,
+                color: '#111',
+                textDecoration: 'none',
+                padding: '10px 16px',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '11px',
+                letterSpacing: '1px',
+                marginBottom: '24px',
+                transition: 'background 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.background = '#ffe033';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.background = accent;
+              }}
+            >
+              <span>💬</span> WHATSAPP
+            </a>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '12px' }}>REDES SOCIALES</div>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              {['Instagram', 'TikTok', 'Facebook', 'YouTube'].map((s) => (
+                <a
+                  key={s}
+                  href="#"
+                  style={{
+                    color: 'var(--text-muted)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '10px',
+                    textDecoration: 'none',
+                    border: '1px solid var(--border)',
+                    padding: '6px 10px',
+                    letterSpacing: '1px',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLAnchorElement).style.color = accent;
+                    (e.currentTarget as HTMLAnchorElement).style.borderColor = accent;
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)';
+                    (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border)';
+                  }}
+                >
+                  {s}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>PAGAMOS CON</div>
+            {['PSE / Bancolombia', 'Nequi / Daviplata', 'Contraentrega', 'Tarjeta Crédito/Débito', 'Efecty / Baloto'].map((p) => (
+              <div
+                key={p}
+                style={{
+                  marginBottom: '8px',
+                  padding: '8px 12px',
+                  border: '1px solid var(--border)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  color: 'var(--text-muted)',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                {p}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ padding: '20px clamp(20px,5vw,80px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>TattooShop Colombia ©2026 — Todos los derechos reservados</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>
+            Hecho con <span style={{ color: accent }}>✦</span> en Colombia
+          </div>
+        </div>
+      </footer>
+
+      {/* CART DRAWER */}
+      {cartOpen && <CartDrawer cart={cart} onClose={() => setCartOpen(false)} onRemove={removeFromCart} onQty={changeQty} accent={accent} />}
+    </div>
+  );
 }
