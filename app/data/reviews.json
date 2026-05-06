@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1,
+    "name": "Carlos Mendoza",
+    "stars": 5,
+    "comment": "Excelente calidad en las tintas. Mi tatuaje quedó perfecto. Muy recomendado.",
+    "photo": "https://via.placeholder.com/50x50?text=CM"
+  },
+  {
+    "id": 2,
+    "name": "María González",
+    "stars": 5,
+    "comment": "Entrega rápida a Medellín. Los productos son profesionales y duran mucho tiempo.",
+    "photo": "https://via.placeholder.com/50x50?text=MG"
+  },
+  {
+    "id": 3,
+    "name": "Juan López",
+    "stars": 4,
+    "comment": "Muy buena atención. Solo tuve que contactar para aclarar una duda y respondieron al tiro.",
+    "photo": null
+  },
+  {
+    "id": 4,
+    "name": "Ana Rodríguez",
+    "stars": 5,
+    "comment": "Llevo 2 años comprando aquí. La confianza y la calidad nunca fallan.",
+    "photo": "https://via.placeholder.com/50x50?text=AR"
+  }
+]

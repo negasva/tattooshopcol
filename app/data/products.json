@@ -1,0 +1,58 @@
+[
+  {
+    "id": 1,
+    "name": "Tinta Negra Premium",
+    "price": 45000,
+    "image": "https://via.placeholder.com/300x300?text=Tinta+Negra",
+    "tags": ["bestsellers", "new"]
+  },
+  {
+    "id": 2,
+    "name": "Kit Agujas Profesional",
+    "price": 75000,
+    "image": "https://via.placeholder.com/300x300?text=Agujas",
+    "tags": ["bestsellers"]
+  },
+  {
+    "id": 3,
+    "name": "Máquina Rotativa Tattoo",
+    "price": 450000,
+    "image": "https://via.placeholder.com/300x300?text=Maquina",
+    "tags": ["premium"]
+  },
+  {
+    "id": 4,
+    "name": "Crema Cicatrizante",
+    "price": 32000,
+    "image": "https://via.placeholder.com/300x300?text=Crema",
+    "tags": ["new", "bestsellers"]
+  },
+  {
+    "id": 5,
+    "name": "Tinta Colores Vibrantes",
+    "price": 55000,
+    "image": "https://via.placeholder.com/300x300?text=Tinta+Color",
+    "tags": ["new"]
+  },
+  {
+    "id": 6,
+    "name": "Desinfectante Profesional",
+    "price": 28000,
+    "image": "https://via.placeholder.com/300x300?text=Desinfectante",
+    "tags": ["essentials"]
+  },
+  {
+    "id": 7,
+    "name": "Papel Transferencia",
+    "price": 15000,
+    "image": "https://via.placeholder.com/300x300?text=Papel",
+    "tags": ["essentials"]
+  },
+  {
+    "id": 8,
+    "name": "Fuente de Poder LED",
+    "price": 85000,
+    "image": "https://via.placeholder.com/300x300?text=Fuente",
+    "tags": ["premium"]
+  }
+]
