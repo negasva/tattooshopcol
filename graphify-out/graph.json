@@ -40,7 +40,7 @@
       "source_file": "next-env.d.ts",
       "source_location": "L1",
       "id": "next_env_d_ts",
-      "community": 10,
+      "community": 11,
       "norm_label": "next-env.d.ts"
     },
     {
@@ -49,7 +49,7 @@
       "source_file": "next.config.js",
       "source_location": "L1",
       "id": "next_config_js",
-      "community": 11,
+      "community": 12,
       "norm_label": "next.config.js"
     },
     {
@@ -58,7 +58,7 @@
       "source_file": "postcss.config.js",
       "source_location": "L1",
       "id": "postcss_config_js",
-      "community": 12,
+      "community": 13,
       "norm_label": "postcss.config.js"
     },
     {
@@ -67,7 +67,7 @@
       "source_file": "tailwind.config.js",
       "source_location": "L1",
       "id": "tailwind_config_js",
-      "community": 13,
+      "community": 14,
       "norm_label": "tailwind.config.js"
     },
     {
@@ -211,7 +211,7 @@
       "source_file": "app/components/ProductCard.tsx",
       "source_location": "L1",
       "id": "app_components_productcard_tsx",
-      "community": 6,
+      "community": 7,
       "norm_label": "productcard.tsx"
     },
     {
@@ -220,7 +220,7 @@
       "source_file": "app/components/ProductCard.tsx",
       "source_location": "L21",
       "id": "components_productcard_handleaddtocart",
-      "community": 6,
+      "community": 7,
       "norm_label": "handleaddtocart()"
     },
     {
@@ -229,7 +229,7 @@
       "source_file": "app/components/ProductGrid.tsx",
       "source_location": "L1",
       "id": "app_components_productgrid_tsx",
-      "community": 6,
+      "community": 7,
       "norm_label": "productgrid.tsx"
     },
     {
@@ -238,7 +238,7 @@
       "source_file": "app/components/ReviewsSection.tsx",
       "source_location": "L1",
       "id": "app_components_reviewssection_tsx",
-      "community": 14,
+      "community": 15,
       "norm_label": "reviewssection.tsx"
     },
     {
@@ -530,6 +530,51 @@
       "norm_label": "future enhancements"
     },
     {
+      "label": "README.md",
+      "file_type": "document",
+      "source_file": "TattooshopColombiaWeb-handoff/tattooshop-colombia-web/README.md",
+      "source_location": "L1",
+      "id": "tattooshopcolombiaweb_handoff_tattooshop_colombia_web_readme_md",
+      "community": 6,
+      "norm_label": "readme.md"
+    },
+    {
+      "label": "CODING AGENTS: READ THIS FIRST",
+      "file_type": "document",
+      "source_file": "TattooshopColombiaWeb-handoff/tattooshop-colombia-web/README.md",
+      "source_location": "L1",
+      "id": "tattooshop_colombia_web_readme_coding_agents_read_this_first",
+      "community": 6,
+      "norm_label": "coding agents: read this first"
+    },
+    {
+      "label": "What you should do \u2014 IMPORTANT",
+      "file_type": "document",
+      "source_file": "TattooshopColombiaWeb-handoff/tattooshop-colombia-web/README.md",
+      "source_location": "L7",
+      "id": "tattooshop_colombia_web_readme_what_you_should_do_important",
+      "community": 6,
+      "norm_label": "what you should do \u2014 important"
+    },
+    {
+      "label": "About the design files",
+      "file_type": "document",
+      "source_file": "TattooshopColombiaWeb-handoff/tattooshop-colombia-web/README.md",
+      "source_location": "L13",
+      "id": "tattooshop_colombia_web_readme_about_the_design_files",
+      "community": 6,
+      "norm_label": "about the design files"
+    },
+    {
+      "label": "Bundle contents",
+      "file_type": "document",
+      "source_file": "TattooshopColombiaWeb-handoff/tattooshop-colombia-web/README.md",
+      "source_location": "L19",
+      "id": "tattooshop_colombia_web_readme_bundle_contents",
+      "community": 6,
+      "norm_label": "bundle contents"
+    },
+    {
       "label": "handleAdd()",
       "file_type": "code",
       "source_file": "app/components/TattooShopHome.tsx",
@@ -551,7 +596,7 @@
       "label": "Tailwind CSS",
       "file_type": "rationale",
       "source_file": "tailwind.config.js",
-      "community": 7,
+      "community": 8,
       "norm_label": "tailwind css",
       "id": "tailwind_css"
     },
@@ -559,7 +604,7 @@
       "label": "Trust-based Design System",
       "file_type": "rationale",
       "source_file": "app/layout.tsx",
-      "community": 9,
+      "community": 10,
       "norm_label": "trust-based design system",
       "id": "trust_design_system"
     },
@@ -567,7 +612,7 @@
       "label": "Colombian Logistics",
       "file_type": "rationale",
       "source_file": "app/components/CitySelector.tsx",
-      "community": 15,
+      "community": 16,
       "norm_label": "colombian logistics",
       "id": "colombian_logistics"
     },
@@ -575,7 +620,7 @@
       "label": "Wompi Payment Integration",
       "file_type": "rationale",
       "source_file": "app/components/PaymentMethods.tsx",
-      "community": 16,
+      "community": 17,
       "norm_label": "wompi payment integration",
       "id": "wompi_integration"
     },
@@ -583,7 +628,7 @@
       "label": "JSON-based Product Management",
       "file_type": "rationale",
       "source_file": "app/components/ProductGrid.tsx",
-      "community": 8,
+      "community": 9,
       "norm_label": "json-based product management",
       "id": "product_management"
     },
@@ -591,7 +636,7 @@
       "label": "WhatsApp Conversational Sales",
       "file_type": "rationale",
       "source_file": "app/components/WhatsAppButton.tsx",
-      "community": 17,
+      "community": 18,
       "norm_label": "whatsapp conversational sales",
       "id": "whatsapp_sales"
     },
@@ -599,7 +644,7 @@
       "label": "Cash on Delivery Logic",
       "file_type": "rationale",
       "source_file": "app/utils/cashOnDeliveryChecker.js",
-      "community": 18,
+      "community": 19,
       "norm_label": "cash on delivery logic",
       "id": "cash_on_delivery"
     },
@@ -607,7 +652,7 @@
       "label": "TattooShop Colombia",
       "file_type": "document",
       "source_file": "README.md",
-      "community": 7,
+      "community": 8,
       "norm_label": "tattooshop colombia",
       "id": "tattooshop_colombia"
     },
@@ -615,7 +660,7 @@
       "label": "Next.js 14+",
       "file_type": "rationale",
       "source_file": "package.json",
-      "community": 7,
+      "community": 8,
       "norm_label": "next.js 14+",
       "id": "nextjs_framework"
     },
@@ -623,7 +668,7 @@
       "label": "Product Card Component",
       "file_type": "code",
       "source_file": "app/components/ProductCard.tsx",
-      "community": 8,
+      "community": 9,
       "norm_label": "product card component",
       "id": "productcard_tsx"
     },
@@ -631,7 +676,7 @@
       "label": "Reviews Section Component",
       "file_type": "code",
       "source_file": "app/components/ReviewsSection.tsx",
-      "community": 9,
+      "community": 10,
       "norm_label": "reviews section component",
       "id": "reviewssection_tsx"
     }
@@ -1127,6 +1172,46 @@
       "target": "tattooshopcol_readme_codeblock_5"
     },
     {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "TattooshopColombiaWeb-handoff/tattooshop-colombia-web/README.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "tattooshopcolombiaweb_handoff_tattooshop_colombia_web_readme_md",
+      "target": "tattooshop_colombia_web_readme_coding_agents_read_this_first",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "TattooshopColombiaWeb-handoff/tattooshop-colombia-web/README.md",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "tattooshop_colombia_web_readme_coding_agents_read_this_first",
+      "target": "tattooshop_colombia_web_readme_what_you_should_do_important",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "TattooshopColombiaWeb-handoff/tattooshop-colombia-web/README.md",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "tattooshop_colombia_web_readme_coding_agents_read_this_first",
+      "target": "tattooshop_colombia_web_readme_about_the_design_files",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "TattooshopColombiaWeb-handoff/tattooshop-colombia-web/README.md",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "tattooshop_colombia_web_readme_coding_agents_read_this_first",
+      "target": "tattooshop_colombia_web_readme_bundle_contents",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "references",
       "confidence": "INFERRED",
       "confidence_score": 0.85,
@@ -1189,5 +1274,5 @@
       "source_file": "app/components/TattooShopHome.tsx"
     }
   ],
-  "built_at_commit": "e1b017577e3267827857fc8c249fda85184fdd07"
+  "built_at_commit": "fcc9a256d04a0ae8d45d37d3b73bf846b19dc2f5"
 }
