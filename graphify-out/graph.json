@@ -932,9 +932,9 @@
       "source_file": "README.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "readme_md",
-      "target": "tattooshopcol_readme_tattooshop_colombia",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_tattooshop_colombia"
     },
     {
       "relation": "contains",
@@ -942,9 +942,9 @@
       "source_file": "README.md",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_tattooshop_colombia",
-      "target": "tattooshopcol_readme_features",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_features"
     },
     {
       "relation": "contains",
@@ -952,9 +952,9 @@
       "source_file": "README.md",
       "source_location": "L36",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_tattooshop_colombia",
-      "target": "tattooshopcol_readme_tech_stack",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_tech_stack"
     },
     {
       "relation": "contains",
@@ -962,9 +962,9 @@
       "source_file": "README.md",
       "source_location": "L43",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_tattooshop_colombia",
-      "target": "tattooshopcol_readme_getting_started",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_getting_started"
     },
     {
       "relation": "contains",
@@ -972,9 +972,9 @@
       "source_file": "README.md",
       "source_location": "L55",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_tattooshop_colombia",
-      "target": "tattooshopcol_readme_project_structure",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_project_structure"
     },
     {
       "relation": "contains",
@@ -982,9 +982,9 @@
       "source_file": "README.md",
       "source_location": "L80",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_tattooshop_colombia",
-      "target": "tattooshopcol_readme_key_features",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_key_features"
     },
     {
       "relation": "contains",
@@ -992,9 +992,9 @@
       "source_file": "README.md",
       "source_location": "L102",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_tattooshop_colombia",
-      "target": "tattooshopcol_readme_configuration",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_configuration"
     },
     {
       "relation": "contains",
@@ -1002,9 +1002,9 @@
       "source_file": "README.md",
       "source_location": "L120",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_tattooshop_colombia",
-      "target": "tattooshopcol_readme_loading_states",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_loading_states"
     },
     {
       "relation": "contains",
@@ -1012,9 +1012,9 @@
       "source_file": "README.md",
       "source_location": "L126",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_tattooshop_colombia",
-      "target": "tattooshopcol_readme_responsive_design",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_responsive_design"
     },
     {
       "relation": "contains",
@@ -1022,9 +1022,9 @@
       "source_file": "README.md",
       "source_location": "L131",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_tattooshop_colombia",
-      "target": "tattooshopcol_readme_future_enhancements",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_future_enhancements"
     },
     {
       "relation": "contains",
@@ -1032,9 +1032,9 @@
       "source_file": "README.md",
       "source_location": "L45",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_getting_started",
-      "target": "tattooshopcol_readme_codeblock_1",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_codeblock_1"
     },
     {
       "relation": "contains",
@@ -1042,9 +1042,9 @@
       "source_file": "README.md",
       "source_location": "L57",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_project_structure",
-      "target": "tattooshopcol_readme_codeblock_2",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_codeblock_2"
     },
     {
       "relation": "contains",
@@ -1052,9 +1052,9 @@
       "source_file": "README.md",
       "source_location": "L82",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_key_features",
-      "target": "tattooshopcol_readme_cash_on_delivery_logic",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_cash_on_delivery_logic"
     },
     {
       "relation": "contains",
@@ -1062,9 +1062,9 @@
       "source_file": "README.md",
       "source_location": "L89",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_key_features",
-      "target": "tattooshopcol_readme_trust_badges",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_trust_badges"
     },
     {
       "relation": "contains",
@@ -1072,9 +1072,9 @@
       "source_file": "README.md",
       "source_location": "L95",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_key_features",
-      "target": "tattooshopcol_readme_product_tags",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_product_tags"
     },
     {
       "relation": "contains",
@@ -1082,9 +1082,9 @@
       "source_file": "README.md",
       "source_location": "L84",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_cash_on_delivery_logic",
-      "target": "tattooshopcol_readme_codeblock_3",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_codeblock_3"
     },
     {
       "relation": "contains",
@@ -1092,9 +1092,9 @@
       "source_file": "README.md",
       "source_location": "L104",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_configuration",
-      "target": "tattooshopcol_readme_whatsapp_integration",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_whatsapp_integration"
     },
     {
       "relation": "contains",
@@ -1102,9 +1102,9 @@
       "source_file": "README.md",
       "source_location": "L110",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_configuration",
-      "target": "tattooshopcol_readme_color_scheme",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_color_scheme"
     },
     {
       "relation": "contains",
@@ -1112,9 +1112,9 @@
       "source_file": "README.md",
       "source_location": "L106",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_whatsapp_integration",
-      "target": "tattooshopcol_readme_codeblock_4",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_codeblock_4"
     },
     {
       "relation": "contains",
@@ -1122,9 +1122,9 @@
       "source_file": "README.md",
       "source_location": "L112",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tattooshopcol_readme_color_scheme",
-      "target": "tattooshopcol_readme_codeblock_5",
-      "confidence_score": 1.0
+      "target": "tattooshopcol_readme_codeblock_5"
     },
     {
       "relation": "references",
@@ -1189,5 +1189,5 @@
       "source_file": "app/components/TattooShopHome.tsx"
     }
   ],
-  "built_at_commit": "78a8a36f7f8bef0e48c9c2b93932de6fc83ac395"
+  "built_at_commit": "50b37b40bb33d97271b17f843525b4f7bd3312de"
 }

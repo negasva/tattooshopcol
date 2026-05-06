@@ -35,15 +35,8 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`}>
       <body>
-        <Header />
         <main>{children}</main>
         <WhatsAppButton />
-        <footer className="bg-trust-dark text-white py-8 mt-12">
-          <div className="max-w-7xl mx-auto px-4 text-center text-sm">
-            <p className="mb-2">© 2024 TattooShop Colombia. Todos los derechos reservados.</p>
-            <p>Envíos seguros a toda Colombia | 5+ Años de Trayectoria</p>
-          </div>
-        </footer>
       </body>
     </html>
   );
