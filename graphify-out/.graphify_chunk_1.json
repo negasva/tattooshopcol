@@ -1,0 +1,13 @@
+{
+  "nodes": [
+    {"id": "productcard_tsx", "label": "Product Card Component", "file_type": "code", "source_file": "app/components/ProductCard.tsx"},
+    {"id": "reviewssection_tsx", "label": "Reviews Section Component", "file_type": "code", "source_file": "app/components/ReviewsSection.tsx"}
+  ],
+  "edges": [
+    {"source": "productcard_tsx", "target": "product_management", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/components/ProductCard.tsx"},
+    {"source": "reviewssection_tsx", "target": "trust_design_system", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/components/ReviewsSection.tsx"}
+  ],
+  "hyperedges": [],
+  "input_tokens": 500,
+  "output_tokens": 200
+}

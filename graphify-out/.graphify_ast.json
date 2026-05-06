@@ -1,0 +1,671 @@
+{
+  "nodes": [
+    {
+      "id": "next_env_d_ts",
+      "label": "next-env.d.ts",
+      "file_type": "code",
+      "source_file": "next-env.d.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "next_config_js",
+      "label": "next.config.js",
+      "file_type": "code",
+      "source_file": "next.config.js",
+      "source_location": "L1"
+    },
+    {
+      "id": "postcss_config_js",
+      "label": "postcss.config.js",
+      "file_type": "code",
+      "source_file": "postcss.config.js",
+      "source_location": "L1"
+    },
+    {
+      "id": "tailwind_config_js",
+      "label": "tailwind.config.js",
+      "file_type": "code",
+      "source_file": "tailwind.config.js",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_layout_tsx",
+      "label": "layout.tsx",
+      "file_type": "code",
+      "source_file": "app\\layout.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_layout_rootlayout",
+      "label": "RootLayout()",
+      "file_type": "code",
+      "source_file": "app\\layout.tsx",
+      "source_location": "L12"
+    },
+    {
+      "id": "app_page_tsx",
+      "label": "page.tsx",
+      "file_type": "code",
+      "source_file": "app\\page.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_page_home",
+      "label": "Home()",
+      "file_type": "code",
+      "source_file": "app\\page.tsx",
+      "source_location": "L3"
+    },
+    {
+      "id": "app_checkout_page_tsx",
+      "label": "page.tsx",
+      "file_type": "code",
+      "source_file": "app\\checkout\\page.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "checkout_page_checkoutpage",
+      "label": "CheckoutPage()",
+      "file_type": "code",
+      "source_file": "app\\checkout\\page.tsx",
+      "source_location": "L13"
+    },
+    {
+      "id": "app_components_checkoutform_tsx",
+      "label": "CheckoutForm.tsx",
+      "file_type": "code",
+      "source_file": "app\\components\\CheckoutForm.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "components_checkoutform_handlecityselect",
+      "label": "handleCitySelect()",
+      "file_type": "code",
+      "source_file": "app\\components\\CheckoutForm.tsx",
+      "source_location": "L32"
+    },
+    {
+      "id": "components_checkoutform_handlepaymentmethodselect",
+      "label": "handlePaymentMethodSelect()",
+      "file_type": "code",
+      "source_file": "app\\components\\CheckoutForm.tsx",
+      "source_location": "L38"
+    },
+    {
+      "id": "components_checkoutform_handlecheckout",
+      "label": "handleCheckout()",
+      "file_type": "code",
+      "source_file": "app\\components\\CheckoutForm.tsx",
+      "source_location": "L45"
+    },
+    {
+      "id": "app_components_cityselector_tsx",
+      "label": "CitySelector.tsx",
+      "file_type": "code",
+      "source_file": "app\\components\\CitySelector.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "components_cityselector_handlecityselect",
+      "label": "handleCitySelect()",
+      "file_type": "code",
+      "source_file": "app\\components\\CitySelector.tsx",
+      "source_location": "L42"
+    },
+    {
+      "id": "app_components_header_tsx",
+      "label": "Header.tsx",
+      "file_type": "code",
+      "source_file": "app\\components\\Header.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "components_header_header",
+      "label": "Header()",
+      "file_type": "code",
+      "source_file": "app\\components\\Header.tsx",
+      "source_location": "L3"
+    },
+    {
+      "id": "app_components_paymentmethods_tsx",
+      "label": "PaymentMethods.tsx",
+      "file_type": "code",
+      "source_file": "app\\components\\PaymentMethods.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "components_paymentmethods_handleselectmethod",
+      "label": "handleSelectMethod()",
+      "file_type": "code",
+      "source_file": "app\\components\\PaymentMethods.tsx",
+      "source_location": "L46"
+    },
+    {
+      "id": "app_components_productcard_tsx",
+      "label": "ProductCard.tsx",
+      "file_type": "code",
+      "source_file": "app\\components\\ProductCard.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "components_productcard_handleaddtocart",
+      "label": "handleAddToCart()",
+      "file_type": "code",
+      "source_file": "app\\components\\ProductCard.tsx",
+      "source_location": "L21"
+    },
+    {
+      "id": "app_components_productgrid_tsx",
+      "label": "ProductGrid.tsx",
+      "file_type": "code",
+      "source_file": "app\\components\\ProductGrid.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_components_reviewssection_tsx",
+      "label": "ReviewsSection.tsx",
+      "file_type": "code",
+      "source_file": "app\\components\\ReviewsSection.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_components_tattooshophome_tsx",
+      "label": "TattooShopHome.tsx",
+      "file_type": "code",
+      "source_file": "app\\components\\TattooShopHome.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "components_tattooshophome_fmt",
+      "label": "fmt()",
+      "file_type": "code",
+      "source_file": "app\\components\\TattooShopHome.tsx",
+      "source_location": "L79"
+    },
+    {
+      "id": "components_tattooshophome_onscroll",
+      "label": "onScroll()",
+      "file_type": "code",
+      "source_file": "app\\components\\TattooShopHome.tsx",
+      "source_location": "L102"
+    },
+    {
+      "id": "components_tattooshophome_addtocart",
+      "label": "addToCart()",
+      "file_type": "code",
+      "source_file": "app\\components\\TattooShopHome.tsx",
+      "source_location": "L112"
+    },
+    {
+      "id": "components_tattooshophome_removefromcart",
+      "label": "removeFromCart()",
+      "file_type": "code",
+      "source_file": "app\\components\\TattooShopHome.tsx",
+      "source_location": "L123"
+    },
+    {
+      "id": "components_tattooshophome_changeqty",
+      "label": "changeQty()",
+      "file_type": "code",
+      "source_file": "app\\components\\TattooShopHome.tsx",
+      "source_location": "L124"
+    },
+    {
+      "id": "components_tattooshophome_handlenewsletter",
+      "label": "handleNewsletter()",
+      "file_type": "code",
+      "source_file": "app\\components\\TattooShopHome.tsx",
+      "source_location": "L134"
+    },
+    {
+      "id": "components_tattooshophome_handleadd",
+      "label": "handleAdd()",
+      "file_type": "code",
+      "source_file": "app\\components\\TattooShopHome.tsx",
+      "source_location": "L594"
+    },
+    {
+      "id": "app_components_whatsappbutton_tsx",
+      "label": "WhatsAppButton.tsx",
+      "file_type": "code",
+      "source_file": "app\\components\\WhatsAppButton.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_utils_cashondeliverychecker_js",
+      "label": "cashOnDeliveryChecker.js",
+      "file_type": "code",
+      "source_file": "app\\utils\\cashOnDeliveryChecker.js",
+      "source_location": "L1"
+    },
+    {
+      "id": "utils_cashondeliverychecker_iscityeligibleforcashondelivery",
+      "label": "isCityEligibleForCashOnDelivery()",
+      "file_type": "code",
+      "source_file": "app\\utils\\cashOnDeliveryChecker.js",
+      "source_location": "L3"
+    },
+    {
+      "id": "utils_cashondeliverychecker_getmaincityforsuburb",
+      "label": "getMainCityForSuburb()",
+      "file_type": "code",
+      "source_file": "app\\utils\\cashOnDeliveryChecker.js",
+      "source_location": "L12"
+    }
+  ],
+  "edges": [
+    {
+      "source": "next_env_d_ts",
+      "target": "c_users_nvz9_desktop_tattooshopcol_web_tattooshopcol_next_types_routes_d_ts",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "next-env.d.ts",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "app_layout_tsx",
+      "target": "next",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\layout.tsx",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "app_layout_tsx",
+      "target": "app_components_header_tsx",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\layout.tsx",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "app_layout_tsx",
+      "target": "app_components_whatsappbutton_tsx",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\layout.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "app_layout_tsx",
+      "target": "c_users_nvz9_desktop_tattooshopcol_web_tattooshopcol_app_globals_css",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\layout.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "app_layout_tsx",
+      "target": "app_layout_rootlayout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\layout.tsx",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "app_page_tsx",
+      "target": "app_components_tattooshophome_tsx",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\page.tsx",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "app_page_tsx",
+      "target": "app_page_home",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\page.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "app_checkout_page_tsx",
+      "target": "react",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\checkout\\page.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "app_checkout_page_tsx",
+      "target": "app_components_checkoutform_tsx",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\checkout\\page.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "app_checkout_page_tsx",
+      "target": "checkout_page_checkoutpage",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\checkout\\page.tsx",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_checkoutform_tsx",
+      "target": "react",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\CheckoutForm.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_checkoutform_tsx",
+      "target": "app_components_cityselector_tsx",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\CheckoutForm.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_checkoutform_tsx",
+      "target": "app_components_paymentmethods_tsx",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\CheckoutForm.tsx",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_checkoutform_tsx",
+      "target": "app_utils_cashondeliverychecker_js",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\CheckoutForm.tsx",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_checkoutform_tsx",
+      "target": "utils_cashondeliverychecker_iscityeligibleforcashondelivery",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\CheckoutForm.tsx",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_checkoutform_tsx",
+      "target": "components_checkoutform_handlecityselect",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\CheckoutForm.tsx",
+      "source_location": "L32",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_checkoutform_tsx",
+      "target": "components_checkoutform_handlepaymentmethodselect",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\CheckoutForm.tsx",
+      "source_location": "L38",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_checkoutform_tsx",
+      "target": "components_checkoutform_handlecheckout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\CheckoutForm.tsx",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_cityselector_tsx",
+      "target": "react",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\CitySelector.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_cityselector_tsx",
+      "target": "c_users_nvz9_desktop_tattooshopcol_web_tattooshopcol_app_data_colombiancities_json",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\CitySelector.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_cityselector_tsx",
+      "target": "components_cityselector_handlecityselect",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\CitySelector.tsx",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_header_tsx",
+      "target": "components_header_header",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\Header.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_paymentmethods_tsx",
+      "target": "react",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\PaymentMethods.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_paymentmethods_tsx",
+      "target": "components_paymentmethods_handleselectmethod",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\PaymentMethods.tsx",
+      "source_location": "L46",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_productcard_tsx",
+      "target": "react",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\ProductCard.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_productcard_tsx",
+      "target": "components_productcard_handleaddtocart",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\ProductCard.tsx",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_productgrid_tsx",
+      "target": "react",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\ProductGrid.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_productgrid_tsx",
+      "target": "app_components_productcard_tsx",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\ProductGrid.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_productgrid_tsx",
+      "target": "c_users_nvz9_desktop_tattooshopcol_web_tattooshopcol_app_data_products_json",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\ProductGrid.tsx",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_reviewssection_tsx",
+      "target": "react",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\ReviewsSection.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_reviewssection_tsx",
+      "target": "c_users_nvz9_desktop_tattooshopcol_web_tattooshopcol_app_data_reviews_json",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\ReviewsSection.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_tattooshophome_tsx",
+      "target": "react",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\TattooShopHome.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_tattooshophome_tsx",
+      "target": "components_tattooshophome_fmt",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\TattooShopHome.tsx",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_tattooshophome_tsx",
+      "target": "components_tattooshophome_onscroll",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\TattooShopHome.tsx",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_tattooshophome_tsx",
+      "target": "components_tattooshophome_addtocart",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\TattooShopHome.tsx",
+      "source_location": "L112",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_tattooshophome_tsx",
+      "target": "components_tattooshophome_removefromcart",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\TattooShopHome.tsx",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_tattooshophome_tsx",
+      "target": "components_tattooshophome_changeqty",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\TattooShopHome.tsx",
+      "source_location": "L124",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_tattooshophome_tsx",
+      "target": "components_tattooshophome_handlenewsletter",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\TattooShopHome.tsx",
+      "source_location": "L134",
+      "weight": 1.0
+    },
+    {
+      "source": "app_components_tattooshophome_tsx",
+      "target": "components_tattooshophome_handleadd",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\components\\TattooShopHome.tsx",
+      "source_location": "L594",
+      "weight": 1.0
+    },
+    {
+      "source": "app_utils_cashondeliverychecker_js",
+      "target": "c_users_nvz9_desktop_tattooshopcol_web_tattooshopcol_app_data_colombiancities_json",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\utils\\cashOnDeliveryChecker.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "app_utils_cashondeliverychecker_js",
+      "target": "utils_cashondeliverychecker_iscityeligibleforcashondelivery",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\utils\\cashOnDeliveryChecker.js",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "app_utils_cashondeliverychecker_js",
+      "target": "utils_cashondeliverychecker_getmaincityforsuburb",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app\\utils\\cashOnDeliveryChecker.js",
+      "source_location": "L12",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

@@ -1,0 +1,1 @@
+{"nodes": [{"id": "wompi_integration", "label": "Wompi Payment Integration", "file_type": "rationale", "source_file": "app/components/PaymentMethods.tsx"}], "edges": [{"source": "paymentmethods_tsx", "target": "wompi_integration", "relation": "implements", "confidence": "INFERRED", "confidence_score": 0.95, "source_file": "app/components/PaymentMethods.tsx"}], "hyperedges": []}

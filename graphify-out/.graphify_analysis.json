@@ -1,0 +1,214 @@
+{
+  "communities": {
+    "0": [
+      "app_checkout_page_tsx",
+      "app_components_checkoutform_tsx",
+      "app_components_cityselector_tsx",
+      "app_utils_cashondeliverychecker_js",
+      "checkout_page_checkoutpage",
+      "components_checkoutform_handlecheckout",
+      "components_checkoutform_handlecityselect",
+      "components_checkoutform_handlepaymentmethodselect",
+      "components_cityselector_handlecityselect",
+      "utils_cashondeliverychecker_getmaincityforsuburb",
+      "utils_cashondeliverychecker_iscityeligibleforcashondelivery"
+    ],
+    "1": [
+      "app_components_tattooshophome_tsx",
+      "app_page_home",
+      "app_page_tsx",
+      "components_tattooshophome_addtocart",
+      "components_tattooshophome_changeqty",
+      "components_tattooshophome_fmt",
+      "components_tattooshophome_handleadd",
+      "components_tattooshophome_handlenewsletter",
+      "components_tattooshophome_onscroll",
+      "components_tattooshophome_removefromcart"
+    ],
+    "2": [
+      "app_components_header_tsx",
+      "app_components_whatsappbutton_tsx",
+      "app_layout_rootlayout",
+      "app_layout_tsx",
+      "components_header_header"
+    ],
+    "3": [
+      "app_components_productcard_tsx",
+      "app_components_productgrid_tsx",
+      "components_productcard_handleaddtocart"
+    ],
+    "4": [
+      "nextjs_framework",
+      "tailwind_css",
+      "tattooshop_colombia"
+    ],
+    "5": [
+      "app_components_paymentmethods_tsx",
+      "components_paymentmethods_handleselectmethod"
+    ],
+    "6": [
+      "product_management",
+      "productcard_tsx"
+    ],
+    "7": [
+      "reviewssection_tsx",
+      "trust_design_system"
+    ],
+    "8": [
+      "next_env_d_ts"
+    ],
+    "9": [
+      "next_config_js"
+    ],
+    "10": [
+      "postcss_config_js"
+    ],
+    "11": [
+      "tailwind_config_js"
+    ],
+    "12": [
+      "app_components_reviewssection_tsx"
+    ],
+    "13": [
+      "colombian_logistics"
+    ],
+    "14": [
+      "wompi_integration"
+    ],
+    "15": [
+      "whatsapp_sales"
+    ],
+    "16": [
+      "cash_on_delivery"
+    ]
+  },
+  "cohesion": {
+    "0": 0.2,
+    "1": 0.2,
+    "2": 0.4,
+    "3": 0.67,
+    "4": 0.67,
+    "5": 1.0,
+    "6": 1.0,
+    "7": 1.0,
+    "8": 1.0,
+    "9": 1.0,
+    "10": 1.0,
+    "11": 1.0,
+    "12": 1.0,
+    "13": 1.0,
+    "14": 1.0,
+    "15": 1.0,
+    "16": 1.0
+  },
+  "gods": [
+    {
+      "id": "utils_cashondeliverychecker_iscityeligibleforcashondelivery",
+      "label": "isCityEligibleForCashOnDelivery()",
+      "degree": 2
+    },
+    {
+      "id": "tattooshop_colombia",
+      "label": "TattooShop Colombia",
+      "degree": 2
+    },
+    {
+      "id": "tailwind_css",
+      "label": "Tailwind CSS",
+      "degree": 1
+    },
+    {
+      "id": "trust_design_system",
+      "label": "Trust-based Design System",
+      "degree": 1
+    },
+    {
+      "id": "product_management",
+      "label": "JSON-based Product Management",
+      "degree": 1
+    },
+    {
+      "id": "nextjs_framework",
+      "label": "Next.js 14+",
+      "degree": 1
+    },
+    {
+      "id": "productcard_tsx",
+      "label": "Product Card Component",
+      "degree": 1
+    },
+    {
+      "id": "reviewssection_tsx",
+      "label": "Reviews Section Component",
+      "degree": 1
+    },
+    {
+      "id": "colombian_logistics",
+      "label": "Colombian Logistics",
+      "degree": 0
+    },
+    {
+      "id": "wompi_integration",
+      "label": "Wompi Payment Integration",
+      "degree": 0
+    }
+  ],
+  "surprises": [
+    {
+      "source": "TattooShop Colombia",
+      "target": "Tailwind CSS",
+      "source_files": [
+        "README.md",
+        "tailwind.config.js"
+      ],
+      "confidence": "INFERRED",
+      "relation": "references",
+      "why": "inferred connection - not explicitly stated in source; crosses file types (code \u2194 doc); connects across different repos/directories"
+    },
+    {
+      "source": "TattooShop Colombia",
+      "target": "Next.js 14+",
+      "source_files": [
+        "README.md",
+        "package.json"
+      ],
+      "confidence": "INFERRED",
+      "relation": "references",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories"
+    },
+    {
+      "source": "Reviews Section Component",
+      "target": "Trust-based Design System",
+      "source_files": [
+        "app/components/ReviewsSection.tsx",
+        "app/layout.tsx"
+      ],
+      "confidence": "INFERRED",
+      "relation": "conceptually_related_to",
+      "why": "inferred connection - not explicitly stated in source"
+    },
+    {
+      "source": "Product Card Component",
+      "target": "JSON-based Product Management",
+      "source_files": [
+        "app/components/ProductCard.tsx",
+        "app/components/ProductGrid.tsx"
+      ],
+      "confidence": "INFERRED",
+      "relation": "conceptually_related_to",
+      "why": "inferred connection - not explicitly stated in source"
+    }
+  ],
+  "questions": [
+    {
+      "type": "verify_inferred",
+      "question": "Are the 2 inferred relationships involving `TattooShop Colombia` (e.g. with `Next.js 14+` and `Tailwind CSS`) actually correct?",
+      "why": "`TattooShop Colombia` has 2 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `Tailwind CSS`, `Trust-based Design System`, `Colombian Logistics` to the rest of the system?",
+      "why": "10 weakly-connected nodes found - possible documentation gaps or missing edges."
+    }
+  ]
+}

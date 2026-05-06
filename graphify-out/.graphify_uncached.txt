@@ -1,0 +1,5 @@
+C:\Users\nvz9\Desktop\tattooshopcol-web\tattooshopcol\next-env.d.ts
+C:\Users\nvz9\Desktop\tattooshopcol-web\tattooshopcol\next.config.js
+C:\Users\nvz9\Desktop\tattooshopcol-web\tattooshopcol\postcss.config.js
+C:\Users\nvz9\Desktop\tattooshopcol-web\tattooshopcol\app\components\ProductCard.tsx
+C:\Users\nvz9\Desktop\tattooshopcol-web\tattooshopcol\app\components\ReviewsSection.tsx

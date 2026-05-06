@@ -1,0 +1,1 @@
+{"nodes": [{"id": "product_management", "label": "JSON-based Product Management", "file_type": "rationale", "source_file": "app/components/ProductGrid.tsx"}], "edges": [{"source": "productgrid_tsx", "target": "productcard_tsx", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/components/ProductGrid.tsx"}], "hyperedges": []}

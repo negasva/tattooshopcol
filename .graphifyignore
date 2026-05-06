@@ -1,0 +1,13 @@
+# .graphifyignore
+node_modules/
+dist/
+*.generated.py
+
+# index app/ and common config files
+*
+!app/
+!app/**
+!README.md
+!package.json
+!*.config.js
+!*.ts

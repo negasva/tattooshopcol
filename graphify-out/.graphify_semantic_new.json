@@ -1,0 +1,234 @@
+{
+  "nodes": [
+    {
+      "id": "tattooshop_colombia",
+      "label": "TattooShop Colombia",
+      "file_type": "document",
+      "source_file": "README.md"
+    },
+    {
+      "id": "nextjs_framework",
+      "label": "Next.js 14+",
+      "file_type": "rationale",
+      "source_file": "package.json"
+    },
+    {
+      "id": "tailwind_css",
+      "label": "Tailwind CSS",
+      "file_type": "rationale",
+      "source_file": "tailwind.config.js"
+    },
+    {
+      "id": "wompi_integration",
+      "label": "Wompi Payment Integration",
+      "file_type": "rationale",
+      "source_file": "app/components/PaymentMethods.tsx"
+    },
+    {
+      "id": "cash_on_delivery",
+      "label": "Cash on Delivery Logic",
+      "file_type": "rationale",
+      "source_file": "app/utils/cashOnDeliveryChecker.js"
+    },
+    {
+      "id": "colombian_logistics",
+      "label": "Colombian Logistics",
+      "file_type": "rationale",
+      "source_file": "app/components/CitySelector.tsx"
+    },
+    {
+      "id": "whatsapp_sales",
+      "label": "WhatsApp Conversational Sales",
+      "file_type": "rationale",
+      "source_file": "app/components/WhatsAppButton.tsx"
+    },
+    {
+      "id": "trust_design_system",
+      "label": "Trust-based Design System",
+      "file_type": "rationale",
+      "source_file": "app/layout.tsx"
+    },
+    {
+      "id": "product_management",
+      "label": "JSON-based Product Management",
+      "file_type": "rationale",
+      "source_file": "app/components/ProductGrid.tsx"
+    },
+    {
+      "id": "productcard_tsx",
+      "label": "Product Card Component",
+      "file_type": "code",
+      "source_file": "app/components/ProductCard.tsx"
+    },
+    {
+      "id": "reviewssection_tsx",
+      "label": "Reviews Section Component",
+      "file_type": "code",
+      "source_file": "app/components/ReviewsSection.tsx"
+    }
+  ],
+  "edges": [
+    {
+      "source": "layout_tsx",
+      "target": "header_tsx",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/layout.tsx"
+    },
+    {
+      "source": "layout_tsx",
+      "target": "whatsappbutton_tsx",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/layout.tsx"
+    },
+    {
+      "source": "page_tsx",
+      "target": "tattooshophome_tsx",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/page.tsx"
+    },
+    {
+      "source": "tattooshophome_tsx",
+      "target": "productgrid_tsx",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/components/TattooShopHome.tsx"
+    },
+    {
+      "source": "productgrid_tsx",
+      "target": "productcard_tsx",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/components/ProductGrid.tsx"
+    },
+    {
+      "source": "checkout_page_tsx",
+      "target": "checkoutform_tsx",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/checkout/page.tsx"
+    },
+    {
+      "source": "checkoutform_tsx",
+      "target": "cityselector_tsx",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/components/CheckoutForm.tsx"
+    },
+    {
+      "source": "checkoutform_tsx",
+      "target": "paymentmethods_tsx",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/components/CheckoutForm.tsx"
+    },
+    {
+      "source": "checkoutform_tsx",
+      "target": "cash_on_delivery_checker",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/components/CheckoutForm.tsx"
+    },
+    {
+      "source": "cash_on_delivery_checker",
+      "target": "colombian_cities_json",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/utils/cashOnDeliveryChecker.js"
+    },
+    {
+      "source": "whatsappbutton_tsx",
+      "target": "whatsapp_sales",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "app/components/WhatsAppButton.tsx"
+    },
+    {
+      "source": "header_tsx",
+      "target": "trust_design_system",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "app/components/Header.tsx"
+    },
+    {
+      "source": "paymentmethods_tsx",
+      "target": "wompi_integration",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "app/components/PaymentMethods.tsx"
+    },
+    {
+      "source": "readme_md",
+      "target": "tattooshop_colombia",
+      "relation": "rationale_for",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "README.md"
+    },
+    {
+      "source": "tattooshop_colombia",
+      "target": "nextjs_framework",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "README.md"
+    },
+    {
+      "source": "tattooshop_colombia",
+      "target": "tailwind_css",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "README.md"
+    },
+    {
+      "source": "productcard_tsx",
+      "target": "product_management",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "app/components/ProductCard.tsx"
+    },
+    {
+      "source": "reviewssection_tsx",
+      "target": "trust_design_system",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "app/components/ReviewsSection.tsx"
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "ecommerce_core_flow",
+      "label": "E-commerce Core Flow",
+      "nodes": [
+        "productgrid_tsx",
+        "productcard_tsx",
+        "checkoutform_tsx",
+        "paymentmethods_tsx"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "app/components/TattooShopHome.tsx"
+    }
+  ],
+  "input_tokens": 2000,
+  "output_tokens": 700
+}
