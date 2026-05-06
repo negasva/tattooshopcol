@@ -12,11 +12,17 @@ export default function AdminPageClient() {
     name: '',
     category: 'Kits',
     price: 0,
+    original_price: 0,
+    discount_percentage: 0,
+    image_url: '',
     specs: '',
     tag: '',
     inventory: 0,
   });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [categories, setCategories] = useState<string[]>(['Kits', 'Máquinas', 'Insumos']);
+  const [newCategory, setNewCategory] = useState('');
+  const [discountType, setDiscountType] = useState<'percentage' | 'amount'>('percentage');
 
   const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123';
 
@@ -53,11 +59,17 @@ export default function AdminPageClient() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const productData = {
+        ...formData,
+        original_price: formData.original_price || null,
+        discount_percentage: formData.discount_percentage || null,
+      };
+
       if (editingId) {
         const { error } = await supabase
           .from('products')
           .update({
-            ...formData,
+            ...productData,
             updated_at: new Date().toISOString(),
           })
           .eq('id', editingId);
@@ -66,14 +78,14 @@ export default function AdminPageClient() {
       } else {
         const { error } = await supabase.from('products').insert([
           {
-            ...formData,
+            ...productData,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
         ]);
         if (error) throw error;
       }
-      setFormData({ name: '', category: 'Kits', price: 0, specs: '', tag: '', inventory: 0 });
+      setFormData({ name: '', category: 'Kits', price: 0, original_price: 0, discount_percentage: 0, image_url: '', specs: '', tag: '', inventory: 0 });
       loadProducts();
       alert(editingId ? 'Producto actualizado' : 'Producto agregado');
     } catch (error) {
@@ -100,12 +112,22 @@ export default function AdminPageClient() {
       name: product.name,
       category: product.category,
       price: product.price,
+      original_price: product.original_price || 0,
+      discount_percentage: product.discount_percentage || 0,
+      image_url: product.image_url || '',
       specs: product.specs,
       tag: product.tag,
       inventory: product.inventory,
     });
     setEditingId(product.id);
     window.scrollTo(0, 0);
+  };
+
+  const handleAddCategory = () => {
+    if (newCategory.trim() && !categories.includes(newCategory)) {
+      setCategories([...categories, newCategory]);
+      setNewCategory('');
+    }
   };
 
   if (!authenticated) {
@@ -186,9 +208,92 @@ export default function AdminPageClient() {
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Categoría</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      border: '1px solid var(--border)',
+                      background: 'var(--bg)',
+                      color: 'var(--text)',
+                      borderRadius: '4px',
+                    }}
+                  >
+                    {categories.map((cat) => (
+                      <option key={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Agregar Nueva Categoría</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  placeholder="Nueva categoría"
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg)',
+                    color: 'var(--text)',
+                    borderRadius: '4px',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCategory}
+                  style={{
+                    padding: '10px 16px',
+                    background: 'var(--surface2)',
+                    color: 'var(--text-muted)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>URL de Imagen</label>
+              <input
+                type="text"
+                value={formData.image_url}
+                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                placeholder="https://ejemplo.com/imagen.jpg"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg)',
+                  color: 'var(--text)',
+                  borderRadius: '4px',
+                }}
+              />
+              {formData.image_url && (
+                <div style={{ marginTop: '12px', maxWidth: '200px' }}>
+                  <img src={formData.image_url} alt="preview" style={{ maxWidth: '100%', borderRadius: '4px' }} />
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Precio con Descuento (COP)</label>
+                <input
+                  type="number"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                  required
                   style={{
                     width: '100%',
                     padding: '10px',
@@ -197,22 +302,35 @@ export default function AdminPageClient() {
                     color: 'var(--text)',
                     borderRadius: '4px',
                   }}
-                >
-                  <option>Kits</option>
-                  <option>Máquinas</option>
-                  <option>Insumos</option>
-                </select>
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Precio Original (COP)</label>
+                <input
+                  type="number"
+                  value={formData.original_price}
+                  onChange={(e) => setFormData({ ...formData, original_price: Number(e.target.value) })}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg)',
+                    color: 'var(--text)',
+                    borderRadius: '4px',
+                  }}
+                />
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Precio (COP)</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Descuento (%)</label>
                 <input
                   type="number"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                  required
+                  value={formData.discount_percentage}
+                  onChange={(e) => setFormData({ ...formData, discount_percentage: Number(e.target.value) })}
+                  min="0"
+                  max="100"
                   style={{
                     width: '100%',
                     padding: '10px',
@@ -300,7 +418,7 @@ export default function AdminPageClient() {
                   type="button"
                   onClick={() => {
                     setEditingId(null);
-                    setFormData({ name: '', category: 'Kits', price: 0, specs: '', tag: '', inventory: 0 });
+                    setFormData({ name: '', category: 'Kits', price: 0, original_price: 0, discount_percentage: 0, image_url: '', specs: '', tag: '', inventory: 0 });
                   }}
                   style={{
                     flex: 1,
@@ -332,9 +450,11 @@ export default function AdminPageClient() {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: '"DM Sans", sans-serif', fontSize: '14px' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    <th style={{ padding: '16px', textAlign: 'left', color: 'var(--accent)', fontWeight: '600' }}>Imagen</th>
                     <th style={{ padding: '16px', textAlign: 'left', color: 'var(--accent)', fontWeight: '600' }}>Nombre</th>
                     <th style={{ padding: '16px', textAlign: 'left', color: 'var(--accent)', fontWeight: '600' }}>Categoría</th>
                     <th style={{ padding: '16px', textAlign: 'right', color: 'var(--accent)', fontWeight: '600' }}>Precio</th>
+                    <th style={{ padding: '16px', textAlign: 'right', color: 'var(--accent)', fontWeight: '600' }}>Descuento</th>
                     <th style={{ padding: '16px', textAlign: 'center', color: 'var(--accent)', fontWeight: '600' }}>Inventario</th>
                     <th style={{ padding: '16px', textAlign: 'center', color: 'var(--accent)', fontWeight: '600' }}>Acciones</th>
                   </tr>
@@ -342,10 +462,20 @@ export default function AdminPageClient() {
                 <tbody>
                   {products.map((product) => (
                     <tr key={product.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '16px' }}>
+                        {product.image_url ? (
+                          <img src={product.image_url} alt={product.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} />
+                        ) : (
+                          <div style={{ width: '50px', height: '50px', background: 'var(--surface2)', borderRadius: '4px' }} />
+                        )}
+                      </td>
                       <td style={{ padding: '16px', color: 'var(--text)' }}>{product.name}</td>
                       <td style={{ padding: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>{product.category}</td>
                       <td style={{ padding: '16px', textAlign: 'right', color: 'var(--accent)', fontWeight: '600' }}>
                         ${product.price.toLocaleString('es-CO')}
+                      </td>
+                      <td style={{ padding: '16px', textAlign: 'right', color: product.discount_percentage && product.discount_percentage > 0 ? 'var(--accent)' : 'var(--text-muted)' }}>
+                        {product.discount_percentage && product.discount_percentage > 0 ? `${product.discount_percentage}%` : '—'}
                       </td>
                       <td style={{ padding: '16px', textAlign: 'center', color: product.inventory > 0 ? 'var(--text)' : '#e55' }}>
                         {product.inventory}

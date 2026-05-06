@@ -10,6 +10,9 @@ export interface Product {
   name: string;
   category: string;
   price: number;
+  original_price?: number;
+  discount_percentage?: number;
+  image_url?: string;
   specs: string;
   tag: string;
   inventory: number;
