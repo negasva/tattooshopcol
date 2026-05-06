@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@layer theme {
+  :root {
+    --color-trust-dark: #0F3460;
+    --color-trust-green: #16A085;
+    --color-trust-light: #ECF0F1;
+  }
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -30,5 +38,29 @@ body {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@layer utilities {
+  .bg-trust-dark {
+    @apply bg-[#0F3460];
+  }
+  .bg-trust-green {
+    @apply bg-[#16A085];
+  }
+  .bg-trust-light {
+    @apply bg-[#ECF0F1];
+  }
+  .text-trust-dark {
+    @apply text-[#0F3460];
+  }
+  .text-trust-green {
+    @apply text-[#16A085];
+  }
+  .text-trust-light {
+    @apply text-[#ECF0F1];
+  }
+  .border-trust-dark {
+    @apply border-[#0F3460];
   }
 }
