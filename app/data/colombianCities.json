@@ -1,0 +1,92 @@
+[
+  {
+    "city": "Bogotá",
+    "department": "Cundinamarca",
+    "cashOnDelivery": true,
+    "suburbs": ["Soacha", "Chía", "Cajicá", "Mosquera"]
+  },
+  {
+    "city": "Medellín",
+    "department": "Antioquia",
+    "cashOnDelivery": true,
+    "suburbs": ["Envigado", "Itagüí", "Sabaneta", "Bello"]
+  },
+  {
+    "city": "Cali",
+    "department": "Valle del Cauca",
+    "cashOnDelivery": true,
+    "suburbs": ["Jamundí", "Palmira", "Yumbo", "Candelaria"]
+  },
+  {
+    "city": "Barranquilla",
+    "department": "Atlántico",
+    "cashOnDelivery": true,
+    "suburbs": ["Soledad", "Puerto Colombia", "Malambo", "Galapa"]
+  },
+  {
+    "city": "Cartagena",
+    "department": "Bolívar",
+    "cashOnDelivery": false,
+    "suburbs": []
+  },
+  {
+    "city": "Cúcuta",
+    "department": "Norte de Santander",
+    "cashOnDelivery": false,
+    "suburbs": []
+  },
+  {
+    "city": "Bucaramanga",
+    "department": "Santander",
+    "cashOnDelivery": false,
+    "suburbs": []
+  },
+  {
+    "city": "Santa Marta",
+    "department": "Magdalena",
+    "cashOnDelivery": false,
+    "suburbs": []
+  },
+  {
+    "city": "Pereira",
+    "department": "Risaralda",
+    "cashOnDelivery": false,
+    "suburbs": []
+  },
+  {
+    "city": "Manizales",
+    "department": "Caldas",
+    "cashOnDelivery": false,
+    "suburbs": []
+  },
+  {
+    "city": "Ibagué",
+    "department": "Tolima",
+    "cashOnDelivery": false,
+    "suburbs": []
+  },
+  {
+    "city": "Pasto",
+    "department": "Nariño",
+    "cashOnDelivery": false,
+    "suburbs": []
+  },
+  {
+    "city": "Armenia",
+    "department": "Quindío",
+    "cashOnDelivery": false,
+    "suburbs": []
+  },
+  {
+    "city": "Popayán",
+    "department": "Cauca",
+    "cashOnDelivery": false,
+    "suburbs": []
+  },
+  {
+    "city": "Villavicencio",
+    "department": "Meta",
+    "cashOnDelivery": false,
+    "suburbs": []
+  }
+]
