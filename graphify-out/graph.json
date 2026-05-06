@@ -40,7 +40,7 @@
       "source_file": "next-env.d.ts",
       "source_location": "L1",
       "id": "next_env_d_ts",
-      "community": 8,
+      "community": 10,
       "norm_label": "next-env.d.ts"
     },
     {
@@ -49,7 +49,7 @@
       "source_file": "next.config.js",
       "source_location": "L1",
       "id": "next_config_js",
-      "community": 9,
+      "community": 11,
       "norm_label": "next.config.js"
     },
     {
@@ -58,7 +58,7 @@
       "source_file": "postcss.config.js",
       "source_location": "L1",
       "id": "postcss_config_js",
-      "community": 10,
+      "community": 12,
       "norm_label": "postcss.config.js"
     },
     {
@@ -67,7 +67,7 @@
       "source_file": "tailwind.config.js",
       "source_location": "L1",
       "id": "tailwind_config_js",
-      "community": 11,
+      "community": 13,
       "norm_label": "tailwind.config.js"
     },
     {
@@ -76,17 +76,8 @@
       "source_file": "app/layout.tsx",
       "source_location": "L1",
       "id": "app_layout_tsx",
-      "community": 2,
+      "community": 3,
       "norm_label": "layout.tsx"
-    },
-    {
-      "label": "RootLayout()",
-      "file_type": "code",
-      "source_file": "app/layout.tsx",
-      "source_location": "L12",
-      "id": "app_layout_rootlayout",
-      "community": 2,
-      "norm_label": "rootlayout()"
     },
     {
       "label": "page.tsx",
@@ -94,7 +85,7 @@
       "source_file": "app/page.tsx",
       "source_location": "L1",
       "id": "app_page_tsx",
-      "community": 1,
+      "community": 2,
       "norm_label": "page.tsx"
     },
     {
@@ -103,7 +94,7 @@
       "source_file": "app/page.tsx",
       "source_location": "L3",
       "id": "app_page_home",
-      "community": 1,
+      "community": 2,
       "norm_label": "home()"
     },
     {
@@ -184,7 +175,7 @@
       "source_file": "app/components/Header.tsx",
       "source_location": "L1",
       "id": "app_components_header_tsx",
-      "community": 2,
+      "community": 3,
       "norm_label": "header.tsx"
     },
     {
@@ -193,7 +184,7 @@
       "source_file": "app/components/Header.tsx",
       "source_location": "L3",
       "id": "components_header_header",
-      "community": 2,
+      "community": 3,
       "norm_label": "header()"
     },
     {
@@ -202,7 +193,7 @@
       "source_file": "app/components/PaymentMethods.tsx",
       "source_location": "L1",
       "id": "app_components_paymentmethods_tsx",
-      "community": 5,
+      "community": 0,
       "norm_label": "paymentmethods.tsx"
     },
     {
@@ -211,7 +202,7 @@
       "source_file": "app/components/PaymentMethods.tsx",
       "source_location": "L46",
       "id": "components_paymentmethods_handleselectmethod",
-      "community": 5,
+      "community": 0,
       "norm_label": "handleselectmethod()"
     },
     {
@@ -220,7 +211,7 @@
       "source_file": "app/components/ProductCard.tsx",
       "source_location": "L1",
       "id": "app_components_productcard_tsx",
-      "community": 3,
+      "community": 6,
       "norm_label": "productcard.tsx"
     },
     {
@@ -229,7 +220,7 @@
       "source_file": "app/components/ProductCard.tsx",
       "source_location": "L21",
       "id": "components_productcard_handleaddtocart",
-      "community": 3,
+      "community": 6,
       "norm_label": "handleaddtocart()"
     },
     {
@@ -238,7 +229,7 @@
       "source_file": "app/components/ProductGrid.tsx",
       "source_location": "L1",
       "id": "app_components_productgrid_tsx",
-      "community": 3,
+      "community": 6,
       "norm_label": "productgrid.tsx"
     },
     {
@@ -247,7 +238,7 @@
       "source_file": "app/components/ReviewsSection.tsx",
       "source_location": "L1",
       "id": "app_components_reviewssection_tsx",
-      "community": 12,
+      "community": 14,
       "norm_label": "reviewssection.tsx"
     },
     {
@@ -256,7 +247,7 @@
       "source_file": "app/components/TattooShopHome.tsx",
       "source_location": "L1",
       "id": "app_components_tattooshophome_tsx",
-      "community": 1,
+      "community": 2,
       "norm_label": "tattooshophome.tsx"
     },
     {
@@ -265,7 +256,7 @@
       "source_file": "app/components/TattooShopHome.tsx",
       "source_location": "L79",
       "id": "components_tattooshophome_fmt",
-      "community": 1,
+      "community": 2,
       "norm_label": "fmt()"
     },
     {
@@ -274,7 +265,7 @@
       "source_file": "app/components/TattooShopHome.tsx",
       "source_location": "L102",
       "id": "components_tattooshophome_onscroll",
-      "community": 1,
+      "community": 2,
       "norm_label": "onscroll()"
     },
     {
@@ -283,7 +274,7 @@
       "source_file": "app/components/TattooShopHome.tsx",
       "source_location": "L112",
       "id": "components_tattooshophome_addtocart",
-      "community": 1,
+      "community": 2,
       "norm_label": "addtocart()"
     },
     {
@@ -292,7 +283,7 @@
       "source_file": "app/components/TattooShopHome.tsx",
       "source_location": "L123",
       "id": "components_tattooshophome_removefromcart",
-      "community": 1,
+      "community": 2,
       "norm_label": "removefromcart()"
     },
     {
@@ -301,7 +292,7 @@
       "source_file": "app/components/TattooShopHome.tsx",
       "source_location": "L124",
       "id": "components_tattooshophome_changeqty",
-      "community": 1,
+      "community": 2,
       "norm_label": "changeqty()"
     },
     {
@@ -310,7 +301,7 @@
       "source_file": "app/components/TattooShopHome.tsx",
       "source_location": "L134",
       "id": "components_tattooshophome_handlenewsletter",
-      "community": 1,
+      "community": 2,
       "norm_label": "handlenewsletter()"
     },
     {
@@ -319,7 +310,7 @@
       "source_file": "app/components/TattooShopHome.tsx",
       "source_location": "L594",
       "id": "components_tattooshophome_handleadd",
-      "community": 1,
+      "community": 2,
       "norm_label": "handleadd()"
     },
     {
@@ -328,7 +319,7 @@
       "source_file": "app/components/WhatsAppButton.tsx",
       "source_location": "L1",
       "id": "app_components_whatsappbutton_tsx",
-      "community": 2,
+      "community": 3,
       "norm_label": "whatsappbutton.tsx"
     },
     {
@@ -359,92 +350,290 @@
       "norm_label": "getmaincityforsuburb()"
     },
     {
-      "label": "Tailwind CSS",
-      "file_type": "rationale",
-      "source_file": "tailwind.config.js",
-      "id": "tailwind_css",
-      "community": 4,
-      "norm_label": "tailwind css"
-    },
-    {
-      "label": "Trust-based Design System",
-      "file_type": "rationale",
-      "source_file": "app/layout.tsx",
-      "id": "trust_design_system",
-      "community": 7,
-      "norm_label": "trust-based design system"
-    },
-    {
-      "label": "Colombian Logistics",
-      "file_type": "rationale",
-      "source_file": "app/components/CitySelector.tsx",
-      "id": "colombian_logistics",
-      "community": 13,
-      "norm_label": "colombian logistics"
-    },
-    {
-      "label": "Wompi Payment Integration",
-      "file_type": "rationale",
-      "source_file": "app/components/PaymentMethods.tsx",
-      "id": "wompi_integration",
-      "community": 14,
-      "norm_label": "wompi payment integration"
-    },
-    {
-      "label": "JSON-based Product Management",
-      "file_type": "rationale",
-      "source_file": "app/components/ProductGrid.tsx",
-      "id": "product_management",
-      "community": 6,
-      "norm_label": "json-based product management"
-    },
-    {
-      "label": "WhatsApp Conversational Sales",
-      "file_type": "rationale",
-      "source_file": "app/components/WhatsAppButton.tsx",
-      "id": "whatsapp_sales",
-      "community": 15,
-      "norm_label": "whatsapp conversational sales"
-    },
-    {
-      "label": "Cash on Delivery Logic",
-      "file_type": "rationale",
-      "source_file": "app/utils/cashOnDeliveryChecker.js",
-      "id": "cash_on_delivery",
-      "community": 16,
-      "norm_label": "cash on delivery logic"
+      "label": "README.md",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L1",
+      "id": "readme_md",
+      "community": 1,
+      "norm_label": "readme.md"
     },
     {
       "label": "TattooShop Colombia",
       "file_type": "document",
       "source_file": "README.md",
-      "id": "tattooshop_colombia",
-      "community": 4,
+      "source_location": "L1",
+      "id": "tattooshopcol_readme_tattooshop_colombia",
+      "community": 1,
       "norm_label": "tattooshop colombia"
+    },
+    {
+      "label": "Features",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L5",
+      "id": "tattooshopcol_readme_features",
+      "community": 1,
+      "norm_label": "features"
+    },
+    {
+      "label": "Tech Stack",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L36",
+      "id": "tattooshopcol_readme_tech_stack",
+      "community": 1,
+      "norm_label": "tech stack"
+    },
+    {
+      "label": "Getting Started",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L43",
+      "id": "tattooshopcol_readme_getting_started",
+      "community": 1,
+      "norm_label": "getting started"
+    },
+    {
+      "label": "code:bash (# Install dependencies)",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L45",
+      "id": "tattooshopcol_readme_codeblock_1",
+      "community": 1,
+      "norm_label": "code:bash (# install dependencies)"
+    },
+    {
+      "label": "Project Structure",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L55",
+      "id": "tattooshopcol_readme_project_structure",
+      "community": 1,
+      "norm_label": "project structure"
+    },
+    {
+      "label": "code:block2 (app/)",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L57",
+      "id": "tattooshopcol_readme_codeblock_2",
+      "community": 1,
+      "norm_label": "code:block2 (app/)"
+    },
+    {
+      "label": "Key Features",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L80",
+      "id": "tattooshopcol_readme_key_features",
+      "community": 4,
+      "norm_label": "key features"
+    },
+    {
+      "label": "Cash on Delivery Logic",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L82",
+      "id": "tattooshopcol_readme_cash_on_delivery_logic",
+      "community": 4,
+      "norm_label": "cash on delivery logic"
+    },
+    {
+      "label": "code:block3 (\u26a0\ufe0f verifica con nosotros si hay disponibilidad de Pago contr)",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L84",
+      "id": "tattooshopcol_readme_codeblock_3",
+      "community": 4,
+      "norm_label": "code:block3 (\u26a0\ufe0f verifica con nosotros si hay disponibilidad de pago contr)"
+    },
+    {
+      "label": "Trust Badges",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L89",
+      "id": "tattooshopcol_readme_trust_badges",
+      "community": 4,
+      "norm_label": "trust badges"
+    },
+    {
+      "label": "Product Tags",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L95",
+      "id": "tattooshopcol_readme_product_tags",
+      "community": 4,
+      "norm_label": "product tags"
+    },
+    {
+      "label": "Configuration",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L102",
+      "id": "tattooshopcol_readme_configuration",
+      "community": 5,
+      "norm_label": "configuration"
+    },
+    {
+      "label": "WhatsApp Integration",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L104",
+      "id": "tattooshopcol_readme_whatsapp_integration",
+      "community": 5,
+      "norm_label": "whatsapp integration"
+    },
+    {
+      "label": "code:javascript (const WHATSAPP_NUMBER = '573001234567'; // Your WhatsApp bus)",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L106",
+      "id": "tattooshopcol_readme_codeblock_4",
+      "community": 5,
+      "norm_label": "code:javascript (const whatsapp_number = '573001234567'; // your whatsapp bus)"
+    },
+    {
+      "label": "Color Scheme",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L110",
+      "id": "tattooshopcol_readme_color_scheme",
+      "community": 5,
+      "norm_label": "color scheme"
+    },
+    {
+      "label": "code:javascript (colors: {)",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L112",
+      "id": "tattooshopcol_readme_codeblock_5",
+      "community": 5,
+      "norm_label": "code:javascript (colors: {)"
+    },
+    {
+      "label": "Loading States",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L120",
+      "id": "tattooshopcol_readme_loading_states",
+      "community": 1,
+      "norm_label": "loading states"
+    },
+    {
+      "label": "Responsive Design",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L126",
+      "id": "tattooshopcol_readme_responsive_design",
+      "community": 1,
+      "norm_label": "responsive design"
+    },
+    {
+      "label": "Future Enhancements",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L131",
+      "id": "tattooshopcol_readme_future_enhancements",
+      "community": 1,
+      "norm_label": "future enhancements"
+    },
+    {
+      "label": "RootLayout()",
+      "file_type": "code",
+      "source_file": "app/layout.tsx",
+      "source_location": "L12",
+      "community": 3,
+      "norm_label": "rootlayout()",
+      "id": "app_layout_rootlayout"
+    },
+    {
+      "label": "Tailwind CSS",
+      "file_type": "rationale",
+      "source_file": "tailwind.config.js",
+      "community": 7,
+      "norm_label": "tailwind css",
+      "id": "tailwind_css"
+    },
+    {
+      "label": "Trust-based Design System",
+      "file_type": "rationale",
+      "source_file": "app/layout.tsx",
+      "community": 9,
+      "norm_label": "trust-based design system",
+      "id": "trust_design_system"
+    },
+    {
+      "label": "Colombian Logistics",
+      "file_type": "rationale",
+      "source_file": "app/components/CitySelector.tsx",
+      "community": 15,
+      "norm_label": "colombian logistics",
+      "id": "colombian_logistics"
+    },
+    {
+      "label": "Wompi Payment Integration",
+      "file_type": "rationale",
+      "source_file": "app/components/PaymentMethods.tsx",
+      "community": 16,
+      "norm_label": "wompi payment integration",
+      "id": "wompi_integration"
+    },
+    {
+      "label": "JSON-based Product Management",
+      "file_type": "rationale",
+      "source_file": "app/components/ProductGrid.tsx",
+      "community": 8,
+      "norm_label": "json-based product management",
+      "id": "product_management"
+    },
+    {
+      "label": "WhatsApp Conversational Sales",
+      "file_type": "rationale",
+      "source_file": "app/components/WhatsAppButton.tsx",
+      "community": 17,
+      "norm_label": "whatsapp conversational sales",
+      "id": "whatsapp_sales"
+    },
+    {
+      "label": "Cash on Delivery Logic",
+      "file_type": "rationale",
+      "source_file": "app/utils/cashOnDeliveryChecker.js",
+      "community": 18,
+      "norm_label": "cash on delivery logic",
+      "id": "cash_on_delivery"
+    },
+    {
+      "label": "TattooShop Colombia",
+      "file_type": "document",
+      "source_file": "README.md",
+      "community": 7,
+      "norm_label": "tattooshop colombia",
+      "id": "tattooshop_colombia"
     },
     {
       "label": "Next.js 14+",
       "file_type": "rationale",
       "source_file": "package.json",
-      "id": "nextjs_framework",
-      "community": 4,
-      "norm_label": "next.js 14+"
+      "community": 7,
+      "norm_label": "next.js 14+",
+      "id": "nextjs_framework"
     },
     {
       "label": "Product Card Component",
       "file_type": "code",
       "source_file": "app/components/ProductCard.tsx",
-      "id": "productcard_tsx",
-      "community": 6,
-      "norm_label": "product card component"
+      "community": 8,
+      "norm_label": "product card component",
+      "id": "productcard_tsx"
     },
     {
       "label": "Reviews Section Component",
       "file_type": "code",
       "source_file": "app/components/ReviewsSection.tsx",
-      "id": "reviewssection_tsx",
-      "community": 7,
-      "norm_label": "reviews section component"
+      "community": 9,
+      "norm_label": "reviews section component",
+      "id": "reviewssection_tsx"
     }
   ],
   "links": [
@@ -455,9 +644,9 @@
       "source_file": "app/layout.tsx",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_layout_tsx",
-      "target": "app_components_header_tsx",
-      "confidence_score": 1.0
+      "target": "app_components_header_tsx"
     },
     {
       "relation": "imports_from",
@@ -466,9 +655,9 @@
       "source_file": "app/layout.tsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_layout_tsx",
-      "target": "app_components_whatsappbutton_tsx",
-      "confidence_score": 1.0
+      "target": "app_components_whatsappbutton_tsx"
     },
     {
       "relation": "contains",
@@ -476,9 +665,9 @@
       "source_file": "app/layout.tsx",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_layout_tsx",
-      "target": "app_layout_rootlayout",
-      "confidence_score": 1.0
+      "target": "app_layout_rootlayout"
     },
     {
       "relation": "imports_from",
@@ -487,9 +676,9 @@
       "source_file": "app/page.tsx",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_page_tsx",
-      "target": "app_components_tattooshophome_tsx",
-      "confidence_score": 1.0
+      "target": "app_components_tattooshophome_tsx"
     },
     {
       "relation": "contains",
@@ -497,9 +686,9 @@
       "source_file": "app/page.tsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_page_tsx",
-      "target": "app_page_home",
-      "confidence_score": 1.0
+      "target": "app_page_home"
     },
     {
       "relation": "imports_from",
@@ -508,9 +697,9 @@
       "source_file": "app/checkout/page.tsx",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_checkout_page_tsx",
-      "target": "app_components_checkoutform_tsx",
-      "confidence_score": 1.0
+      "target": "app_components_checkoutform_tsx"
     },
     {
       "relation": "contains",
@@ -518,9 +707,9 @@
       "source_file": "app/checkout/page.tsx",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_checkout_page_tsx",
-      "target": "checkout_page_checkoutpage",
-      "confidence_score": 1.0
+      "target": "checkout_page_checkoutpage"
     },
     {
       "relation": "imports_from",
@@ -529,9 +718,9 @@
       "source_file": "app/components/CheckoutForm.tsx",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_checkoutform_tsx",
-      "target": "app_components_cityselector_tsx",
-      "confidence_score": 1.0
+      "target": "app_components_cityselector_tsx"
     },
     {
       "relation": "imports_from",
@@ -540,9 +729,9 @@
       "source_file": "app/components/CheckoutForm.tsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_checkoutform_tsx",
-      "target": "app_components_paymentmethods_tsx",
-      "confidence_score": 1.0
+      "target": "app_components_paymentmethods_tsx"
     },
     {
       "relation": "imports_from",
@@ -551,9 +740,9 @@
       "source_file": "app/components/CheckoutForm.tsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_checkoutform_tsx",
-      "target": "app_utils_cashondeliverychecker_js",
-      "confidence_score": 1.0
+      "target": "app_utils_cashondeliverychecker_js"
     },
     {
       "relation": "imports",
@@ -562,9 +751,9 @@
       "source_file": "app/components/CheckoutForm.tsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_checkoutform_tsx",
-      "target": "utils_cashondeliverychecker_iscityeligibleforcashondelivery",
-      "confidence_score": 1.0
+      "target": "utils_cashondeliverychecker_iscityeligibleforcashondelivery"
     },
     {
       "relation": "contains",
@@ -572,9 +761,9 @@
       "source_file": "app/components/CheckoutForm.tsx",
       "source_location": "L32",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_checkoutform_tsx",
-      "target": "components_checkoutform_handlecityselect",
-      "confidence_score": 1.0
+      "target": "components_checkoutform_handlecityselect"
     },
     {
       "relation": "contains",
@@ -582,9 +771,9 @@
       "source_file": "app/components/CheckoutForm.tsx",
       "source_location": "L38",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_checkoutform_tsx",
-      "target": "components_checkoutform_handlepaymentmethodselect",
-      "confidence_score": 1.0
+      "target": "components_checkoutform_handlepaymentmethodselect"
     },
     {
       "relation": "contains",
@@ -592,9 +781,9 @@
       "source_file": "app/components/CheckoutForm.tsx",
       "source_location": "L45",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_checkoutform_tsx",
-      "target": "components_checkoutform_handlecheckout",
-      "confidence_score": 1.0
+      "target": "components_checkoutform_handlecheckout"
     },
     {
       "relation": "contains",
@@ -602,9 +791,9 @@
       "source_file": "app/components/CitySelector.tsx",
       "source_location": "L42",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_cityselector_tsx",
-      "target": "components_cityselector_handlecityselect",
-      "confidence_score": 1.0
+      "target": "components_cityselector_handlecityselect"
     },
     {
       "relation": "contains",
@@ -612,9 +801,9 @@
       "source_file": "app/components/Header.tsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_header_tsx",
-      "target": "components_header_header",
-      "confidence_score": 1.0
+      "target": "components_header_header"
     },
     {
       "relation": "contains",
@@ -622,9 +811,9 @@
       "source_file": "app/components/PaymentMethods.tsx",
       "source_location": "L46",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_paymentmethods_tsx",
-      "target": "components_paymentmethods_handleselectmethod",
-      "confidence_score": 1.0
+      "target": "components_paymentmethods_handleselectmethod"
     },
     {
       "relation": "contains",
@@ -632,9 +821,9 @@
       "source_file": "app/components/ProductCard.tsx",
       "source_location": "L21",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_productcard_tsx",
-      "target": "components_productcard_handleaddtocart",
-      "confidence_score": 1.0
+      "target": "components_productcard_handleaddtocart"
     },
     {
       "relation": "imports_from",
@@ -643,9 +832,9 @@
       "source_file": "app/components/ProductGrid.tsx",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_productgrid_tsx",
-      "target": "app_components_productcard_tsx",
-      "confidence_score": 1.0
+      "target": "app_components_productcard_tsx"
     },
     {
       "relation": "contains",
@@ -653,9 +842,9 @@
       "source_file": "app/components/TattooShopHome.tsx",
       "source_location": "L79",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_tattooshophome_tsx",
-      "target": "components_tattooshophome_fmt",
-      "confidence_score": 1.0
+      "target": "components_tattooshophome_fmt"
     },
     {
       "relation": "contains",
@@ -663,9 +852,9 @@
       "source_file": "app/components/TattooShopHome.tsx",
       "source_location": "L102",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_tattooshophome_tsx",
-      "target": "components_tattooshophome_onscroll",
-      "confidence_score": 1.0
+      "target": "components_tattooshophome_onscroll"
     },
     {
       "relation": "contains",
@@ -673,9 +862,9 @@
       "source_file": "app/components/TattooShopHome.tsx",
       "source_location": "L112",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_tattooshophome_tsx",
-      "target": "components_tattooshophome_addtocart",
-      "confidence_score": 1.0
+      "target": "components_tattooshophome_addtocart"
     },
     {
       "relation": "contains",
@@ -683,9 +872,9 @@
       "source_file": "app/components/TattooShopHome.tsx",
       "source_location": "L123",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_tattooshophome_tsx",
-      "target": "components_tattooshophome_removefromcart",
-      "confidence_score": 1.0
+      "target": "components_tattooshophome_removefromcart"
     },
     {
       "relation": "contains",
@@ -693,9 +882,9 @@
       "source_file": "app/components/TattooShopHome.tsx",
       "source_location": "L124",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_tattooshophome_tsx",
-      "target": "components_tattooshophome_changeqty",
-      "confidence_score": 1.0
+      "target": "components_tattooshophome_changeqty"
     },
     {
       "relation": "contains",
@@ -703,9 +892,9 @@
       "source_file": "app/components/TattooShopHome.tsx",
       "source_location": "L134",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_tattooshophome_tsx",
-      "target": "components_tattooshophome_handlenewsletter",
-      "confidence_score": 1.0
+      "target": "components_tattooshophome_handlenewsletter"
     },
     {
       "relation": "contains",
@@ -713,9 +902,9 @@
       "source_file": "app/components/TattooShopHome.tsx",
       "source_location": "L594",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_components_tattooshophome_tsx",
-      "target": "components_tattooshophome_handleadd",
-      "confidence_score": 1.0
+      "target": "components_tattooshophome_handleadd"
     },
     {
       "relation": "contains",
@@ -723,9 +912,9 @@
       "source_file": "app/utils/cashOnDeliveryChecker.js",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_utils_cashondeliverychecker_js",
-      "target": "utils_cashondeliverychecker_iscityeligibleforcashondelivery",
-      "confidence_score": 1.0
+      "target": "utils_cashondeliverychecker_iscityeligibleforcashondelivery"
     },
     {
       "relation": "contains",
@@ -733,8 +922,208 @@
       "source_file": "app/utils/cashOnDeliveryChecker.js",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_utils_cashondeliverychecker_js",
-      "target": "utils_cashondeliverychecker_getmaincityforsuburb",
+      "target": "utils_cashondeliverychecker_getmaincityforsuburb"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "readme_md",
+      "target": "tattooshopcol_readme_tattooshop_colombia",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_tattooshop_colombia",
+      "target": "tattooshopcol_readme_features",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_tattooshop_colombia",
+      "target": "tattooshopcol_readme_tech_stack",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_tattooshop_colombia",
+      "target": "tattooshopcol_readme_getting_started",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_tattooshop_colombia",
+      "target": "tattooshopcol_readme_project_structure",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L80",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_tattooshop_colombia",
+      "target": "tattooshopcol_readme_key_features",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L102",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_tattooshop_colombia",
+      "target": "tattooshopcol_readme_configuration",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L120",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_tattooshop_colombia",
+      "target": "tattooshopcol_readme_loading_states",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L126",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_tattooshop_colombia",
+      "target": "tattooshopcol_readme_responsive_design",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L131",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_tattooshop_colombia",
+      "target": "tattooshopcol_readme_future_enhancements",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_getting_started",
+      "target": "tattooshopcol_readme_codeblock_1",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L57",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_project_structure",
+      "target": "tattooshopcol_readme_codeblock_2",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L82",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_key_features",
+      "target": "tattooshopcol_readme_cash_on_delivery_logic",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L89",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_key_features",
+      "target": "tattooshopcol_readme_trust_badges",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_key_features",
+      "target": "tattooshopcol_readme_product_tags",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L84",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_cash_on_delivery_logic",
+      "target": "tattooshopcol_readme_codeblock_3",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L104",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_configuration",
+      "target": "tattooshopcol_readme_whatsapp_integration",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L110",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_configuration",
+      "target": "tattooshopcol_readme_color_scheme",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L106",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_whatsapp_integration",
+      "target": "tattooshopcol_readme_codeblock_4",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L112",
+      "weight": 1.0,
+      "source": "tattooshopcol_readme_color_scheme",
+      "target": "tattooshopcol_readme_codeblock_5",
       "confidence_score": 1.0
     },
     {
@@ -800,5 +1189,5 @@
       "source_file": "app/components/TattooShopHome.tsx"
     }
   ],
-  "built_at_commit": "c5c871705ac32f4d6f84a5c2911bfca841c2a02c"
+  "built_at_commit": "78a8a36f7f8bef0e48c9c2b93932de6fc83ac395"
 }
