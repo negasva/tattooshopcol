@@ -75,12 +75,93 @@ function LogoMark({ accent }: { accent: string }) {
   );
 }
 
+function CartDrawer({ cart, onClose, onRemove, onQty, accent, onCheckout }: { cart: CartItem[]; onClose: () => void; onRemove: (id: string) => void; onQty: (id: string, delta: number) => void; accent: string; onCheckout: () => void }) {
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 800, backdropFilter: 'blur(4px)' }} />
+      <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'clamp(320px,40vw,480px)', background: '#181818', zIndex: 900, display: 'flex', flexDirection: 'column', borderLeft: '1px solid #2e2e2e', boxShadow: '-20px 0 60px rgba(0,0,0,0.6)' }}>
+        <div style={{ padding: '28px 28px 20px', borderBottom: '1px solid #2e2e2e', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '2px', textTransform: 'uppercase' }}>Carrito</span>
+            <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '28px', lineHeight: 1, marginTop: '4px', color: 'var(--text)' }}>
+              {cart.length} {cart.length === 1 ? 'ítem' : 'ítems'}
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: '1px solid #2e2e2e', color: 'var(--text)', cursor: 'pointer', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'border-color 0.2s' }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = accent; }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2e2e2e'; }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '20px', height: '20px' }}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 28px' }}>
+          {cart.length === 0 ? (
+            <div style={{ paddingTop: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: '40px', marginBottom: '16px', opacity: 0.3 }}>∅</div>
+              <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', letterSpacing: '1px' }}>Tu carrito está vacío</p>
+            </div>
+          ) : (
+            cart.map((item) => (
+              <div key={item.id} style={{ padding: '20px 0', borderBottom: '1px solid #2a2a2a', display: 'flex', gap: '16px', alignItems: 'center' }}>
+                <div style={{ width: '64px', height: '64px', background: '#1e1e1e', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: '24px', opacity: 0.3 }}>{getCategoryIcon(item.category)}</span>
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '3px' }}>
+                    {item.category.toUpperCase()}
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {item.name}
+                  </div>
+                  <div style={{ color: accent, fontFamily: '"DM Mono", monospace', fontSize: '13px', marginTop: '4px' }}>{fmt(item.price)}</div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1px solid #2e2e2e' }}>
+                    <button onClick={() => onQty(item.id, -1)} style={{ width: '28px', height: '28px', background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                    <span style={{ width: '28px', textAlign: 'center', fontFamily: '"DM Mono", monospace', fontSize: '12px' }}>{item.qty}</span>
+                    <button onClick={() => onQty(item.id, 1)} style={{ width: '28px', height: '28px', background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                  </div>
+                  <button onClick={() => onRemove(item.id)} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '11px', fontFamily: '"DM Mono", monospace', transition: 'color 0.2s' }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#e55'; }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#555'; }}>
+                    eliminar
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {cart.length > 0 && (
+          <div style={{ padding: '24px 28px', borderTop: '1px solid #2e2e2e' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+              <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1px' }}>SUBTOTAL</span>
+              <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '26px', color: accent }}>{fmt(total)}</span>
+            </div>
+            <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-dim)', marginBottom: '20px' }}>Envío calculado al pagar · IVA incluido</p>
+            <button style={{ width: '100%', padding: '16px', background: accent, color: '#111', border: 'none', fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px', letterSpacing: '1px', cursor: 'pointer', transition: 'background 0.2s,transform 0.1s' }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#ffe033'; }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = accent; }} onClick={onCheckout} onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.98)'; }} onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}>
+              PAGAR AHORA
+            </button>
+            <button onClick={onClose} style={{ width: '100%', marginTop: '10px', padding: '12px', background: 'none', color: 'var(--text-muted)', border: '1px solid #2e2e2e', fontFamily: '"DM Mono", monospace', fontSize: '12px', letterSpacing: '1px', cursor: 'pointer', transition: 'border-color 0.2s,color 0.2s' }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = accent; (e.currentTarget as HTMLButtonElement).style.color = accent; }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2e2e2e'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; }}>
+              SEGUIR COMPRANDO
+            </button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 export default function ProductDetailClient({ product }: { product: Product }) {
   const accent = '#FFD400';
   const router = useRouter();
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
 
   const hasDiscount = !!(product.discount_percentage && product.discount_percentage > 0);
   const originalPrice = (product.original_price && product.original_price > product.price)
@@ -95,13 +176,19 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     : product.price;
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('ts_cart');
-      if (stored) {
-        const cart: CartItem[] = JSON.parse(stored);
-        setCartCount(cart.reduce((s, i) => s + i.qty, 0));
-      }
-    } catch {}
+    const load = () => {
+      try {
+        const stored = localStorage.getItem('ts_cart');
+        if (stored) {
+          const c: CartItem[] = JSON.parse(stored);
+          setCart(c);
+          setCartCount(c.reduce((s, i) => s + i.qty, 0));
+        }
+      } catch {}
+    };
+    load();
+    window.addEventListener('storage', load);
+    return () => window.removeEventListener('storage', load);
   }, []);
 
   const handleAddToCart = () => {
@@ -125,14 +212,28 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const handleBuyNow = () => {
     try {
       const stored = localStorage.getItem('ts_cart');
-      const cart: CartItem[] = stored ? JSON.parse(stored) : [];
-      const existing = cart.find((i) => i.id === product.id);
+      const c: CartItem[] = stored ? JSON.parse(stored) : [];
+      const existing = c.find((i) => i.id === product.id);
       const updated = existing
-        ? cart.map((i) => (i.id === product.id ? { ...i, qty: i.qty + qty } : i))
-        : [...cart, { ...product, qty }];
+        ? c.map((i) => (i.id === product.id ? { ...i, qty: i.qty + qty } : i))
+        : [...c, { ...product, qty }];
       localStorage.setItem('ts_cart', JSON.stringify(updated));
     } catch {}
     router.push('/checkout');
+  };
+
+  const removeFromCart = (id: string) => {
+    const updated = cart.filter((i) => i.id !== id);
+    setCart(updated);
+    localStorage.setItem('ts_cart', JSON.stringify(updated));
+    setCartCount(updated.reduce((s, i) => s + i.qty, 0));
+  };
+
+  const changeQty = (id: string, delta: number) => {
+    const updated = cart.map((i) => (i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i)).filter((i) => i.qty > 0);
+    setCart(updated);
+    localStorage.setItem('ts_cart', JSON.stringify(updated));
+    setCartCount(updated.reduce((s, i) => s + i.qty, 0));
   };
 
   // Parsear specs: líneas entre * son sub-items (fuente más pequeña)
@@ -198,8 +299,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             ← Volver al catálogo
           </Link>
 
-          <Link
-            href="/checkout"
+          <button
+            onClick={() => setCartOpen(true)}
             style={{
               background: cartCount > 0 ? accent : 'transparent',
               color: cartCount > 0 ? '#111' : 'var(--text)',
@@ -217,7 +318,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           >
             <span>CARRITO</span>
             {cartCount > 0 && <span style={{ fontWeight: 700 }}>{cartCount}</span>}
-          </Link>
+          </button>
         </div>
       </nav>
 
@@ -718,6 +819,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           ← Ver todos los productos
         </Link>
       </footer>
+
+      {cartOpen && <CartDrawer cart={cart} onClose={() => setCartOpen(false)} onRemove={removeFromCart} onQty={changeQty} accent={accent} onCheckout={() => { setCartOpen(false); router.push('/checkout'); }} />}
     </div>
   );
 }
