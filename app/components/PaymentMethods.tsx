@@ -11,6 +11,9 @@ const BankIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor
 const PhoneIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '22px', height: '22px' }}><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>;
 const HomeIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '22px', height: '22px' }}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
 const CheckIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '16px', height: '16px' }}><polyline points="20 6 9 17 4 12"/></svg>;
+const NequiIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '22px', height: '22px' }}><path d="M12 2l3 7h7l-5.5 4 2 7-6.5-5-6.5 5 2-7-5.5-4h7z"/></svg>;
+const DaviplataIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '22px', height: '22px' }}><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 12h10"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="15" x2="17" y2="15"/></svg>;
+const BancolombiaIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '22px', height: '22px' }}><rect x="2" y="6" width="20" height="12" rx="1"/><path d="M6 10v4M9 10v4M12 10v4M15 10v4M18 10v4"/></svg>;
 
 const METHODS = [
   {
@@ -31,9 +34,9 @@ const METHODS = [
     icon: PhoneIcon,
     description: 'Nequi · Daviplata · Bancolombia',
     subOptions: [
-      { key: 'nequi',       label: 'Nequi',       icon: PhoneIcon, desc: 'Billetera digital Nequi' },
-      { key: 'daviplata',   label: 'Daviplata',   icon: BankIcon, desc: 'Billetera Davivienda' },
-      { key: 'bancolombia', label: 'Bancolombia', icon: BankIcon, desc: 'Cuenta Bancolombia' },
+      { key: 'nequi',       label: 'Nequi',       icon: NequiIcon, desc: 'Billetera digital Nequi' },
+      { key: 'daviplata',   label: 'Daviplata',   icon: DaviplataIcon, desc: 'Billetera Davivienda' },
+      { key: 'bancolombia', label: 'Bancolombia', icon: BancolombiaIcon, desc: 'Cuenta Bancolombia' },
     ],
   },
   {

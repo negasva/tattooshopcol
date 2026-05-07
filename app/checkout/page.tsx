@@ -84,6 +84,24 @@ export default function CheckoutPage() {
 
   const isCash = selectedMethod === 'cash';
 
+  const changeQty = (itemId: string, delta: number) => {
+    const updated = cart.map((i) => {
+      if (i.id === itemId) {
+        const newQty = Math.max(1, i.qty + delta);
+        return { ...i, qty: newQty };
+      }
+      return i;
+    }).filter((i) => i.qty > 0);
+    setCart(updated);
+    localStorage.setItem('ts_cart', JSON.stringify(updated));
+  };
+
+  const removeItem = (itemId: string) => {
+    const updated = cart.filter((i) => i.id !== itemId);
+    setCart(updated);
+    localStorage.setItem('ts_cart', JSON.stringify(updated));
+  };
+
   const handleCheckout = () => {
     if (!canCheckout) return;
     setIsProcessing(true);
@@ -308,15 +326,40 @@ export default function CheckoutPage() {
                   const sp = salePrice(item);
                   const hasDisc = sp < item.price;
                   return (
-                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '14px 16px', borderBottom: '1px solid var(--border)', gap: '12px' }}>
+                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid var(--border)', gap: '12px' }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text)', lineHeight: 1.4 }}>{item.name}</div>
-                        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', marginTop: '3px' }}>
-                          {item.qty > 1 ? `${item.qty} uds × ${fmt(sp)}` : '1 unidad'}
-                          {hasDisc && <span style={{ color: '#e55', marginLeft: '8px' }}>-{item.discount_percentage}%</span>}
+                        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>{fmt(sp)}</span>
+                          {hasDisc && <span style={{ color: '#e55' }}>-{item.discount_percentage}%</span>}
                         </div>
                       </div>
-                      <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: accent, flexShrink: 0 }}>{fmt(sp * item.qty)}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1px solid var(--border)' }}>
+                          <button
+                            onClick={() => changeQty(item.id, -1)}
+                            style={{ width: '32px', height: '32px', background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color 0.2s' }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = accent; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)'; }}
+                          >−</button>
+                          <span style={{ width: '32px', textAlign: 'center', fontFamily: '"DM Mono", monospace', fontSize: '11px', borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>{item.qty}</span>
+                          <button
+                            onClick={() => changeQty(item.id, 1)}
+                            style={{ width: '32px', height: '32px', background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color 0.2s' }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = accent; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)'; }}
+                          >+</button>
+                        </div>
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '11px', fontFamily: '"DM Mono", monospace', transition: 'color 0.2s' }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#e55'; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#666'; }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '16px', color: accent, flexShrink: 0, minWidth: '80px', textAlign: 'right' }}>{fmt(sp * item.qty)}</div>
                     </div>
                   );
                 })}
@@ -352,13 +395,13 @@ export default function CheckoutPage() {
             <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', letterSpacing: '3px', marginBottom: '12px' }}>COMPRA SEGURA</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'var(--border)' }}>
               {[
-                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, label: 'SSL', sub: 'Encriptado' },
-                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>, label: 'Wompi', sub: 'Seguro' },
-                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>, label: 'PSE', sub: 'Bancario' },
-                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>, label: 'Billeteras', sub: 'Digitales' },
+                { icon: '🔒', label: 'SSL', sub: 'Encriptado' },
+                { icon: '💳', label: 'Wompi', sub: 'Seguro' },
+                { icon: '🏦', label: 'PSE', sub: 'Bancario' },
+                { icon: '📱', label: 'Billeteras', sub: 'Digitales' },
               ].map((b) => (
                 <div key={b.label} style={{ background: 'var(--bg)', padding: '12px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '18px', marginBottom: '4px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-muted)' }}>{b.icon}</div>
+                  <div style={{ fontSize: '18px', marginBottom: '4px' }}>{b.icon}</div>
                   <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '1px' }}>{b.label}</div>
                   <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '8px', color: 'var(--text-dim)', marginTop: '2px' }}>{b.sub}</div>
                 </div>
