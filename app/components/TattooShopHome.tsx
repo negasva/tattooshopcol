@@ -100,6 +100,8 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
     setTimeout(() => setAdded(false), 1400);
   };
 
+  const hasDiscount = product.discount_percentage && product.discount_percentage > 0;
+
   return (
     <div
       onMouseEnter={() => setHovered(true)}
@@ -112,9 +114,29 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
+        boxShadow: hasDiscount ? `0 0 24px rgba(229, 85, 85, 0.3)` : 'none',
       }}
     >
-      {product.tag && (
+      {(product.discount_percentage && product.discount_percentage > 0) ? (
+        <div
+          style={{
+            position: 'absolute',
+            top: 12,
+            left: 12,
+            zIndex: 2,
+            background: '#e55',
+            color: '#fff',
+            fontFamily: '"DM Mono", monospace',
+            fontSize: '9px',
+            letterSpacing: '2px',
+            padding: '3px 8px',
+            textTransform: 'uppercase',
+            fontWeight: '700',
+          }}
+        >
+          -{product.discount_percentage}%
+        </div>
+      ) : product.tag && (
         <div
           style={{
             position: 'absolute',
@@ -186,7 +208,14 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
           {product.name}
         </div>
         <div style={{ marginTop: 'auto', paddingTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-          <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', color: accent }}>{fmt(product.price)}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {hasDiscount && product.original_price && (
+              <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '14px', color: 'var(--text-muted)', textDecoration: 'line-through', opacity: 0.5 }}>
+                {fmt(product.original_price)}
+              </span>
+            )}
+            <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', color: accent }}>{fmt(product.price)}</span>
+          </div>
           <button
             onClick={handleAdd}
             style={{

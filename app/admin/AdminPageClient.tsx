@@ -488,7 +488,8 @@ export default function AdminPageClient() {
                     <th style={{ padding: '16px', textAlign: 'left', color: 'var(--accent)', fontWeight: '600' }}>Imagen</th>
                     <th style={{ padding: '16px', textAlign: 'left', color: 'var(--accent)', fontWeight: '600' }}>Nombre</th>
                     <th style={{ padding: '16px', textAlign: 'left', color: 'var(--accent)', fontWeight: '600' }}>Categoría</th>
-                    <th style={{ padding: '16px', textAlign: 'right', color: 'var(--accent)', fontWeight: '600' }}>Precio</th>
+                    <th style={{ padding: '16px', textAlign: 'right', color: 'var(--accent)', fontWeight: '600' }}>Precio Original</th>
+                    <th style={{ padding: '16px', textAlign: 'right', color: 'var(--accent)', fontWeight: '600' }}>Precio Final</th>
                     <th style={{ padding: '16px', textAlign: 'right', color: 'var(--accent)', fontWeight: '600' }}>Descuento</th>
                     <th style={{ padding: '16px', textAlign: 'center', color: 'var(--accent)', fontWeight: '600' }}>Inventario</th>
                     <th style={{ padding: '16px', textAlign: 'center', color: 'var(--accent)', fontWeight: '600' }}>Acciones</th>
@@ -506,10 +507,13 @@ export default function AdminPageClient() {
                       </td>
                       <td style={{ padding: '16px', color: 'var(--text)' }}>{product.name}</td>
                       <td style={{ padding: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>{product.category}</td>
+                      <td style={{ padding: '16px', textAlign: 'right', color: product.original_price ? 'var(--accent)' : 'var(--text-muted)' }}>
+                        {product.original_price ? `$${product.original_price.toLocaleString('es-CO')}` : '—'}
+                      </td>
                       <td style={{ padding: '16px', textAlign: 'right', color: 'var(--accent)', fontWeight: '600' }}>
                         ${product.price.toLocaleString('es-CO')}
                       </td>
-                      <td style={{ padding: '16px', textAlign: 'right', color: product.discount_percentage && product.discount_percentage > 0 ? 'var(--accent)' : 'var(--text-muted)' }}>
+                      <td style={{ padding: '16px', textAlign: 'right', color: product.discount_percentage && product.discount_percentage > 0 ? '#e55' : 'var(--text-muted)' }}>
                         {product.discount_percentage && product.discount_percentage > 0 ? `${product.discount_percentage}%` : '—'}
                       </td>
                       <td style={{ padding: '16px', textAlign: 'center', color: product.inventory > 0 ? 'var(--text)' : '#e55' }}>
