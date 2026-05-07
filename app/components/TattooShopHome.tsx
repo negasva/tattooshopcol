@@ -102,12 +102,18 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
   };
 
   const hasDiscount = !!(product.discount_percentage && product.discount_percentage > 0);
-  // Calculate original price if not stored but discount % exists
-  const originalPrice = product.original_price && product.original_price > product.price
+  // Si original_price está guardado: precio = sale, original_price = tachado
+  // Si no: price = precio original, sale = price - (price × pct/100)
+  const originalPrice = (product.original_price && product.original_price > product.price)
     ? product.original_price
     : hasDiscount
-    ? Math.round(product.price / (1 - (product.discount_percentage! / 100)))
+    ? product.price
     : null;
+  const salePrice = hasDiscount
+    ? (product.original_price && product.original_price > product.price
+        ? product.price
+        : Math.round(product.price - product.price * (product.discount_percentage! / 100)))
+    : product.price;
 
   return (
     <div
@@ -202,28 +208,29 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'rgba(0,0,0,0)',
+              background: hovered ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'background 0.25s',
-              ...(hovered ? { background: 'rgba(0,0,0,0.35)' } : {}),
+              pointerEvents: 'none',
             }}
           >
-            {hovered && (
-              <span style={{
-                fontFamily: '"DM Mono", monospace',
-                fontSize: '10px',
-                color: accent,
-                letterSpacing: '2px',
-                border: `1px solid ${accent}`,
-                padding: '8px 16px',
-                background: 'rgba(0,0,0,0.6)',
-                textTransform: 'uppercase',
-              }}>
-                VER DETALLE →
-              </span>
-            )}
+            <span style={{
+              fontFamily: '"DM Mono", monospace',
+              fontSize: '10px',
+              color: accent,
+              letterSpacing: '2px',
+              border: `1px solid ${accent}`,
+              padding: '8px 16px',
+              background: 'rgba(0,0,0,0.7)',
+              textTransform: 'uppercase',
+              opacity: hovered ? 1 : 0,
+              transform: hovered ? 'translateY(0)' : 'translateY(6px)',
+              transition: 'opacity 0.2s, transform 0.2s',
+            }}>
+              VER DETALLE →
+            </span>
           </div>
         </div>
       </Link>
@@ -253,7 +260,7 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
                 {fmt(originalPrice)}
               </span>
             )}
-            <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px', fontWeight: '700', color: accent }}>{fmt(product.price)}</span>
+            <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px', fontWeight: '700', color: accent }}>{fmt(salePrice)}</span>
           </div>
           <button
             onClick={handleAdd}

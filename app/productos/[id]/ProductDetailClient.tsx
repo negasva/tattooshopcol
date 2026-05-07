@@ -81,12 +81,16 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [cartCount, setCartCount] = useState(0);
 
   const hasDiscount = !!(product.discount_percentage && product.discount_percentage > 0);
-  const originalPrice =
-    product.original_price && product.original_price > product.price
-      ? product.original_price
-      : hasDiscount
-      ? Math.round(product.price / (1 - product.discount_percentage! / 100))
-      : null;
+  const originalPrice = (product.original_price && product.original_price > product.price)
+    ? product.original_price
+    : hasDiscount
+    ? product.price
+    : null;
+  const salePrice = hasDiscount
+    ? (product.original_price && product.original_price > product.price
+        ? product.price
+        : Math.round(product.price - product.price * (product.discount_percentage! / 100)))
+    : product.price;
 
   useEffect(() => {
     try {
@@ -353,7 +357,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 lineHeight: 1,
               }}
             >
-              {fmt(product.price)}
+              {fmt(salePrice)}
             </span>
             {hasDiscount && originalPrice && (
               <span
@@ -367,7 +371,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 {fmt(originalPrice)}
               </span>
             )}
-            {hasDiscount && (
+            {hasDiscount && originalPrice && (
               <span
                 style={{
                   fontFamily: '"DM Mono", monospace',
@@ -378,7 +382,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   padding: '4px 8px',
                 }}
               >
-                AHORRAS {fmt((originalPrice || 0) - product.price)}
+                AHORRAS {fmt(originalPrice - salePrice)}
               </span>
             )}
           </div>
@@ -572,7 +576,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 TOTAL ({qty} unidades)
               </span>
               <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '28px', color: accent }}>
-                {fmt(product.price * qty)}
+                {fmt(salePrice * qty)}
               </span>
             </div>
           )}
