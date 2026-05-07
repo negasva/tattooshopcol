@@ -331,7 +331,7 @@ export default function AdminPageClient() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Precio con Descuento (COP)</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Precio Final (Lo que Paga el Cliente)</label>
                 <input
                   type="number"
                   value={formData.price}
@@ -348,7 +348,7 @@ export default function AdminPageClient() {
                 />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Precio Original (COP)</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Precio Original (Sin Descuento)</label>
                 <input
                   type="number"
                   value={formData.original_price}
