@@ -188,15 +188,27 @@ export default function CheckoutPage() {
           <CitySelector onCitySelect={(city, eligible) => { setSelectedCity(city); setCashEligible(eligible); setSelectedMethod(''); setSelectedSub(''); }} />
 
           {selectedCity && !cashEligible && (
-            <div style={{ background: 'rgba(255,212,0,0.06)', border: `1px solid ${accent}33`, padding: '14px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '16px', flexShrink: 0 }}>⚠️</span>
-              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1.7 }}>
-                Pago contra entrega no disponible en tu ciudad.{' '}
-                <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Para verificar si en mi zona hay cobertura de contra entrega, me encuentro en…')}`}
-                  target="_blank" rel="noopener noreferrer" style={{ color: '#25d366', textDecoration: 'none' }}>
-                  💬 Verifica con nosotros →
-                </a>
+            <div style={{ background: 'rgba(255,212,0,0.06)', border: `1px solid ${accent}33`, padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-start' }}>
+              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text)', lineHeight: 1.7 }}>
+                Para pago contra entrega en esta ciudad es necesario verificar via whatsapp
               </div>
+              <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Quiero verificar la disponibilidad de contra entrega en mi ciudad…')}`}
+                target="_blank" rel="noopener noreferrer"
+                style={{
+                  background: '#25d366',
+                  color: '#fff',
+                  padding: '10px 16px',
+                  borderRadius: '4px',
+                  textDecoration: 'none',
+                  fontFamily: '"DM Mono", monospace',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  letterSpacing: '1px',
+                  transition: 'background 0.2s',
+                  display: 'inline-block',
+                }}>
+                💬 VERIFICA CON NOSOTROS
+              </a>
             </div>
           )}
 
