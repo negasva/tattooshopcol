@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../lib/supabase';
 
 interface Product {
   id: string;
@@ -507,7 +507,8 @@ export default function TattooShopHome() {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const { data, error } = await supabase
+        const sb = getSupabase();
+        const { data, error } = await sb
           .from('products')
           .select('*')
           .order('created_at', { ascending: false });
