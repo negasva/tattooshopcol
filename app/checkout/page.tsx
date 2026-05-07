@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import CitySelector from '../components/CitySelector';
-import PaymentMethods from '../components/PaymentMethods';
+import PaymentMethods, { COD_FEE } from '../components/PaymentMethods';
 
 const accent = '#FFD400';
 const WHATSAPP = '573000000000';
+// Wompi public key — reemplaza con tu llave real de producción
+const WOMPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY || 'pub_test_XXXXXXXXXXXXXXXX';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n);
@@ -29,7 +31,6 @@ function LogoMark() {
       <line x1="60" y1="20" x2="60" y2="90" stroke={accent} strokeWidth="2.5" strokeLinecap="round" />
       <polygon points="60,90 55,75 65,75" fill={accent} />
       <line x1="38" y1="45" x2="82" y2="45" stroke={accent} strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
-      <line x1="44" y1="36" x2="76" y2="36" stroke={accent} strokeWidth="0.8" strokeLinecap="round" opacity="0.4" />
     </svg>
   );
 }
@@ -38,7 +39,8 @@ export default function CheckoutPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCity, setSelectedCity] = useState('');
   const [cashEligible, setCashEligible] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState('');
+  const [selectedMethod, setSelectedMethod] = useState('');
+  const [selectedSub, setSelectedSub] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [navScrolled, setNavScrolled] = useState(false);
 
@@ -63,34 +65,83 @@ export default function CheckoutPage() {
     return item.price;
   };
 
-  const total = cart.reduce((s, i) => s + salePrice(i) * i.qty, 0);
+  const subtotal = cart.reduce((s, i) => s + salePrice(i) * i.qty, 0);
+  const codFee = selectedMethod === 'cash' ? COD_FEE : 0;
+  const total = subtotal + codFee;
 
   const methods = cashEligible
-    ? ['card', 'pse', 'nequi', 'daviplata', 'cash']
-    : ['card', 'pse', 'nequi', 'daviplata'];
+    ? ['card', 'pse', 'transfer', 'cash']
+    : ['card', 'pse', 'transfer'];
 
-  const handleCitySelect = (city: string, eligible: boolean) => {
-    setSelectedCity(city);
-    setCashEligible(eligible);
-    setSelectedPayment('');
+  const handleMethodSelect = (method: string, sub?: string) => {
+    setSelectedMethod(method);
+    setSelectedSub(sub || '');
   };
+
+  const canCheckout = selectedCity && selectedMethod &&
+    (selectedMethod !== 'transfer' || selectedSub) &&
+    cart.length > 0;
+
+  const isCash = selectedMethod === 'cash';
 
   const handleCheckout = () => {
-    if (!selectedCity || !selectedPayment) {
-      alert('Selecciona tu ciudad y método de pago para continuar');
+    if (!canCheckout) return;
+    setIsProcessing(true);
+
+    if (isCash) {
+      // Contra entrega → WhatsApp
+      const msg = encodeURIComponent(
+        `Hola! Quiero hacer un pedido con pago contra entrega.\n\n` +
+        `Pedido:\n${cart.map((i) => `• ${i.name} x${i.qty} — ${fmt(salePrice(i) * i.qty)}`).join('\n')}\n\n` +
+        `Subtotal: ${fmt(subtotal)}\nCosto contra entrega: ${fmt(COD_FEE)}\nTotal: ${fmt(total)}\n` +
+        `Ciudad: ${selectedCity}`
+      );
+      setTimeout(() => {
+        window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank');
+        setIsProcessing(false);
+      }, 400);
       return;
     }
-    setIsProcessing(true);
-    const msg = encodeURIComponent(
-      `Hola! Quiero finalizar mi compra.\n\nPedido:\n${cart.map((i) => `• ${i.name} x${i.qty} — ${fmt(salePrice(i) * i.qty)}`).join('\n')}\n\nTotal: ${fmt(total)}\nCiudad: ${selectedCity}\nMétodo de pago: ${selectedPayment}`
-    );
-    setTimeout(() => {
-      window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank');
-      setIsProcessing(false);
-    }, 600);
+
+    if (selectedMethod === 'card' || selectedMethod === 'pse') {
+      // Wompi checkout
+      const reference = `order-${Date.now()}`;
+      const amountCents = total * 100;
+      const currency = 'COP';
+      // Redirect to Wompi hosted checkout
+      const wompiUrl = selectedMethod === 'pse'
+        ? `https://checkout.wompi.co/p/?public-key=${WOMPI_PUBLIC_KEY}&currency=${currency}&amount-in-cents=${amountCents}&reference=${reference}&redirect-url=${encodeURIComponent(window.location.origin + '/checkout?success=1')}&payment-method=PSE`
+        : `https://checkout.wompi.co/p/?public-key=${WOMPI_PUBLIC_KEY}&currency=${currency}&amount-in-cents=${amountCents}&reference=${reference}&redirect-url=${encodeURIComponent(window.location.origin + '/checkout?success=1')}`;
+      setTimeout(() => {
+        window.location.href = wompiUrl;
+        setIsProcessing(false);
+      }, 400);
+      return;
+    }
+
+    if (selectedMethod === 'transfer') {
+      // Transferencia bancaria → WhatsApp con instrucciones
+      const subLabels: Record<string, string> = { nequi: 'Nequi', daviplata: 'Daviplata', bancolombia: 'Bancolombia' };
+      const msg = encodeURIComponent(
+        `Hola! Quiero pagar por ${subLabels[selectedSub] || 'transferencia bancaria'}.\n\n` +
+        `Pedido:\n${cart.map((i) => `• ${i.name} x${i.qty} — ${fmt(salePrice(i) * i.qty)}`).join('\n')}\n\n` +
+        `Total: ${fmt(total)}\nCiudad: ${selectedCity}\n\n` +
+        `Por favor envíenme los datos para realizar la transferencia.`
+      );
+      setTimeout(() => {
+        window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank');
+        setIsProcessing(false);
+      }, 400);
+    }
   };
 
-  const canCheckout = selectedCity && selectedPayment && cart.length > 0;
+  const btnLabel = isProcessing
+    ? 'PROCESANDO...'
+    : isCash
+    ? 'FINALIZAR POR WHATSAPP'
+    : selectedMethod === 'transfer'
+    ? 'FINALIZAR POR WHATSAPP'
+    : 'FINALIZAR COMPRA';
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
@@ -112,11 +163,7 @@ export default function CheckoutPage() {
             <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '8px', color: accent, letterSpacing: '3px' }}>COLOMBIA</div>
           </div>
         </Link>
-        <Link href="/" style={{
-          fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)',
-          letterSpacing: '1.5px', textDecoration: 'none', textTransform: 'uppercase',
-          display: 'flex', alignItems: 'center', gap: '6px', transition: 'color 0.2s',
-        }}
+        <Link href="/" style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1.5px', textDecoration: 'none', textTransform: 'uppercase', transition: 'color 0.2s' }}
           onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = accent; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)'; }}
         >
@@ -132,123 +179,98 @@ export default function CheckoutPage() {
         </h1>
       </div>
 
-      {/* MAIN */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-        gap: '1px',
-        background: 'var(--border)',
-        padding: 0,
-      }}>
+      {/* MAIN GRID */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1px', background: 'var(--border)' }}>
 
-        {/* LEFT — Formulario */}
-        <div style={{ background: 'var(--bg)', padding: 'clamp(24px,4vw,56px)' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '36px' }}>
+        {/* LEFT */}
+        <div style={{ background: 'var(--bg)', padding: 'clamp(24px,4vw,56px)', display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
-            {/* Ciudad */}
-            <CitySelector onCitySelect={handleCitySelect} />
+          <CitySelector onCitySelect={(city, eligible) => { setSelectedCity(city); setCashEligible(eligible); setSelectedMethod(''); setSelectedSub(''); }} />
 
-            {/* Pago contra entrega info */}
-            {selectedCity && !cashEligible && (
-              <div style={{
-                background: 'rgba(255,212,0,0.06)',
-                border: `1px solid ${accent}33`,
-                padding: '14px 16px',
-                display: 'flex',
-                gap: '12px',
-                alignItems: 'flex-start',
-              }}>
-                <span style={{ fontSize: '16px', flexShrink: 0 }}>⚠️</span>
-                <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1.7 }}>
-                  Pago contra entrega no disponible en tu ciudad.{' '}
-                  <a
-                    href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Para verificar si en mi zona hay cobertura de contra entrega, me encuentro en…')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: '#25d366', textDecoration: 'none', letterSpacing: '0.5px' }}
-                  >
-                    💬 Verifica con nosotros →
-                  </a>
-                </div>
+          {selectedCity && !cashEligible && (
+            <div style={{ background: 'rgba(255,212,0,0.06)', border: `1px solid ${accent}33`, padding: '14px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+              <span style={{ fontSize: '16px', flexShrink: 0 }}>⚠️</span>
+              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1.7 }}>
+                Pago contra entrega no disponible en tu ciudad.{' '}
+                <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Para verificar si en mi zona hay cobertura de contra entrega, me encuentro en…')}`}
+                  target="_blank" rel="noopener noreferrer" style={{ color: '#25d366', textDecoration: 'none' }}>
+                  💬 Verifica con nosotros →
+                </a>
               </div>
-            )}
+            </div>
+          )}
 
-            {selectedCity && cashEligible && (
-              <div style={{
-                background: 'rgba(37,211,102,0.06)',
-                border: '1px solid rgba(37,211,102,0.25)',
-                padding: '10px 16px',
-                fontFamily: '"DM Mono", monospace',
-                fontSize: '10px',
-                color: '#25d366',
-                letterSpacing: '0.5px',
-              }}>
-                ✓ Pago contra entrega disponible en {selectedCity}
-              </div>
-            )}
+          {selectedCity && cashEligible && (
+            <div style={{ background: 'rgba(37,211,102,0.06)', border: '1px solid rgba(37,211,102,0.25)', padding: '10px 16px', fontFamily: '"DM Mono", monospace', fontSize: '10px', color: '#25d366', letterSpacing: '0.5px' }}>
+              ✓ Pago contra entrega disponible en {selectedCity}
+            </div>
+          )}
 
-            {/* Métodos de pago */}
-            <PaymentMethods
-              availableMethods={methods}
-              selectedMethod={selectedPayment}
-              onSelectMethod={setSelectedPayment}
-            />
+          <PaymentMethods
+            availableMethods={methods}
+            selectedMethod={selectedMethod}
+            selectedSub={selectedSub}
+            onSelectMethod={handleMethodSelect}
+            cashEligible={cashEligible}
+          />
 
-            {/* Botón finalizar */}
-            <button
-              onClick={handleCheckout}
-              disabled={!canCheckout || isProcessing}
-              style={{
-                width: '100%',
-                padding: '20px',
-                background: canCheckout ? accent : 'var(--surface)',
-                color: canCheckout ? '#111' : 'var(--text-dim)',
-                border: `1px solid ${canCheckout ? accent : 'var(--border)'}`,
-                fontFamily: '"Bebas Neue", sans-serif',
-                fontSize: '26px',
-                letterSpacing: '2px',
-                cursor: canCheckout ? 'pointer' : 'not-allowed',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '12px',
-                boxShadow: canCheckout ? `0 0 28px ${accent}33` : 'none',
-              }}
-              onMouseEnter={(e) => { if (canCheckout) (e.currentTarget as HTMLButtonElement).style.background = '#ffe033'; }}
-              onMouseLeave={(e) => { if (canCheckout) (e.currentTarget as HTMLButtonElement).style.background = accent; }}
-            >
-              {isProcessing ? (
-                <><div className="spinner" style={{ borderTopColor: '#111' }} /> PROCESANDO...</>
-              ) : (
-                <>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.12-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
-                  FINALIZAR POR WHATSAPP
-                </>
-              )}
-            </button>
+          {/* Info Wompi */}
+          {(selectedMethod === 'card' || selectedMethod === 'pse') && (
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', padding: '12px 14px', fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', lineHeight: 1.7 }}>
+              🔒 Pago procesado de forma segura por{' '}
+              <span style={{ color: accent }}>Wompi (Bancolombia)</span>
+              {selectedMethod === 'pse' && ' — Serás redirigido a tu banco para completar la transferencia.'}
+              {selectedMethod === 'card' && ' — Encriptación SSL 256-bit. Aceptamos Visa, Mastercard y Amex.'}
+            </div>
+          )}
 
-            {!canCheckout && (
-              <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', textAlign: 'center', letterSpacing: '1px', marginTop: '-20px' }}>
-                {!selectedCity ? 'Selecciona tu ciudad para continuar' : 'Selecciona un método de pago'}
-              </p>
-            )}
-          </div>
+          {/* CTA */}
+          <button
+            onClick={handleCheckout}
+            disabled={!canCheckout || isProcessing}
+            style={{
+              width: '100%',
+              padding: '20px',
+              background: canCheckout ? accent : 'var(--surface)',
+              color: canCheckout ? '#111' : 'var(--text-dim)',
+              border: `1px solid ${canCheckout ? accent : 'var(--border)'}`,
+              fontFamily: '"Bebas Neue", sans-serif',
+              fontSize: '26px',
+              letterSpacing: '2px',
+              cursor: canCheckout ? 'pointer' : 'not-allowed',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px',
+              boxShadow: canCheckout ? `0 0 28px ${accent}33` : 'none',
+            }}
+            onMouseEnter={(e) => { if (canCheckout) (e.currentTarget as HTMLButtonElement).style.background = '#ffe033'; }}
+            onMouseLeave={(e) => { if (canCheckout) (e.currentTarget as HTMLButtonElement).style.background = accent; }}
+            onMouseDown={(e) => { if (canCheckout) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.98)'; }}
+            onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
+          >
+            {isCash || selectedMethod === 'transfer' ? <span>💬</span> : <span>🔒</span>}
+            {btnLabel}
+          </button>
+
+          {!canCheckout && (
+            <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', textAlign: 'center', letterSpacing: '1px', marginTop: '-16px' }}>
+              {!selectedCity ? 'Selecciona tu ciudad para continuar' : !selectedMethod ? 'Selecciona un método de pago' : 'Selecciona la plataforma de transferencia'}
+            </p>
+          )}
         </div>
 
-        {/* RIGHT — Resumen del pedido */}
+        {/* RIGHT — Resumen */}
         <div style={{ background: 'var(--surface)', padding: 'clamp(24px,4vw,56px)', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-
           <div>
             <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '16px' }}>RESUMEN DEL PEDIDO</div>
-
             {cart.length === 0 ? (
               <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-dim)', padding: '40px 0', textAlign: 'center' }}>
-                <div style={{ fontSize: '32px', opacity: 0.3, marginBottom: '12px' }}>∅</div>
-                Tu carrito está vacío
+                <div style={{ fontSize: '32px', opacity: 0.3, marginBottom: '12px' }}>∅</div>Tu carrito está vacío
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0', background: 'var(--bg)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
                 {cart.map((item) => {
                   const sp = salePrice(item);
                   const hasDisc = sp < item.price;
@@ -257,13 +279,11 @@ export default function CheckoutPage() {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text)', lineHeight: 1.4 }}>{item.name}</div>
                         <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', marginTop: '3px' }}>
-                          {item.qty > 1 ? `${item.qty} unidades × ${fmt(sp)}` : '1 unidad'}
+                          {item.qty > 1 ? `${item.qty} uds × ${fmt(sp)}` : '1 unidad'}
                           {hasDisc && <span style={{ color: '#e55', marginLeft: '8px' }}>-{item.discount_percentage}%</span>}
                         </div>
                       </div>
-                      <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: accent, flexShrink: 0 }}>
-                        {fmt(sp * item.qty)}
-                      </div>
+                      <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: accent, flexShrink: 0 }}>{fmt(sp * item.qty)}</div>
                     </div>
                   );
                 })}
@@ -271,13 +291,22 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          {/* Total */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-            <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '2px' }}>TOTAL</span>
-            <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '36px', color: accent }}>{fmt(total)}</span>
+          {/* Totales */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-dim)' }}>
+              <span>SUBTOTAL</span><span>{fmt(subtotal)}</span>
+            </div>
+            {codFee > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: '"DM Mono", monospace', fontSize: '10px', color: '#e88' }}>
+                <span>CONTRA ENTREGA</span><span>+ {fmt(COD_FEE)}</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '8px' }}>
+              <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '2px' }}>TOTAL</span>
+              <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '36px', color: accent }}>{fmt(total)}</span>
+            </div>
           </div>
 
-          {/* Ciudad seleccionada */}
           {selectedCity && (
             <div style={{ background: 'var(--bg)', border: `1px solid ${accent}33`, padding: '12px 16px' }}>
               <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '2px', marginBottom: '4px' }}>ENTREGA EN</div>
@@ -285,16 +314,11 @@ export default function CheckoutPage() {
             </div>
           )}
 
-          {/* Sellos de seguridad */}
+          {/* Sellos */}
           <div>
             <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', letterSpacing: '3px', marginBottom: '12px' }}>COMPRA SEGURA</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'var(--border)' }}>
-              {[
-                { icon: '🔒', label: 'SSL', sub: 'Encriptado' },
-                { icon: '💳', label: 'Wompi', sub: 'Seguro' },
-                { icon: '🏦', label: 'PSE', sub: 'Bancario' },
-                { icon: '📱', label: 'Nequi', sub: 'Billetera' },
-              ].map((b) => (
+              {[{ icon: '🔒', label: 'SSL', sub: 'Encriptado' }, { icon: '💳', label: 'Wompi', sub: 'Seguro' }, { icon: '🏦', label: 'PSE', sub: 'Bancario' }, { icon: '📱', label: 'Billeteras', sub: 'Digitales' }].map((b) => (
                 <div key={b.label} style={{ background: 'var(--bg)', padding: '12px', textAlign: 'center' }}>
                   <div style={{ fontSize: '18px', marginBottom: '4px' }}>{b.icon}</div>
                   <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '1px' }}>{b.label}</div>
@@ -302,21 +326,13 @@ export default function CheckoutPage() {
                 </div>
               ))}
             </div>
-            <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '8px', color: 'var(--text-dim)', textAlign: 'center', marginTop: '12px', letterSpacing: '0.5px', lineHeight: 1.6 }}>
-              Tu información está protegida con encriptación SSL
-            </p>
           </div>
         </div>
       </div>
 
-      {/* FOOTER */}
       <footer style={{ borderTop: '1px solid var(--border)', padding: '20px clamp(20px,5vw,80px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--surface)', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>
-          TattooShop Colombia ©2026 — Todos los derechos reservados
-        </div>
-        <Link href="/" style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: accent, letterSpacing: '2px', textDecoration: 'none', textTransform: 'uppercase' }}>
-          ← Ver todos los productos
-        </Link>
+        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>TattooShop Colombia ©2026</div>
+        <Link href="/" style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: accent, letterSpacing: '2px', textDecoration: 'none' }}>← Ver todos los productos</Link>
       </footer>
     </div>
   );
