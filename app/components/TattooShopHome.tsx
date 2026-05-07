@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getSupabase } from '../lib/supabase';
+import { toSlug } from '../lib/utils';
 
 interface Product {
   id: string;
@@ -185,7 +186,7 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
         0{idx + 1}
       </div>
 
-      <Link href={`/productos/${product.id}`} style={{ display: 'block', textDecoration: 'none' }}>
+      <Link href={`/productos/${toSlug(product.name)}`} style={{ display: 'block', textDecoration: 'none' }}>
         <div style={{ aspectRatio: '4/3', overflow: 'hidden', position: 'relative' }}>
           <div
             style={{
@@ -240,7 +241,7 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
         <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '2px', textTransform: 'uppercase' }}>
           {product.category} — {product.specs?.split('\n')[0]}
         </div>
-        <Link href={`/productos/${product.id}`} style={{ textDecoration: 'none' }}>
+        <Link href={`/productos/${toSlug(product.name)}`} style={{ textDecoration: 'none' }}>
           <div
             style={{
               fontFamily: '"Bebas Neue", sans-serif',

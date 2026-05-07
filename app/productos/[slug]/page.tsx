@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import ProductDetailClient from './ProductDetailClient';
+import { toSlug } from '@/app/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     notFound();
@@ -16,13 +17,17 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 
-  const { data: product, error } = await supabase
+  const { data: products, error } = await supabase
     .from('products')
-    .select('*')
-    .eq('id', id)
-    .single();
+    .select('*');
 
-  if (error || !product) {
+  if (error || !products) {
+    notFound();
+  }
+
+  const product = products.find((p) => toSlug(p.name) === slug);
+
+  if (!product) {
     notFound();
   }
 
