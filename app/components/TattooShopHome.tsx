@@ -100,7 +100,13 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
     setTimeout(() => setAdded(false), 1400);
   };
 
-  const hasDiscount = product.discount_percentage && product.discount_percentage > 0;
+  const hasDiscount = !!(product.discount_percentage && product.discount_percentage > 0);
+  // Calculate original price if not stored but discount % exists
+  const originalPrice = product.original_price && product.original_price > product.price
+    ? product.original_price
+    : hasDiscount
+    ? Math.round(product.price / (1 - (product.discount_percentage! / 100)))
+    : null;
 
   return (
     <div
@@ -209,9 +215,9 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
         </div>
         <div style={{ marginTop: 'auto', paddingTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
-            {hasDiscount && product.original_price && product.original_price > 0 && (
+            {hasDiscount && originalPrice && (
               <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', textDecoration: 'line-through', opacity: 0.4 }}>
-                {fmt(product.original_price)}
+                {fmt(originalPrice)}
               </span>
             )}
             <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px', fontWeight: '700', color: accent }}>{fmt(product.price)}</span>

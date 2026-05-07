@@ -29,6 +29,8 @@ export default function AdminPageClient() {
 
   useEffect(() => {
     if (authenticated) {
+      // Ejecutar migración automática al autenticarse
+      fetch('/api/migrate').catch(() => {});
       loadProducts();
     }
   }, [authenticated]);
