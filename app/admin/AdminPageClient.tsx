@@ -350,6 +350,26 @@ export default function AdminPageClient() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Precio Original (Sin Descuento)</label>
+                <input
+                  type="number"
+                  value={formData.original_price}
+                  onChange={(e) => {
+                    const newOriginalPrice = Number(e.target.value);
+                    const newPrice = calculatePrice(newOriginalPrice, formData.discount_percentage);
+                    setFormData({ ...formData, original_price: newOriginalPrice, price: newPrice });
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg)',
+                    color: 'var(--text)',
+                    borderRadius: '4px',
+                  }}
+                />
+              </div>
+              <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Precio Final (Lo que Paga el Cliente)</label>
                 <input
                   type="number"
@@ -364,26 +384,6 @@ export default function AdminPageClient() {
                     setFormData({ ...formData, price: newPrice, discount_percentage: newDiscountPercentage });
                   }}
                   required
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg)',
-                    color: 'var(--text)',
-                    borderRadius: '4px',
-                  }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Precio Original (Sin Descuento)</label>
-                <input
-                  type="number"
-                  value={formData.original_price}
-                  onChange={(e) => {
-                    const newOriginalPrice = Number(e.target.value);
-                    const newPrice = calculatePrice(newOriginalPrice, formData.discount_percentage);
-                    setFormData({ ...formData, original_price: newOriginalPrice, price: newPrice });
-                  }}
                   style={{
                     width: '100%',
                     padding: '10px',

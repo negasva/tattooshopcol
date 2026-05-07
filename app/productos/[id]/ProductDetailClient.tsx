@@ -236,8 +236,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     setCartCount(updated.reduce((s, i) => s + i.qty, 0));
   };
 
-  // Parsear specs: líneas entre * son sub-items (fuente más pequeña)
-  interface SpecItem { text: string; isSubItem: boolean; }
+  // Parsear specs: si *texto* está en misma línea, hace BOLD grande. Si * está en líneas separadas, hace pequeño
+  interface SpecItem { text: string; isSubItem: boolean; isBold: boolean; }
   const specsItems: SpecItem[] = (() => {
     if (!product.specs) return [];
     const raw = product.specs.includes('\n')
@@ -247,7 +247,15 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     let inSub = false;
     for (const line of raw) {
       if (line === '*') { inSub = !inSub; }
-      else { result.push({ text: line, isSubItem: inSub }); }
+      else {
+        // Si está rodeado de * en la misma línea (*texto*), es BOLD
+        const boldMatch = line.match(/^\*(.+)\*$/);
+        if (boldMatch) {
+          result.push({ text: boldMatch[1], isSubItem: false, isBold: true });
+        } else {
+          result.push({ text: line, isSubItem: inSub, isBold: false });
+        }
+      }
     }
     return result;
   })();
@@ -577,21 +585,22 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                       display: 'flex',
                       alignItems: 'flex-start',
                       gap: '10px',
-                      padding: item.isSubItem ? '7px 0 7px 16px' : '11px 0',
+                      padding: item.isBold ? '14px 0' : item.isSubItem ? '7px 0 7px 16px' : '11px 0',
                       borderBottom: i < specsItems.length - 1 ? `1px solid ${item.isSubItem ? 'rgba(46,46,46,0.5)' : 'var(--border)'}` : 'none',
                       background: item.isSubItem ? 'rgba(255,255,255,0.015)' : 'transparent',
                     }}
                   >
-                    <span style={{ color: item.isSubItem ? 'var(--text-dim)' : accent, fontSize: item.isSubItem ? '8px' : '10px', marginTop: '2px', flexShrink: 0 }}>
+                    {!item.isBold && <span style={{ color: item.isSubItem ? 'var(--text-dim)' : accent, fontSize: item.isSubItem ? '8px' : '10px', marginTop: '2px', flexShrink: 0 }}>
                       {item.isSubItem ? '›' : '✦'}
-                    </span>
+                    </span>}
                     <span style={{
-                      fontFamily: '"DM Mono", monospace',
-                      fontSize: item.isSubItem ? '10px' : '12px',
-                      color: item.isSubItem ? 'var(--text-dim)' : 'var(--text-muted)',
-                      letterSpacing: item.isSubItem ? '0' : '0.5px',
+                      fontFamily: item.isBold ? '"Bebas Neue", sans-serif' : '"DM Mono", monospace',
+                      fontSize: item.isBold ? '16px' : item.isSubItem ? '10px' : '12px',
+                      color: item.isBold ? accent : item.isSubItem ? 'var(--text-dim)' : 'var(--text-muted)',
+                      letterSpacing: item.isBold ? '1px' : item.isSubItem ? '0' : '0.5px',
                       lineHeight: 1.5,
-                      fontStyle: item.isSubItem ? 'italic' : 'normal',
+                      fontStyle: item.isSubItem && !item.isBold ? 'italic' : 'normal',
+                      fontWeight: item.isBold ? 'bold' : 'normal',
                     }}>
                       {item.text}
                     </span>
