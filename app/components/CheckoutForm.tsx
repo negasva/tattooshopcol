@@ -71,6 +71,8 @@ export default function CheckoutForm({ cartItems }: CheckoutFormProps) {
           <PaymentMethods
             availableMethods={paymentMethods}
             selectedMethod={selectedPayment}
+            selectedSub=""
+            cashEligible={isCashOnDeliveryEligible}
             onSelectMethod={handlePaymentMethodSelect}
           />
 

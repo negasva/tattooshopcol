@@ -299,7 +299,7 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
   );
 }
 
-function CartDrawer({ cart, onClose, onRemove, onQty, accent }: { cart: CartItem[]; onClose: () => void; onRemove: (id: string) => void; onQty: (id: string, delta: number) => void; accent: string }) {
+function CartDrawer({ cart, onClose, onRemove, onQty, accent, onCheckout }: { cart: CartItem[]; onClose: () => void; onRemove: (id: string) => void; onQty: (id: string, delta: number) => void; accent: string; onCheckout: () => void }) {
   const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
 
   return (
@@ -444,7 +444,7 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent }: { cart: CartItem
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.background = accent;
               }}
-              onClick={() => { setCartOpen(false); router.push('/checkout'); }}
+              onClick={onCheckout}
               onMouseDown={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.98)';
               }}
@@ -1118,7 +1118,7 @@ export default function TattooShopHome() {
       </footer>
 
       {/* CART DRAWER */}
-      {cartOpen && <CartDrawer cart={cart} onClose={() => setCartOpen(false)} onRemove={removeFromCart} onQty={changeQty} accent={accent} />}
+      {cartOpen && <CartDrawer cart={cart} onClose={() => setCartOpen(false)} onRemove={removeFromCart} onQty={changeQty} accent={accent} onCheckout={() => { setCartOpen(false); router.push('/checkout'); }} />}
     </div>
   );
 }
