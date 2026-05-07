@@ -69,19 +69,15 @@ export default function AdminPageClient() {
       let originalPrice = formData.original_price;
 
       // Si hay precio original y descuento %, calcular automáticamente el precio final
-      if (originalPrice && originalPrice > 0 && discountPercentage && discountPercentage > 0) {
+      if (originalPrice > 0 && discountPercentage > 0) {
         finalPrice = Math.round(originalPrice - (originalPrice * discountPercentage / 100));
-      }
-      // Si hay precio original y precio final, calcular automáticamente el descuento %
-      else if (originalPrice && originalPrice > 0 && finalPrice > 0 && finalPrice < originalPrice) {
-        discountPercentage = Math.round(((originalPrice - finalPrice) / originalPrice) * 100);
       }
 
       const productData = {
         ...formData,
         price: finalPrice,
-        discount_percentage: discountPercentage || null,
-        original_price: originalPrice || null,
+        discount_percentage: discountPercentage > 0 ? discountPercentage : null,
+        original_price: originalPrice > 0 ? originalPrice : null,
       };
 
       if (editingId) {

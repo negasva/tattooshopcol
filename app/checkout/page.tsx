@@ -351,9 +351,14 @@ export default function CheckoutPage() {
           <div>
             <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', letterSpacing: '3px', marginBottom: '12px' }}>COMPRA SEGURA</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'var(--border)' }}>
-              {[{ icon: '🔒', label: 'SSL', sub: 'Encriptado' }, { icon: '💳', label: 'Wompi', sub: 'Seguro' }, { icon: '🏦', label: 'PSE', sub: 'Bancario' }, { icon: '📱', label: 'Billeteras', sub: 'Digitales' }].map((b) => (
+              {[
+                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, label: 'SSL', sub: 'Encriptado' },
+                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>, label: 'Wompi', sub: 'Seguro' },
+                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>, label: 'PSE', sub: 'Bancario' },
+                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>, label: 'Billeteras', sub: 'Digitales' },
+              ].map((b) => (
                 <div key={b.label} style={{ background: 'var(--bg)', padding: '12px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '18px', marginBottom: '4px' }}>{b.icon}</div>
+                  <div style={{ fontSize: '18px', marginBottom: '4px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-muted)' }}>{b.icon}</div>
                   <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '1px' }}>{b.label}</div>
                   <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '8px', color: 'var(--text-dim)', marginTop: '2px' }}>{b.sub}</div>
                 </div>
