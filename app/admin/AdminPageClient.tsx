@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase, Product } from '../lib/supabase';
+import { getSupabase, Product } from '../lib/supabase';
 
 export default function AdminPageClient() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -38,7 +38,8 @@ export default function AdminPageClient() {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+      const sb = getSupabase();
+      const { data, error } = await sb.from('products').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       setProducts(data || []);
     } catch (error) {
@@ -62,6 +63,7 @@ export default function AdminPageClient() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const sb = getSupabase();
       let finalPrice = formData.price;
       let discountPercentage = formData.discount_percentage;
       let originalPrice = formData.original_price;
@@ -83,7 +85,7 @@ export default function AdminPageClient() {
       };
 
       if (editingId) {
-        const { error } = await supabase
+        const { error } = await sb
           .from('products')
           .update({
             ...productData,
@@ -93,7 +95,7 @@ export default function AdminPageClient() {
         if (error) throw error;
         setEditingId(null);
       } else {
-        const { error } = await supabase.from('products').insert([
+        const { error } = await sb.from('products').insert([
           {
             ...productData,
             created_at: new Date().toISOString(),
@@ -114,7 +116,8 @@ export default function AdminPageClient() {
   const handleDelete = async (id: string) => {
     if (!confirm('¿Estás seguro?')) return;
     try {
-      const { error } = await supabase.from('products').delete().eq('id', id);
+      const sb = getSupabase();
+      const { error } = await sb.from('products').delete().eq('id', id);
       if (error) throw error;
       loadProducts();
       alert('Producto eliminado');
@@ -158,17 +161,18 @@ export default function AdminPageClient() {
     if (!file) return;
     try {
       setUploading(true);
+      const sb = getSupabase();
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `products/${fileName}`;
 
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError, data } = await sb.storage
         .from('product-images')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      const { data: publicUrlData } = supabase.storage
+      const { data: publicUrlData } = sb.storage
         .from('product-images')
         .getPublicUrl(filePath);
 
