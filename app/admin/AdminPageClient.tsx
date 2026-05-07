@@ -23,6 +23,7 @@ export default function AdminPageClient() {
   const [categories, setCategories] = useState<string[]>(['Kits', 'Máquinas', 'Insumos']);
   const [newCategory, setNewCategory] = useState('');
   const [discountType, setDiscountType] = useState<'percentage' | 'amount'>('percentage');
+  const [uploading, setUploading] = useState(false);
 
   const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123';
 
@@ -130,6 +131,34 @@ export default function AdminPageClient() {
     }
   };
 
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
+    try {
+      setUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `products/${fileName}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, image_url: publicUrlData.publicUrl });
+      alert('Imagen subida exitosamente');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Error subiendo imagen');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   if (!authenticated) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
@@ -208,7 +237,7 @@ export default function AdminPageClient() {
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Categoría</label>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -225,65 +254,71 @@ export default function AdminPageClient() {
                       <option key={cat}>{cat}</option>
                     ))}
                   </select>
+                  <input
+                    type="text"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
+                    placeholder="Nueva"
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      border: '1px solid var(--border)',
+                      background: 'var(--bg)',
+                      color: 'var(--text)',
+                      borderRadius: '4px',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCategory}
+                    style={{
+                      padding: '10px 16px',
+                      background: 'var(--accent)',
+                      color: '#111',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontWeight: '600',
+                      fontSize: '16px',
+                    }}
+                  >
+                    +
+                  </button>
                 </div>
               </div>
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Agregar Nueva Categoría</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input
-                  type="text"
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  placeholder="Nueva categoría"
-                  style={{
-                    flex: 1,
-                    padding: '10px',
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg)',
-                    color: 'var(--text)',
-                    borderRadius: '4px',
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={handleAddCategory}
-                  style={{
-                    padding: '10px 16px',
-                    background: 'var(--surface2)',
-                    color: 'var(--text-muted)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>URL de Imagen</label>
-              <input
-                type="text"
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                placeholder="https://ejemplo.com/imagen.jpg"
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg)',
-                  color: 'var(--text)',
-                  borderRadius: '4px',
-                }}
-              />
-              {formData.image_url && (
-                <div style={{ marginTop: '12px', maxWidth: '200px' }}>
-                  <img src={formData.image_url} alt="preview" style={{ maxWidth: '100%', borderRadius: '4px' }} />
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Imagen</label>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageUpload(file);
+                    }}
+                    disabled={uploading}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid var(--border)',
+                      background: 'var(--bg)',
+                      color: 'var(--text)',
+                      borderRadius: '4px',
+                      cursor: uploading ? 'not-allowed' : 'pointer',
+                    }}
+                  />
+                  {uploading && <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>Subiendo...</div>}
                 </div>
-              )}
+                {formData.image_url && (
+                  <div style={{ width: '100px', height: '100px' }}>
+                    <img src={formData.image_url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
