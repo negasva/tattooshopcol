@@ -297,7 +297,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3,1fr)',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
               gap: '1px',
               background: 'var(--border)',
               marginTop: '1px',

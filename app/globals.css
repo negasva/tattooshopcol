@@ -145,4 +145,41 @@ input:focus {
   }
 }
 
+/* Improve nav on mobile */
+@media (max-width: 600px) {
+  /* Compact nav height on mobile */
+  nav {
+    height: 56px !important;
+  }
+
+  /* Smaller cart button text on mobile */
+  nav button:last-child {
+    padding: 6px 12px !important;
+    font-size: 10px !important;
+  }
+
+  /* Reduce heading sizes on mobile */
+  h1, h2, h3, h4 {
+    line-height: 1.1 !important;
+  }
+
+  /* Improve input/textarea visibility */
+  textarea, input {
+    font-size: 16px !important; /* Prevents iOS zoom */
+  }
+
+  /* Better spacing for action buttons on mobile */
+  [data-product-detail] button {
+    padding: 14px 16px !important;
+    min-height: 48px !important;
+    font-size: 14px !important;
+  }
+
+  /* Better quantity selector on mobile */
+  [data-product-detail] button[style*="width: 44px"],
+  [data-product-detail] div[style*="width: 56px"] {
+    min-height: 44px !important;
+  }
+}
+
 @import "tailwindcss";
