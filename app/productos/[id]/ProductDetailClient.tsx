@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface Product {
   id: string;
@@ -76,6 +77,7 @@ function LogoMark({ accent }: { accent: string }) {
 
 export default function ProductDetailClient({ product }: { product: Product }) {
   const accent = '#FFD400';
+  const router = useRouter();
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [cartCount, setCartCount] = useState(0);
@@ -120,12 +122,34 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     setTimeout(() => setAdded(false), 2000);
   };
 
-  // Si tiene saltos de línea, usar esos; si no, separar por coma/pipe como fallback
-  const specsLines = product.specs
-    ? product.specs.includes('\n')
+  const handleBuyNow = () => {
+    try {
+      const stored = localStorage.getItem('ts_cart');
+      const cart: CartItem[] = stored ? JSON.parse(stored) : [];
+      const existing = cart.find((i) => i.id === product.id);
+      const updated = existing
+        ? cart.map((i) => (i.id === product.id ? { ...i, qty: i.qty + qty } : i))
+        : [...cart, { ...product, qty }];
+      localStorage.setItem('ts_cart', JSON.stringify(updated));
+    } catch {}
+    router.push('/checkout');
+  };
+
+  // Parsear specs: líneas entre * son sub-items (fuente más pequeña)
+  interface SpecItem { text: string; isSubItem: boolean; }
+  const specsItems: SpecItem[] = (() => {
+    if (!product.specs) return [];
+    const raw = product.specs.includes('\n')
       ? product.specs.split('\n').map((s) => s.trim()).filter(Boolean)
-      : product.specs.split(/[,|·]/).map((s) => s.trim()).filter(Boolean)
-    : [];
+      : product.specs.split(/[,|·]/).map((s) => s.trim()).filter(Boolean);
+    const result: SpecItem[] = [];
+    let inSub = false;
+    for (const line of raw) {
+      if (line === '*') { inSub = !inSub; }
+      else { result.push({ text: line, isSubItem: inSub }); }
+    }
+    return result;
+  })();
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
@@ -352,7 +376,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           </div>
 
           {/* Price */}
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: '20px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: '20px 0' }}>
             <span
               style={{
                 fontFamily: '"Bebas Neue", sans-serif',
@@ -383,7 +407,11 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   color: '#e55',
                   letterSpacing: '1px',
                   background: 'rgba(229,85,85,0.12)',
-                  padding: '4px 8px',
+                  border: '1px solid rgba(229,85,85,0.25)',
+                  padding: '6px 10px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  lineHeight: 1,
                 }}
               >
                 AHORRAS {fmt(originalPrice - salePrice)}
@@ -392,26 +420,36 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           </div>
 
           {/* Specs */}
-          {specsLines.length > 0 && (
+          {specsItems.length > 0 && (
             <div>
               <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '16px' }}>
                 ESPECIFICACIONES DEL KIT
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-                {specsLines.map((spec, i) => (
+                {specsItems.map((item, i) => (
                   <div
                     key={i}
                     style={{
                       display: 'flex',
                       alignItems: 'flex-start',
-                      gap: '12px',
-                      padding: '12px 0',
-                      borderBottom: i < specsLines.length - 1 ? '1px solid var(--border)' : 'none',
+                      gap: '10px',
+                      padding: item.isSubItem ? '7px 0 7px 16px' : '11px 0',
+                      borderBottom: i < specsItems.length - 1 ? `1px solid ${item.isSubItem ? 'rgba(46,46,46,0.5)' : 'var(--border)'}` : 'none',
+                      background: item.isSubItem ? 'rgba(255,255,255,0.015)' : 'transparent',
                     }}
                   >
-                    <span style={{ color: accent, fontSize: '10px', marginTop: '2px', flexShrink: 0 }}>✦</span>
-                    <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.5px', lineHeight: 1.5 }}>
-                      {spec}
+                    <span style={{ color: item.isSubItem ? 'var(--text-dim)' : accent, fontSize: item.isSubItem ? '8px' : '10px', marginTop: '2px', flexShrink: 0 }}>
+                      {item.isSubItem ? '›' : '✦'}
+                    </span>
+                    <span style={{
+                      fontFamily: '"DM Mono", monospace',
+                      fontSize: item.isSubItem ? '10px' : '12px',
+                      color: item.isSubItem ? 'var(--text-dim)' : 'var(--text-muted)',
+                      letterSpacing: item.isSubItem ? '0' : '0.5px',
+                      lineHeight: 1.5,
+                      fontStyle: item.isSubItem ? 'italic' : 'normal',
+                    }}>
+                      {item.text}
                     </span>
                   </div>
                 ))}
@@ -419,108 +457,91 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             </div>
           )}
 
-          {/* Qty + Add to cart */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {/* Qty + Buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', letterSpacing: '3px' }}>CANTIDAD</div>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'stretch' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  border: '1px solid var(--border)',
-                  background: 'var(--surface)',
-                }}
-              >
-                <button
-                  onClick={() => setQty((q) => Math.max(1, q - 1))}
-                  style={{
-                    width: '44px',
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--text)',
-                    cursor: 'pointer',
-                    fontSize: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'color 0.2s',
-                  }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = accent; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)'; }}
-                >
-                  −
-                </button>
-                <div
-                  style={{
-                    width: '56px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontFamily: '"Bebas Neue", sans-serif',
-                    fontSize: '24px',
-                    color: 'var(--text)',
-                    borderLeft: '1px solid var(--border)',
-                    borderRight: '1px solid var(--border)',
-                  }}
-                >
-                  {qty}
-                </div>
-                <button
-                  onClick={() => setQty((q) => q + 1)}
-                  style={{
-                    width: '44px',
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--text)',
-                    cursor: 'pointer',
-                    fontSize: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'color 0.2s',
-                  }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = accent; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)'; }}
-                >
-                  +
-                </button>
-              </div>
 
+            {/* Qty selector */}
+            <div
+              style={{
+                display: 'flex',
+                border: '1px solid var(--border)',
+                background: 'var(--surface)',
+                alignSelf: 'flex-start',
+              }}
+            >
               <button
-                onClick={handleAddToCart}
-                style={{
-                  flex: 1,
-                  background: added ? accent : 'transparent',
-                  color: added ? '#111' : accent,
-                  border: `1px solid ${accent}`,
-                  fontFamily: '"Bebas Neue", sans-serif',
-                  fontSize: '22px',
-                  letterSpacing: '1px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px',
-                  padding: '0 24px',
-                }}
-                onMouseEnter={(e) => {
-                  if (!added) {
-                    (e.currentTarget as HTMLButtonElement).style.background = accent;
-                    (e.currentTarget as HTMLButtonElement).style.color = '#111';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!added) {
-                    (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                    (e.currentTarget as HTMLButtonElement).style.color = accent;
-                  }
-                }}
-              >
-                {added ? '✓ AGREGADO AL CARRITO' : '+ AGREGAR AL CARRITO'}
-              </button>
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                style={{ width: '48px', height: '48px', background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color 0.2s' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = accent; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)'; }}
+              >−</button>
+              <div style={{ width: '60px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Bebas Neue", sans-serif', fontSize: '26px', color: 'var(--text)', borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
+                {qty}
+              </div>
+              <button
+                onClick={() => setQty((q) => q + 1)}
+                style={{ width: '48px', height: '48px', background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color 0.2s' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = accent; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)'; }}
+              >+</button>
             </div>
 
-            {/* WhatsApp CTA */}
+            {/* COMPRAR — botón principal, el más llamativo */}
+            <button
+              onClick={handleBuyNow}
+              style={{
+                width: '100%',
+                padding: '20px',
+                background: accent,
+                color: '#111',
+                border: 'none',
+                fontFamily: '"Bebas Neue", sans-serif',
+                fontSize: '28px',
+                letterSpacing: '2px',
+                cursor: 'pointer',
+                transition: 'background 0.2s, transform 0.1s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+                boxShadow: `0 0 32px ${accent}44`,
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#ffe033'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = accent; }}
+              onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.98)'; }}
+              onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7.4 17H19v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H15.5c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0 0 20 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+              COMPRAR AHORA
+            </button>
+
+            {/* Agregar al carrito — secundario */}
+            <button
+              onClick={handleAddToCart}
+              style={{
+                width: '100%',
+                padding: '14px',
+                background: added ? accent : 'transparent',
+                color: added ? '#111' : accent,
+                border: `1px solid ${accent}`,
+                fontFamily: '"Bebas Neue", sans-serif',
+                fontSize: '18px',
+                letterSpacing: '1px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+              }}
+              onMouseEnter={(e) => { if (!added) { (e.currentTarget as HTMLButtonElement).style.background = accent; (e.currentTarget as HTMLButtonElement).style.color = '#111'; } }}
+              onMouseLeave={(e) => { if (!added) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = accent; } }}
+            >
+              {added ? '✓ AGREGADO AL CARRITO' : '+ AGREGAR AL CARRITO'}
+            </button>
+
+            {/* WhatsApp — terciario */}
             <a
               href={`https://wa.me/573000000000?text=Hola%2C%20quiero%20pedir%3A%20${encodeURIComponent(product.name)}%20x${qty}`}
               target="_blank"
@@ -529,18 +550,19 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '10px',
-                padding: '16px',
-                background: '#25d366',
-                color: '#fff',
+                gap: '8px',
+                padding: '12px',
+                background: 'transparent',
+                color: '#25d366',
                 textDecoration: 'none',
-                fontFamily: '"Bebas Neue", sans-serif',
-                fontSize: '22px',
+                fontFamily: '"DM Mono", monospace',
+                fontSize: '12px',
                 letterSpacing: '1px',
-                transition: 'background 0.2s',
+                border: '1px solid #25d36644',
+                transition: 'all 0.2s',
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#1fba58'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#25d366'; }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#25d36618'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#25d366'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'transparent'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#25d36644'; }}
             >
               <span>💬</span> PEDIR POR WHATSAPP
             </a>
