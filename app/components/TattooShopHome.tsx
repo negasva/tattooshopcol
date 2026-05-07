@@ -207,14 +207,14 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
         >
           {product.name}
         </div>
-        <div style={{ marginTop: 'auto', paddingTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {hasDiscount && product.original_price && (
-              <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '14px', color: 'var(--text-muted)', textDecoration: 'line-through', opacity: 0.5 }}>
+        <div style={{ marginTop: 'auto', paddingTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+            {hasDiscount && product.original_price && product.original_price > 0 && (
+              <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', textDecoration: 'line-through', opacity: 0.4 }}>
                 {fmt(product.original_price)}
               </span>
             )}
-            <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', color: accent }}>{fmt(product.price)}</span>
+            <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px', fontWeight: '700', color: accent }}>{fmt(product.price)}</span>
           </div>
           <button
             onClick={handleAdd}

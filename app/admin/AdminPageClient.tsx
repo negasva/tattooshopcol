@@ -60,10 +60,16 @@ export default function AdminPageClient() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Calcular automáticamente el descuento % si hay precio original y precio final
+      let discountPercentage = formData.discount_percentage;
+      if (formData.original_price && formData.original_price > 0 && formData.price > 0) {
+        discountPercentage = Math.round(((formData.original_price - formData.price) / formData.original_price) * 100);
+      }
+
       const productData = {
         ...formData,
+        discount_percentage: discountPercentage || null,
         original_price: formData.original_price || null,
-        discount_percentage: formData.discount_percentage || null,
       };
 
       if (editingId) {
