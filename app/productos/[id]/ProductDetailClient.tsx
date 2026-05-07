@@ -199,7 +199,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           </Link>
 
           <Link
-            href="/"
+            href="/checkout"
             style={{
               background: cartCount > 0 ? accent : 'transparent',
               color: cartCount > 0 ? '#111' : 'var(--text)',
@@ -353,9 +353,21 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             }}
           >
             {[
-              { icon: '🛡', label: 'GARANTÍA', sub: '100% original' },
-              { icon: '🚚', label: 'ENVÍO', sub: 'Todo Colombia' },
-              { icon: '💳', label: 'PAGO', sub: 'Contraentrega' },
+              { icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '20px', height: '20px' }}>
+                  <path d="M12 2L2 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                </svg>
+              ), label: 'GARANTÍA', sub: '100% original' },
+              { icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '20px', height: '20px' }}>
+                  <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+              ), label: 'ENVÍO', sub: 'Todo Colombia' },
+              { icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '20px', height: '20px' }}>
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+                </svg>
+              ), label: 'PAGO', sub: 'Contraentrega' },
             ].map((item) => (
               <div
                 key={item.label}
@@ -365,7 +377,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   textAlign: 'center',
                 }}
               >
-                <div style={{ fontSize: '20px', marginBottom: '4px' }}>{item.icon}</div>
+                <div style={{ fontSize: '20px', marginBottom: '4px', color: accent }}>{item.icon}</div>
                 <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '2px' }}>{item.label}</div>
                 <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', marginTop: '2px', letterSpacing: '0.5px' }}>{item.sub}</div>
               </div>

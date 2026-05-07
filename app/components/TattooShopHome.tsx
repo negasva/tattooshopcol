@@ -349,7 +349,6 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent, onCheckout }: { ca
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '18px',
               transition: 'border-color 0.2s',
             }}
             onMouseEnter={(e) => {
@@ -359,7 +358,9 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent, onCheckout }: { ca
               (e.currentTarget as HTMLButtonElement).style.borderColor = '#2e2e2e';
             }}
           >
-            ✕
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '20px', height: '20px' }}>
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
           </button>
         </div>
 
@@ -373,7 +374,11 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent, onCheckout }: { ca
             cart.map((item) => (
               <div key={item.id} style={{ padding: '20px 0', borderBottom: '1px solid #2a2a2a', display: 'flex', gap: '16px', alignItems: 'center' }}>
                 <div style={{ width: '64px', height: '64px', background: '#1e1e1e', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: '24px', opacity: 0.3 }}>{getCategoryIcon(item.category)}</span>
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: '24px', opacity: 0.3 }}>{getCategoryIcon(item.category)}</span>
+                  )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '3px' }}>
@@ -1055,7 +1060,10 @@ export default function TattooShopHome() {
                 (e.currentTarget as HTMLAnchorElement).style.background = accent;
               }}
             >
-              <span>💬</span> WHATSAPP
+              <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '16px', height: '16px' }}>
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004c-1.025 0-2.04-.312-2.926-.902L6.583 3.715l1.922 6.155c-.727 1.195-1.11 2.569-1.11 4.001 0 4.495 3.665 8.16 8.16 8.16s8.16-3.665 8.16-8.16-3.665-8.159-8.16-8.159"/>
+              </svg>
+              WHATSAPP
             </a>
             <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '12px' }}>REDES SOCIALES</div>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
