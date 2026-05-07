@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { supabase } from '../lib/supabase';
 
 interface Product {
@@ -177,42 +178,74 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
         0{idx + 1}
       </div>
 
-      <div style={{ aspectRatio: '4/3', overflow: 'hidden', position: 'relative' }}>
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            transform: hovered ? 'scale(1.04)' : 'scale(1)',
-            transition: 'transform 0.5s ease',
-          }}
-        >
-          {product.image_url ? (
-            <img
-              src={product.image_url}
-              alt={product.name}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          ) : (
-            <ProductPlaceholder icon={getCategoryIcon(product.category)} category={product.category} accent={accent} />
-          )}
+      <Link href={`/productos/${product.id}`} style={{ display: 'block', textDecoration: 'none' }}>
+        <div style={{ aspectRatio: '4/3', overflow: 'hidden', position: 'relative' }}>
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              transform: hovered ? 'scale(1.04)' : 'scale(1)',
+              transition: 'transform 0.5s ease',
+            }}
+          >
+            {product.image_url ? (
+              <img
+                src={product.image_url}
+                alt={product.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              <ProductPlaceholder icon={getCategoryIcon(product.category)} category={product.category} accent={accent} />
+            )}
+          </div>
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'rgba(0,0,0,0)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.25s',
+              ...(hovered ? { background: 'rgba(0,0,0,0.35)' } : {}),
+            }}
+          >
+            {hovered && (
+              <span style={{
+                fontFamily: '"DM Mono", monospace',
+                fontSize: '10px',
+                color: accent,
+                letterSpacing: '2px',
+                border: `1px solid ${accent}`,
+                padding: '8px 16px',
+                background: 'rgba(0,0,0,0.6)',
+                textTransform: 'uppercase',
+              }}>
+                VER DETALLE →
+              </span>
+            )}
+          </div>
         </div>
-      </div>
+      </Link>
 
       <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
         <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '2px', textTransform: 'uppercase' }}>
           {product.category} — {product.specs}
         </div>
-        <div
-          style={{
-            fontFamily: '"Bebas Neue", sans-serif',
-            fontSize: '24px',
-            lineHeight: 1.1,
-            color: 'var(--text)',
-            letterSpacing: '0.5px',
-          }}
-        >
-          {product.name}
-        </div>
+        <Link href={`/productos/${product.id}`} style={{ textDecoration: 'none' }}>
+          <div
+            style={{
+              fontFamily: '"Bebas Neue", sans-serif',
+              fontSize: '24px',
+              lineHeight: 1.1,
+              color: hovered ? accent : 'var(--text)',
+              letterSpacing: '0.5px',
+              transition: 'color 0.2s',
+            }}
+          >
+            {product.name}
+          </div>
+        </Link>
         <div style={{ marginTop: 'auto', paddingTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
             {hasDiscount && originalPrice && (
