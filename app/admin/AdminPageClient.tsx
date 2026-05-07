@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase, Product } from '../lib/supabase';
+import { getSupabase, Product } from '../lib/supabase';
 
 export default function AdminPageClient() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -38,7 +38,8 @@ export default function AdminPageClient() {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+      const sb = getSupabase();
+      const { data, error } = await sb.from('products').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       setProducts(data || []);
     } catch (error) {
@@ -62,28 +63,25 @@ export default function AdminPageClient() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const sb = getSupabase();
       let finalPrice = formData.price;
       let discountPercentage = formData.discount_percentage;
       let originalPrice = formData.original_price;
 
       // Si hay precio original y descuento %, calcular automáticamente el precio final
-      if (originalPrice && originalPrice > 0 && discountPercentage && discountPercentage > 0) {
+      if (originalPrice > 0 && discountPercentage > 0) {
         finalPrice = Math.round(originalPrice - (originalPrice * discountPercentage / 100));
-      }
-      // Si hay precio original y precio final, calcular automáticamente el descuento %
-      else if (originalPrice && originalPrice > 0 && finalPrice > 0 && finalPrice < originalPrice) {
-        discountPercentage = Math.round(((originalPrice - finalPrice) / originalPrice) * 100);
       }
 
       const productData = {
         ...formData,
         price: finalPrice,
-        discount_percentage: discountPercentage || null,
-        original_price: originalPrice || null,
+        discount_percentage: discountPercentage > 0 ? discountPercentage : null,
+        original_price: originalPrice > 0 ? originalPrice : null,
       };
 
       if (editingId) {
-        const { error } = await supabase
+        const { error } = await sb
           .from('products')
           .update({
             ...productData,
@@ -93,7 +91,7 @@ export default function AdminPageClient() {
         if (error) throw error;
         setEditingId(null);
       } else {
-        const { error } = await supabase.from('products').insert([
+        const { error } = await sb.from('products').insert([
           {
             ...productData,
             created_at: new Date().toISOString(),
@@ -114,7 +112,8 @@ export default function AdminPageClient() {
   const handleDelete = async (id: string) => {
     if (!confirm('¿Estás seguro?')) return;
     try {
-      const { error } = await supabase.from('products').delete().eq('id', id);
+      const sb = getSupabase();
+      const { error } = await sb.from('products').delete().eq('id', id);
       if (error) throw error;
       loadProducts();
       alert('Producto eliminado');
@@ -158,17 +157,18 @@ export default function AdminPageClient() {
     if (!file) return;
     try {
       setUploading(true);
+      const sb = getSupabase();
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `products/${fileName}`;
 
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError, data } = await sb.storage
         .from('product-images')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      const { data: publicUrlData } = supabase.storage
+      const { data: publicUrlData } = sb.storage
         .from('product-images')
         .getPublicUrl(filePath);
 
@@ -346,6 +346,26 @@ export default function AdminPageClient() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Precio Original (Sin Descuento)</label>
+                <input
+                  type="number"
+                  value={formData.original_price}
+                  onChange={(e) => {
+                    const newOriginalPrice = Number(e.target.value);
+                    const newPrice = calculatePrice(newOriginalPrice, formData.discount_percentage);
+                    setFormData({ ...formData, original_price: newOriginalPrice, price: newPrice });
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg)',
+                    color: 'var(--text)',
+                    borderRadius: '4px',
+                  }}
+                />
+              </div>
+              <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Precio Final (Lo que Paga el Cliente)</label>
                 <input
                   type="number"
@@ -360,26 +380,6 @@ export default function AdminPageClient() {
                     setFormData({ ...formData, price: newPrice, discount_percentage: newDiscountPercentage });
                   }}
                   required
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg)',
-                    color: 'var(--text)',
-                    borderRadius: '4px',
-                  }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Precio Original (Sin Descuento)</label>
-                <input
-                  type="number"
-                  value={formData.original_price}
-                  onChange={(e) => {
-                    const newOriginalPrice = Number(e.target.value);
-                    const newPrice = calculatePrice(newOriginalPrice, formData.discount_percentage);
-                    setFormData({ ...formData, original_price: newOriginalPrice, price: newPrice });
-                  }}
                   style={{
                     width: '100%',
                     padding: '10px',

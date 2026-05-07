@@ -1,92 +1,348 @@
 [
   {
-    "city": "Bogotá",
-    "department": "Cundinamarca",
-    "cashOnDelivery": true,
-    "suburbs": ["Soacha", "Chía", "Cajicá", "Mosquera"]
+    "department": "Amazonas",
+    "cities": [
+      { "name": "Leticia", "cashOnDelivery": true },
+      { "name": "La Chorrera", "cashOnDelivery": false },
+      { "name": "Puerto Alegría", "cashOnDelivery": false },
+      { "name": "Puerto Nariño", "cashOnDelivery": false }
+    ]
   },
   {
-    "city": "Medellín",
     "department": "Antioquia",
-    "cashOnDelivery": true,
-    "suburbs": ["Envigado", "Itagüí", "Sabaneta", "Bello"]
+    "cities": [
+      { "name": "Medellín", "cashOnDelivery": true },
+      { "name": "Envigado", "cashOnDelivery": true },
+      { "name": "Itagüí", "cashOnDelivery": true },
+      { "name": "Sabaneta", "cashOnDelivery": true },
+      { "name": "Bello", "cashOnDelivery": true },
+      { "name": "Rionegro", "cashOnDelivery": false },
+      { "name": "Caldas", "cashOnDelivery": false },
+      { "name": "La Estrella", "cashOnDelivery": false },
+      { "name": "Copacabana", "cashOnDelivery": false },
+      { "name": "Girardota", "cashOnDelivery": false }
+    ]
   },
   {
-    "city": "Cali",
-    "department": "Valle del Cauca",
-    "cashOnDelivery": true,
-    "suburbs": ["Jamundí", "Palmira", "Yumbo", "Candelaria"]
+    "department": "Arauca",
+    "cities": [
+      { "name": "Arauca", "cashOnDelivery": true },
+      { "name": "Saravena", "cashOnDelivery": false },
+      { "name": "Fortul", "cashOnDelivery": false },
+      { "name": "Cravo Norte", "cashOnDelivery": false }
+    ]
   },
   {
-    "city": "Barranquilla",
     "department": "Atlántico",
-    "cashOnDelivery": true,
-    "suburbs": ["Soledad", "Puerto Colombia", "Malambo", "Galapa"]
+    "cities": [
+      { "name": "Barranquilla", "cashOnDelivery": true },
+      { "name": "Soledad", "cashOnDelivery": true },
+      { "name": "Puerto Colombia", "cashOnDelivery": true },
+      { "name": "Malambo", "cashOnDelivery": true },
+      { "name": "Galapa", "cashOnDelivery": true },
+      { "name": "Juan de Acosta", "cashOnDelivery": false },
+      { "name": "Luruaco", "cashOnDelivery": false }
+    ]
   },
   {
-    "city": "Cartagena",
     "department": "Bolívar",
-    "cashOnDelivery": false,
-    "suburbs": []
+    "cities": [
+      { "name": "Cartagena", "cashOnDelivery": true },
+      { "name": "Turbaco", "cashOnDelivery": true },
+      { "name": "Arjona", "cashOnDelivery": true },
+      { "name": "Piedmont", "cashOnDelivery": true },
+      { "name": "Magangué", "cashOnDelivery": true },
+      { "name": "Santa Rosa", "cashOnDelivery": false },
+      { "name": "Cordobatown", "cashOnDelivery": false }
+    ]
   },
   {
-    "city": "Cúcuta",
-    "department": "Norte de Santander",
-    "cashOnDelivery": false,
-    "suburbs": []
+    "department": "Boyacá",
+    "cities": [
+      { "name": "Tunja", "cashOnDelivery": true },
+      { "name": "Duitama", "cashOnDelivery": true },
+      { "name": "Sogamoso", "cashOnDelivery": true },
+      { "name": "Paipa", "cashOnDelivery": true },
+      { "name": "Ipiales", "cashOnDelivery": true },
+      { "name": "Puerto Boyacá", "cashOnDelivery": false },
+      { "name": "Garagoa", "cashOnDelivery": false },
+      { "name": "Ramiriquí", "cashOnDelivery": false }
+    ]
   },
   {
-    "city": "Bucaramanga",
-    "department": "Santander",
-    "cashOnDelivery": false,
-    "suburbs": []
-  },
-  {
-    "city": "Santa Marta",
-    "department": "Magdalena",
-    "cashOnDelivery": false,
-    "suburbs": []
-  },
-  {
-    "city": "Pereira",
-    "department": "Risaralda",
-    "cashOnDelivery": false,
-    "suburbs": []
-  },
-  {
-    "city": "Manizales",
     "department": "Caldas",
-    "cashOnDelivery": false,
-    "suburbs": []
+    "cities": [
+      { "name": "Manizales", "cashOnDelivery": true },
+      { "name": "Villamaría", "cashOnDelivery": true },
+      { "name": "Neira", "cashOnDelivery": true },
+      { "name": "Chinchiná", "cashOnDelivery": true },
+      { "name": "La Dorada", "cashOnDelivery": true },
+      { "name": "Salamina", "cashOnDelivery": false },
+      { "name": "Supía", "cashOnDelivery": false }
+    ]
   },
   {
-    "city": "Ibagué",
-    "department": "Tolima",
-    "cashOnDelivery": false,
-    "suburbs": []
+    "department": "Caquetá",
+    "cities": [
+      { "name": "Florencia", "cashOnDelivery": true },
+      { "name": "Cartagena del Chairá", "cashOnDelivery": false },
+      { "name": "San Vicente del Caguán", "cashOnDelivery": false },
+      { "name": "Solano", "cashOnDelivery": false }
+    ]
   },
   {
-    "city": "Pasto",
-    "department": "Nariño",
-    "cashOnDelivery": false,
-    "suburbs": []
+    "department": "Casanare",
+    "cities": [
+      { "name": "Yopal", "cashOnDelivery": true },
+      { "name": "Paz de Ariporo", "cashOnDelivery": false },
+      { "name": "Aguazul", "cashOnDelivery": false },
+      { "name": "Villanueva", "cashOnDelivery": false }
+    ]
   },
   {
-    "city": "Armenia",
-    "department": "Quindío",
-    "cashOnDelivery": false,
-    "suburbs": []
-  },
-  {
-    "city": "Popayán",
     "department": "Cauca",
-    "cashOnDelivery": false,
-    "suburbs": []
+    "cities": [
+      { "name": "Popayán", "cashOnDelivery": true },
+      { "name": "Piendamó", "cashOnDelivery": true },
+      { "name": "Santander de Quilichao", "cashOnDelivery": true },
+      { "name": "Puerto Tejada", "cashOnDelivery": true },
+      { "name": "Corinto", "cashOnDelivery": true },
+      { "name": "Páez", "cashOnDelivery": false },
+      { "name": "Totoró", "cashOnDelivery": false }
+    ]
   },
   {
-    "city": "Villavicencio",
+    "department": "Cesar",
+    "cities": [
+      { "name": "Valledupar", "cashOnDelivery": true },
+      { "name": "Aguachica", "cashOnDelivery": true },
+      { "name": "Codazzi", "cashOnDelivery": true },
+      { "name": "La Paz", "cashOnDelivery": true },
+      { "name": "Chimichagua", "cashOnDelivery": true },
+      { "name": "González", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "Chocó",
+    "cities": [
+      { "name": "Quibdó", "cashOnDelivery": true },
+      { "name": "Istmina", "cashOnDelivery": false },
+      { "name": "Condoto", "cashOnDelivery": false },
+      { "name": "Unguía", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "Córdoba",
+    "cities": [
+      { "name": "Montería", "cashOnDelivery": true },
+      { "name": "Cereté", "cashOnDelivery": true },
+      { "name": "Lorica", "cashOnDelivery": true },
+      { "name": "Planeta Rica", "cashOnDelivery": true },
+      { "name": "San Andrés de Sotavento", "cashOnDelivery": true },
+      { "name": "Canalete", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "Cundinamarca",
+    "cities": [
+      { "name": "Bogotá", "cashOnDelivery": true },
+      { "name": "Soacha", "cashOnDelivery": true },
+      { "name": "Chía", "cashOnDelivery": true },
+      { "name": "Cajicá", "cashOnDelivery": true },
+      { "name": "Mosquera", "cashOnDelivery": true },
+      { "name": "Zipaquirá", "cashOnDelivery": false },
+      { "name": "Girardot", "cashOnDelivery": false },
+      { "name": "Fusagasugá", "cashOnDelivery": false },
+      { "name": "Ubaté", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "Guainía",
+    "cities": [
+      { "name": "Inírida", "cashOnDelivery": true },
+      { "name": "Maicao", "cashOnDelivery": false },
+      { "name": "San Fernando de Atabapo", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "Guaviare",
+    "cities": [
+      { "name": "San José del Guaviare", "cashOnDelivery": true },
+      { "name": "Miraflores", "cashOnDelivery": false },
+      { "name": "El Retorno", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "Huila",
+    "cities": [
+      { "name": "Neiva", "cashOnDelivery": true },
+      { "name": "Pitalito", "cashOnDelivery": true },
+      { "name": "Garzón", "cashOnDelivery": true },
+      { "name": "Campoalegre", "cashOnDelivery": true },
+      { "name": "Aipe", "cashOnDelivery": true },
+      { "name": "La Plata", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "La Guajira",
+    "cities": [
+      { "name": "Riohacha", "cashOnDelivery": true },
+      { "name": "Maicao", "cashOnDelivery": true },
+      { "name": "Uribia", "cashOnDelivery": true },
+      { "name": "Hatonuevo", "cashOnDelivery": true },
+      { "name": "Fonseca", "cashOnDelivery": true },
+      { "name": "Villanueva", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "Magdalena",
+    "cities": [
+      { "name": "Santa Marta", "cashOnDelivery": true },
+      { "name": "Aracataca", "cashOnDelivery": true },
+      { "name": "El Banco", "cashOnDelivery": true },
+      { "name": "Fundación", "cashOnDelivery": true },
+      { "name": "Plato", "cashOnDelivery": true },
+      { "name": "Ciénaga", "cashOnDelivery": false }
+    ]
+  },
+  {
     "department": "Meta",
-    "cashOnDelivery": false,
-    "suburbs": []
+    "cities": [
+      { "name": "Villavicencio", "cashOnDelivery": true },
+      { "name": "Acacías", "cashOnDelivery": true },
+      { "name": "Granada", "cashOnDelivery": true },
+      { "name": "Restrepo", "cashOnDelivery": true },
+      { "name": "San Juan de Arama", "cashOnDelivery": true },
+      { "name": "Puerto López", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "Nariño",
+    "cities": [
+      { "name": "Pasto", "cashOnDelivery": true },
+      { "name": "Ipiales", "cashOnDelivery": true },
+      { "name": "Túquerres", "cashOnDelivery": true },
+      { "name": "Puerto Asis", "cashOnDelivery": true },
+      { "name": "Pupiales", "cashOnDelivery": true },
+      { "name": "Samaniego", "cashOnDelivery": false },
+      { "name": "La Unión", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "Norte de Santander",
+    "cities": [
+      { "name": "Cúcuta", "cashOnDelivery": true },
+      { "name": "Los Patios", "cashOnDelivery": true },
+      { "name": "San Cayetano", "cashOnDelivery": true },
+      { "name": "El Zulia", "cashOnDelivery": true },
+      { "name": "Villa del Rosario", "cashOnDelivery": true },
+      { "name": "Ocaña", "cashOnDelivery": false },
+      { "name": "Gramalote", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "Putumayo",
+    "cities": [
+      { "name": "Mocoa", "cashOnDelivery": true },
+      { "name": "Puerto Asís", "cashOnDelivery": false },
+      { "name": "Puerto Caicedo", "cashOnDelivery": false },
+      { "name": "Puerto Guzmán", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "Quindío",
+    "cities": [
+      { "name": "Armenia", "cashOnDelivery": true },
+      { "name": "Pereira", "cashOnDelivery": true },
+      { "name": "Calarcá", "cashOnDelivery": true },
+      { "name": "Circasia", "cashOnDelivery": true },
+      { "name": "Filandia", "cashOnDelivery": true },
+      { "name": "Salento", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "Risaralda",
+    "cities": [
+      { "name": "Pereira", "cashOnDelivery": true },
+      { "name": "Dosquebradas", "cashOnDelivery": true },
+      { "name": "La Virginia", "cashOnDelivery": true },
+      { "name": "Santa Rosa de Cabal", "cashOnDelivery": true },
+      { "name": "Apia", "cashOnDelivery": true },
+      { "name": "Balboa", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "San Andrés y Providencia",
+    "cities": [
+      { "name": "San Andrés", "cashOnDelivery": true },
+      { "name": "Providencia", "cashOnDelivery": false },
+      { "name": "Santa Catalina", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "Santander",
+    "cities": [
+      { "name": "Bucaramanga", "cashOnDelivery": true },
+      { "name": "Floridablanca", "cashOnDelivery": true },
+      { "name": "Piedecuesta", "cashOnDelivery": true },
+      { "name": "Girón", "cashOnDelivery": true },
+      { "name": "Lebrija", "cashOnDelivery": true },
+      { "name": "Socorro", "cashOnDelivery": false },
+      { "name": "San Gil", "cashOnDelivery": false },
+      { "name": "Barrancabermeja", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "Sucre",
+    "cities": [
+      { "name": "Sincelejo", "cashOnDelivery": true },
+      { "name": "Corozal", "cashOnDelivery": true },
+      { "name": "Los Palmitos", "cashOnDelivery": true },
+      { "name": "Sampués", "cashOnDelivery": true },
+      { "name": "Tolú", "cashOnDelivery": true },
+      { "name": "Coveñas", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "Tolima",
+    "cities": [
+      { "name": "Ibagué", "cashOnDelivery": true },
+      { "name": "Espinal", "cashOnDelivery": true },
+      { "name": "Flandes", "cashOnDelivery": true },
+      { "name": "Saldaña", "cashOnDelivery": true },
+      { "name": "Guamo", "cashOnDelivery": true },
+      { "name": "Honda", "cashOnDelivery": false },
+      { "name": "Líbano", "cashOnDelivery": false },
+      { "name": "Armero", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "Valle del Cauca",
+    "cities": [
+      { "name": "Cali", "cashOnDelivery": true },
+      { "name": "Palmira", "cashOnDelivery": true },
+      { "name": "Yumbo", "cashOnDelivery": true },
+      { "name": "Candelaria", "cashOnDelivery": true },
+      { "name": "Jamundí", "cashOnDelivery": true },
+      { "name": "Buenaventura", "cashOnDelivery": false },
+      { "name": "Tulúa", "cashOnDelivery": false },
+      { "name": "Cartago", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "Vaupés",
+    "cities": [
+      { "name": "Mitú", "cashOnDelivery": true },
+      { "name": "Taraira", "cashOnDelivery": false },
+      { "name": "Papunaua", "cashOnDelivery": false }
+    ]
+  },
+  {
+    "department": "Vichada",
+    "cities": [
+      { "name": "Puerto Carreño", "cashOnDelivery": true },
+      { "name": "Santa Rosalía", "cashOnDelivery": false },
+      { "name": "La Primavera", "cashOnDelivery": false }
+    ]
   }
 ]

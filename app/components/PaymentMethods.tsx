@@ -6,34 +6,40 @@ const COD_FEE = 18000;
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n);
 
+const CardIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '22px', height: '22px' }}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>;
+const BankIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '22px', height: '22px' }}><line x1="12" y1="1" x2="12" y2="23"/><path d="M1 6h22M1 10h22M1 14h22M1 18h22"/></svg>;
+const PhoneIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '22px', height: '22px' }}><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>;
+const HomeIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '22px', height: '22px' }}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
+const CheckIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '16px', height: '16px' }}><polyline points="20 6 9 17 4 12"/></svg>;
+
 const METHODS = [
   {
     key: 'card',
     label: 'Tarjeta Débito/Crédito',
-    icon: '💳',
+    icon: CardIcon,
     description: 'Visa, Mastercard, American Express — Pago seguro con Wompi',
   },
   {
     key: 'pse',
     label: 'PSE',
-    icon: '🏦',
+    icon: BankIcon,
     description: 'Transferencia bancaria inmediata desde tu banco',
   },
   {
     key: 'transfer',
     label: 'Transferencia Bancaria',
-    icon: '📲',
+    icon: PhoneIcon,
     description: 'Nequi · Daviplata · Bancolombia',
     subOptions: [
-      { key: 'nequi',       label: 'Nequi',       icon: '📱', desc: 'Billetera digital Nequi' },
-      { key: 'daviplata',   label: 'Daviplata',   icon: '💰', desc: 'Billetera Davivienda' },
-      { key: 'bancolombia', label: 'Bancolombia', icon: '🏛', desc: 'Cuenta Bancolombia' },
+      { key: 'nequi',       label: 'Nequi',       icon: PhoneIcon, desc: 'Billetera digital Nequi' },
+      { key: 'daviplata',   label: 'Daviplata',   icon: BankIcon, desc: 'Billetera Davivienda' },
+      { key: 'bancolombia', label: 'Bancolombia', icon: BankIcon, desc: 'Cuenta Bancolombia' },
     ],
   },
   {
     key: 'cash',
     label: 'Pago Contra Entrega',
-    icon: '🏠',
+    icon: HomeIcon,
     description: `Pagas al recibir — costo adicional de ${fmt(COD_FEE)}`,
     codOnly: true,
   },
@@ -82,7 +88,7 @@ export default function PaymentMethods({
                 onMouseEnter={(e) => { if (!active && !disabled) (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface2)'; }}
                 onMouseLeave={(e) => { if (!active && !disabled) (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface)'; }}
               >
-                <span style={{ fontSize: '22px', flexShrink: 0 }}>{m.icon}</span>
+                <span style={{ color: accent, flexShrink: 0 }}>{typeof m.icon === 'function' ? <m.icon /> : m.icon}</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: active ? accent : 'var(--text)', letterSpacing: '0.5px' }}>
                     {m.label}
@@ -90,7 +96,7 @@ export default function PaymentMethods({
                   </div>
                   <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', marginTop: '2px', lineHeight: 1.5 }}>{m.description}</div>
                 </div>
-                {active && <span style={{ color: accent, fontSize: '16px', flexShrink: 0 }}>✓</span>}
+                {active && <span style={{ color: accent, flexShrink: 0 }}><CheckIcon /></span>}
               </button>
 
               {/* Sub-opciones de Transferencia */}
@@ -117,12 +123,12 @@ export default function PaymentMethods({
                         onMouseEnter={(e) => { if (!subActive) (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface)'; }}
                         onMouseLeave={(e) => { if (!subActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
                       >
-                        <span style={{ fontSize: '18px' }}>{sub.icon}</span>
+                        <span style={{ color: accent }}>{typeof sub.icon === 'function' ? <sub.icon /> : sub.icon}</span>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: subActive ? accent : 'var(--text-muted)' }}>{sub.label}</div>
                           <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '8px', color: 'var(--text-dim)', marginTop: '1px' }}>{sub.desc}</div>
                         </div>
-                        {subActive && <span style={{ color: accent, fontSize: '13px' }}>✓</span>}
+                        {subActive && <span style={{ color: accent }}><CheckIcon /></span>}
                       </button>
                     );
                   })}

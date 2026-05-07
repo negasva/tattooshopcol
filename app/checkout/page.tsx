@@ -188,21 +188,41 @@ export default function CheckoutPage() {
           <CitySelector onCitySelect={(city, eligible) => { setSelectedCity(city); setCashEligible(eligible); setSelectedMethod(''); setSelectedSub(''); }} />
 
           {selectedCity && !cashEligible && (
-            <div style={{ background: 'rgba(255,212,0,0.06)', border: `1px solid ${accent}33`, padding: '14px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '16px', flexShrink: 0 }}>⚠️</span>
-              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1.7 }}>
-                Pago contra entrega no disponible en tu ciudad.{' '}
-                <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Para verificar si en mi zona hay cobertura de contra entrega, me encuentro en…')}`}
-                  target="_blank" rel="noopener noreferrer" style={{ color: '#25d366', textDecoration: 'none' }}>
-                  💬 Verifica con nosotros →
-                </a>
+            <div style={{ background: 'rgba(255,212,0,0.06)', border: `1px solid ${accent}33`, padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-start' }}>
+              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text)', lineHeight: 1.7 }}>
+                Para pago contra entrega en esta ciudad es necesario verificar via whatsapp
               </div>
+              <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Quiero verificar la disponibilidad de contra entrega en mi ciudad…')}`}
+                target="_blank" rel="noopener noreferrer"
+                style={{
+                  background: '#25d366',
+                  color: '#fff',
+                  padding: '10px 16px',
+                  borderRadius: '4px',
+                  textDecoration: 'none',
+                  fontFamily: '"DM Mono", monospace',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  letterSpacing: '1px',
+                  transition: 'background 0.2s',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}>
+                <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '16px', height: '16px' }}>
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004c-1.025 0-2.04-.312-2.926-.902L6.583 3.715l1.922 6.155c-.727 1.195-1.11 2.569-1.11 4.001 0 4.495 3.665 8.16 8.16 8.16s8.16-3.665 8.16-8.16-3.665-8.159-8.16-8.159"/>
+                </svg>
+                VERIFICA CON NOSOTROS
+              </a>
             </div>
           )}
 
           {selectedCity && cashEligible && (
-            <div style={{ background: 'rgba(37,211,102,0.06)', border: '1px solid rgba(37,211,102,0.25)', padding: '10px 16px', fontFamily: '"DM Mono", monospace', fontSize: '10px', color: '#25d366', letterSpacing: '0.5px' }}>
-              ✓ Pago contra entrega disponible en {selectedCity}
+            <div style={{ background: 'rgba(37,211,102,0.06)', border: '1px solid rgba(37,211,102,0.25)', padding: '10px 16px', fontFamily: '"DM Mono", monospace', fontSize: '10px', color: '#25d366', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '16px', height: '16px', flexShrink: 0 }}>
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Pago contra entrega disponible en {selectedCity}
             </div>
           )}
 
@@ -216,11 +236,16 @@ export default function CheckoutPage() {
 
           {/* Info Wompi */}
           {(selectedMethod === 'card' || selectedMethod === 'pse') && (
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', padding: '12px 14px', fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', lineHeight: 1.7 }}>
-              🔒 Pago procesado de forma segura por{' '}
-              <span style={{ color: accent }}>Wompi (Bancolombia)</span>
-              {selectedMethod === 'pse' && ' — Serás redirigido a tu banco para completar la transferencia.'}
-              {selectedMethod === 'card' && ' — Encriptación SSL 256-bit. Aceptamos Visa, Mastercard y Amex.'}
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', padding: '12px 14px', fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', lineHeight: 1.7, display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '16px', height: '16px', flexShrink: 0, marginTop: '2px' }}>
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <span>
+                Pago procesado de forma segura por{' '}
+                <span style={{ color: accent }}>Wompi (Bancolombia)</span>
+                {selectedMethod === 'pse' && ' — Serás redirigido a tu banco para completar la transferencia.'}
+                {selectedMethod === 'card' && ' — Encriptación SSL 256-bit. Aceptamos Visa, Mastercard y Amex.'}
+              </span>
             </div>
           )}
 
@@ -250,7 +275,15 @@ export default function CheckoutPage() {
             onMouseDown={(e) => { if (canCheckout) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.98)'; }}
             onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
           >
-            {isCash || selectedMethod === 'transfer' ? <span>💬</span> : <span>🔒</span>}
+            {isCash || selectedMethod === 'transfer' ? (
+              <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '18px', height: '18px' }}>
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004c-1.025 0-2.04-.312-2.926-.902L6.583 3.715l1.922 6.155c-.727 1.195-1.11 2.569-1.11 4.001 0 4.495 3.665 8.16 8.16 8.16s8.16-3.665 8.16-8.16-3.665-8.159-8.16-8.159"/>
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}>
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            )}
             {btnLabel}
           </button>
 
@@ -318,9 +351,14 @@ export default function CheckoutPage() {
           <div>
             <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', letterSpacing: '3px', marginBottom: '12px' }}>COMPRA SEGURA</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'var(--border)' }}>
-              {[{ icon: '🔒', label: 'SSL', sub: 'Encriptado' }, { icon: '💳', label: 'Wompi', sub: 'Seguro' }, { icon: '🏦', label: 'PSE', sub: 'Bancario' }, { icon: '📱', label: 'Billeteras', sub: 'Digitales' }].map((b) => (
+              {[
+                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, label: 'SSL', sub: 'Encriptado' },
+                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>, label: 'Wompi', sub: 'Seguro' },
+                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>, label: 'PSE', sub: 'Bancario' },
+                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>, label: 'Billeteras', sub: 'Digitales' },
+              ].map((b) => (
                 <div key={b.label} style={{ background: 'var(--bg)', padding: '12px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '18px', marginBottom: '4px' }}>{b.icon}</div>
+                  <div style={{ fontSize: '18px', marginBottom: '4px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-muted)' }}>{b.icon}</div>
                   <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '1px' }}>{b.label}</div>
                   <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '8px', color: 'var(--text-dim)', marginTop: '2px' }}>{b.sub}</div>
                 </div>

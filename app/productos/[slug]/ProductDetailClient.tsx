@@ -75,12 +75,93 @@ function LogoMark({ accent }: { accent: string }) {
   );
 }
 
+function CartDrawer({ cart, onClose, onRemove, onQty, accent, onCheckout }: { cart: CartItem[]; onClose: () => void; onRemove: (id: string) => void; onQty: (id: string, delta: number) => void; accent: string; onCheckout: () => void }) {
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 800, backdropFilter: 'blur(4px)' }} />
+      <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'clamp(320px,40vw,480px)', background: '#181818', zIndex: 900, display: 'flex', flexDirection: 'column', borderLeft: '1px solid #2e2e2e', boxShadow: '-20px 0 60px rgba(0,0,0,0.6)' }}>
+        <div style={{ padding: '28px 28px 20px', borderBottom: '1px solid #2e2e2e', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '2px', textTransform: 'uppercase' }}>Carrito</span>
+            <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '28px', lineHeight: 1, marginTop: '4px', color: 'var(--text)' }}>
+              {cart.length} {cart.length === 1 ? 'ítem' : 'ítems'}
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: '1px solid #2e2e2e', color: 'var(--text)', cursor: 'pointer', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'border-color 0.2s' }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = accent; }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2e2e2e'; }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '20px', height: '20px' }}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 28px' }}>
+          {cart.length === 0 ? (
+            <div style={{ paddingTop: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: '40px', marginBottom: '16px', opacity: 0.3 }}>∅</div>
+              <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', letterSpacing: '1px' }}>Tu carrito está vacío</p>
+            </div>
+          ) : (
+            cart.map((item) => (
+              <div key={item.id} style={{ padding: '20px 0', borderBottom: '1px solid #2a2a2a', display: 'flex', gap: '16px', alignItems: 'center' }}>
+                <div style={{ width: '64px', height: '64px', background: '#1e1e1e', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: '24px', opacity: 0.3 }}>{getCategoryIcon(item.category)}</span>
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '3px' }}>
+                    {item.category.toUpperCase()}
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {item.name}
+                  </div>
+                  <div style={{ color: accent, fontFamily: '"DM Mono", monospace', fontSize: '13px', marginTop: '4px' }}>{fmt(item.price)}</div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1px solid #2e2e2e' }}>
+                    <button onClick={() => onQty(item.id, -1)} style={{ width: '28px', height: '28px', background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                    <span style={{ width: '28px', textAlign: 'center', fontFamily: '"DM Mono", monospace', fontSize: '12px' }}>{item.qty}</span>
+                    <button onClick={() => onQty(item.id, 1)} style={{ width: '28px', height: '28px', background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                  </div>
+                  <button onClick={() => onRemove(item.id)} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '11px', fontFamily: '"DM Mono", monospace', transition: 'color 0.2s' }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#e55'; }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#555'; }}>
+                    eliminar
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {cart.length > 0 && (
+          <div style={{ padding: '24px 28px', borderTop: '1px solid #2e2e2e' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+              <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1px' }}>SUBTOTAL</span>
+              <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '26px', color: accent }}>{fmt(total)}</span>
+            </div>
+            <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-dim)', marginBottom: '20px' }}>Envío calculado al pagar · IVA incluido</p>
+            <button style={{ width: '100%', padding: '16px', background: accent, color: '#111', border: 'none', fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px', letterSpacing: '1px', cursor: 'pointer', transition: 'background 0.2s,transform 0.1s' }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#ffe033'; }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = accent; }} onClick={onCheckout} onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.98)'; }} onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}>
+              PAGAR AHORA
+            </button>
+            <button onClick={onClose} style={{ width: '100%', marginTop: '10px', padding: '12px', background: 'none', color: 'var(--text-muted)', border: '1px solid #2e2e2e', fontFamily: '"DM Mono", monospace', fontSize: '12px', letterSpacing: '1px', cursor: 'pointer', transition: 'border-color 0.2s,color 0.2s' }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = accent; (e.currentTarget as HTMLButtonElement).style.color = accent; }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2e2e2e'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; }}>
+              SEGUIR COMPRANDO
+            </button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 export default function ProductDetailClient({ product }: { product: Product }) {
   const accent = '#FFD400';
   const router = useRouter();
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
 
   const hasDiscount = !!(product.discount_percentage && product.discount_percentage > 0);
   const originalPrice = (product.original_price && product.original_price > product.price)
@@ -95,13 +176,19 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     : product.price;
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('ts_cart');
-      if (stored) {
-        const cart: CartItem[] = JSON.parse(stored);
-        setCartCount(cart.reduce((s, i) => s + i.qty, 0));
-      }
-    } catch {}
+    const load = () => {
+      try {
+        const stored = localStorage.getItem('ts_cart');
+        if (stored) {
+          const c: CartItem[] = JSON.parse(stored);
+          setCart(c);
+          setCartCount(c.reduce((s, i) => s + i.qty, 0));
+        }
+      } catch {}
+    };
+    load();
+    window.addEventListener('storage', load);
+    return () => window.removeEventListener('storage', load);
   }, []);
 
   const handleAddToCart = () => {
@@ -125,18 +212,32 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const handleBuyNow = () => {
     try {
       const stored = localStorage.getItem('ts_cart');
-      const cart: CartItem[] = stored ? JSON.parse(stored) : [];
-      const existing = cart.find((i) => i.id === product.id);
+      const c: CartItem[] = stored ? JSON.parse(stored) : [];
+      const existing = c.find((i) => i.id === product.id);
       const updated = existing
-        ? cart.map((i) => (i.id === product.id ? { ...i, qty: i.qty + qty } : i))
-        : [...cart, { ...product, qty }];
+        ? c.map((i) => (i.id === product.id ? { ...i, qty: i.qty + qty } : i))
+        : [...c, { ...product, qty }];
       localStorage.setItem('ts_cart', JSON.stringify(updated));
     } catch {}
     router.push('/checkout');
   };
 
-  // Parsear specs: líneas entre * son sub-items (fuente más pequeña)
-  interface SpecItem { text: string; isSubItem: boolean; }
+  const removeFromCart = (id: string) => {
+    const updated = cart.filter((i) => i.id !== id);
+    setCart(updated);
+    localStorage.setItem('ts_cart', JSON.stringify(updated));
+    setCartCount(updated.reduce((s, i) => s + i.qty, 0));
+  };
+
+  const changeQty = (id: string, delta: number) => {
+    const updated = cart.map((i) => (i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i)).filter((i) => i.qty > 0);
+    setCart(updated);
+    localStorage.setItem('ts_cart', JSON.stringify(updated));
+    setCartCount(updated.reduce((s, i) => s + i.qty, 0));
+  };
+
+  // Parsear specs: si *texto* está en misma línea, hace BOLD grande. Si * está en líneas separadas, hace pequeño
+  interface SpecItem { text: string; isSubItem: boolean; isBold: boolean; }
   const specsItems: SpecItem[] = (() => {
     if (!product.specs) return [];
     const raw = product.specs.includes('\n')
@@ -146,7 +247,15 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     let inSub = false;
     for (const line of raw) {
       if (line === '*') { inSub = !inSub; }
-      else { result.push({ text: line, isSubItem: inSub }); }
+      else {
+        // Si está rodeado de * en la misma línea (*texto*), es BOLD
+        const boldMatch = line.match(/^\*(.+)\*$/);
+        if (boldMatch) {
+          result.push({ text: boldMatch[1], isSubItem: false, isBold: true });
+        } else {
+          result.push({ text: line, isSubItem: inSub, isBold: false });
+        }
+      }
     }
     return result;
   })();
@@ -198,8 +307,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             ← Volver al catálogo
           </Link>
 
-          <Link
-            href="/"
+          <button
+            onClick={() => setCartOpen(true)}
             style={{
               background: cartCount > 0 ? accent : 'transparent',
               color: cartCount > 0 ? '#111' : 'var(--text)',
@@ -217,7 +326,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           >
             <span>CARRITO</span>
             {cartCount > 0 && <span style={{ fontWeight: 700 }}>{cartCount}</span>}
-          </Link>
+          </button>
         </div>
       </nav>
 
@@ -353,9 +462,21 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             }}
           >
             {[
-              { icon: '🛡', label: 'GARANTÍA', sub: '100% original' },
-              { icon: '🚚', label: 'ENVÍO', sub: 'Todo Colombia' },
-              { icon: '💳', label: 'PAGO', sub: 'Contraentrega' },
+              { icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '20px', height: '20px' }}>
+                  <path d="M12 2L2 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                </svg>
+              ), label: 'GARANTÍA', sub: '100% original' },
+              { icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '20px', height: '20px' }}>
+                  <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+              ), label: 'ENVÍO', sub: 'Todo Colombia' },
+              { icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '20px', height: '20px' }}>
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+                </svg>
+              ), label: 'PAGO', sub: 'Contraentrega' },
             ].map((item) => (
               <div
                 key={item.label}
@@ -365,7 +486,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   textAlign: 'center',
                 }}
               >
-                <div style={{ fontSize: '20px', marginBottom: '4px' }}>{item.icon}</div>
+                <div style={{ fontSize: '20px', marginBottom: '4px', color: accent }}>{item.icon}</div>
                 <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '2px' }}>{item.label}</div>
                 <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', marginTop: '2px', letterSpacing: '0.5px' }}>{item.sub}</div>
               </div>
@@ -464,21 +585,22 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                       display: 'flex',
                       alignItems: 'flex-start',
                       gap: '10px',
-                      padding: item.isSubItem ? '7px 0 7px 16px' : '11px 0',
+                      padding: item.isBold ? '14px 0' : item.isSubItem ? '7px 0 7px 16px' : '11px 0',
                       borderBottom: i < specsItems.length - 1 ? `1px solid ${item.isSubItem ? 'rgba(46,46,46,0.5)' : 'var(--border)'}` : 'none',
                       background: item.isSubItem ? 'rgba(255,255,255,0.015)' : 'transparent',
                     }}
                   >
-                    <span style={{ color: item.isSubItem ? 'var(--text-dim)' : accent, fontSize: item.isSubItem ? '8px' : '10px', marginTop: '2px', flexShrink: 0 }}>
+                    {!item.isBold && <span style={{ color: item.isSubItem ? 'var(--text-dim)' : accent, fontSize: item.isSubItem ? '8px' : '10px', marginTop: '2px', flexShrink: 0 }}>
                       {item.isSubItem ? '›' : '✦'}
-                    </span>
+                    </span>}
                     <span style={{
-                      fontFamily: '"DM Mono", monospace',
-                      fontSize: item.isSubItem ? '10px' : '12px',
-                      color: item.isSubItem ? 'var(--text-dim)' : 'var(--text-muted)',
-                      letterSpacing: item.isSubItem ? '0' : '0.5px',
+                      fontFamily: item.isBold ? '"Bebas Neue", sans-serif' : '"DM Mono", monospace',
+                      fontSize: item.isBold ? '16px' : item.isSubItem ? '10px' : '12px',
+                      color: item.isBold ? accent : item.isSubItem ? 'var(--text-dim)' : 'var(--text-muted)',
+                      letterSpacing: item.isBold ? '1px' : item.isSubItem ? '0' : '0.5px',
                       lineHeight: 1.5,
-                      fontStyle: item.isSubItem ? 'italic' : 'normal',
+                      fontStyle: item.isSubItem && !item.isBold ? 'italic' : 'normal',
+                      fontWeight: item.isBold ? 'bold' : 'normal',
                     }}>
                       {item.text}
                     </span>
@@ -595,7 +717,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#25d36618'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#25d366'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'transparent'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#25d36644'; }}
             >
-              <span>💬</span> PEDIR POR WHATSAPP
+              <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '16px', height: '16px', flexShrink: 0 }}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004c-1.025 0-2.04-.312-2.926-.902L6.583 3.715l1.922 6.155c-.727 1.195-1.11 2.569-1.11 4.001 0 4.495 3.665 8.16 8.16 8.16s8.16-3.665 8.16-8.16-3.665-8.159-8.16-8.159"/></svg>
+              PEDIR POR WHATSAPP
             </a>
           </div>
 
@@ -647,7 +770,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = '0.7'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = '1'; }}
             >
-              💬 Verifica aquí →
+              <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '12px', height: '12px' }}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004c-1.025 0-2.04-.312-2.926-.902L6.583 3.715l1.922 6.155c-.727 1.195-1.11 2.569-1.11 4.001 0 4.495 3.665 8.16 8.16 8.16s8.16-3.665 8.16-8.16-3.665-8.159-8.16-8.159"/></svg> Verifica aquí →
             </a>
             <div style={{ marginTop: '4px' }}>✓ Garantía directa con nosotros</div>
             <div>✓ Producto 100% original</div>
@@ -706,6 +829,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           ← Ver todos los productos
         </Link>
       </footer>
+
+      {cartOpen && <CartDrawer cart={cart} onClose={() => setCartOpen(false)} onRemove={removeFromCart} onQty={changeQty} accent={accent} onCheckout={() => { setCartOpen(false); router.push('/checkout'); }} />}
     </div>
   );
 }
