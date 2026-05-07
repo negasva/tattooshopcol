@@ -109,6 +109,40 @@ input:focus {
   [class*="grid-3"] {
     grid-template-columns: 1fr !important;
   }
+
+  /* Product detail page: stack image and info vertically on mobile */
+  [data-product-detail] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Cart drawer narrower on mobile */
+  [data-cart-drawer] {
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+
+  /* Better spacing on mobile */
+  body {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra small devices */
+  body {
+    font-size: 13px;
+  }
+
+  /* Tighter padding on very small screens */
+  [data-hero-section] {
+    padding: clamp(40px, 8vw, 60px) clamp(16px, 4vw, 20px) 0 !important;
+  }
+
+  /* Buttons more touch-friendly */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
 @import "tailwindcss";

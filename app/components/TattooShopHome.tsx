@@ -314,6 +314,7 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent }: { cart: CartItem
         }}
       />
       <div
+        data-cart-drawer=""
         style={{
           position: 'fixed',
           top: 0,
@@ -649,6 +650,7 @@ export default function TattooShopHome() {
 
       {/* HERO */}
       <section
+        data-hero-section=""
         style={{
           padding: 'clamp(60px,10vh,120px) clamp(20px,5vw,80px) 0',
           display: 'flex',
@@ -710,7 +712,7 @@ export default function TattooShopHome() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(3,1fr)',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
             gap: '1px',
             marginLeft: '-clamp(20px,5vw,80px)',
             marginRight: '-clamp(20px,5vw,80px)',
@@ -853,7 +855,7 @@ export default function TattooShopHome() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(3,minmax(0,1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
                 gap: '1px',
                 background: 'var(--border)',
               }}
@@ -871,7 +873,7 @@ export default function TattooShopHome() {
       </section>
 
       {/* ABOUT */}
-      <section style={{ borderTop: '1px solid var(--border)', display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+      <section style={{ borderTop: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
         <div style={{ padding: 'clamp(48px,8vw,96px) clamp(24px,5vw,80px)', borderRight: '1px solid var(--border)' }}>
           <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '20px' }}>SOBRE NOSOTROS</div>
           <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(28px,4vw,52px)', lineHeight: 0.95, color: 'var(--text)', marginBottom: '24px' }}>

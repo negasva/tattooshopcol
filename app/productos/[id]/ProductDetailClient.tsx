@@ -223,6 +223,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
       {/* MAIN CONTENT */}
       <div
+        data-product-detail=""
         style={{
           padding: 'clamp(32px,6vw,72px) clamp(20px,5vw,80px)',
           display: 'grid',
@@ -233,7 +234,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         }}
       >
         {/* IMAGE PANEL */}
-        <div style={{ background: 'var(--bg)', position: 'sticky', top: '80px' }}>
+        <div style={{ background: 'var(--bg)', position: 'static' }}>
           <div
             style={{
               aspectRatio: '4/3',
