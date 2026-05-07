@@ -259,6 +259,31 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       >
         {/* IMAGE PANEL */}
         <div style={{ background: 'var(--bg)', position: 'static' }}>
+
+          {/* Botón atrás encima de la foto */}
+          <Link
+            href="/"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 16px',
+              marginBottom: '8px',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-muted)',
+              textDecoration: 'none',
+              fontFamily: '"DM Mono", monospace',
+              fontSize: '10px',
+              letterSpacing: '2px',
+              textTransform: 'uppercase',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = accent; (e.currentTarget as HTMLAnchorElement).style.borderColor = accent; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border)'; }}
+          >
+            ← ATRÁS
+          </Link>
           <div
             style={{
               aspectRatio: '4/3',
@@ -355,8 +380,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: accent, letterSpacing: '3px', textTransform: 'uppercase' }}>
               {getCategoryIcon(product.category)} {product.category}
             </div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>
-              SKU-{String(product.id).padStart(4, '0')}
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '8px', color: 'var(--text-dim)', letterSpacing: '0.5px', textAlign: 'right', opacity: 0.5 }}>
+              SKU {String(product.id).slice(0, 8).toUpperCase()}
             </div>
           </div>
 
@@ -376,46 +401,52 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           </div>
 
           {/* Price */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: '20px 0' }}>
-            <span
-              style={{
-                fontFamily: '"Bebas Neue", sans-serif',
-                fontSize: 'clamp(36px,5vw,56px)',
-                color: accent,
-                lineHeight: 1,
-              }}
-            >
-              {fmt(salePrice)}
-            </span>
-            {hasDiscount && originalPrice && (
+          <div style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: '20px 0' }}>
+            {/* Fila principal: precio amarillo + precio tachado en el mismo eje horizontal */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
               <span
                 style={{
-                  fontFamily: '"DM Mono", monospace',
-                  fontSize: '16px',
-                  color: 'var(--text-dim)',
-                  textDecoration: 'line-through',
-                }}
-              >
-                {fmt(originalPrice)}
-              </span>
-            )}
-            {hasDiscount && originalPrice && (
-              <span
-                style={{
-                  fontFamily: '"DM Mono", monospace',
-                  fontSize: '11px',
-                  color: '#e55',
-                  letterSpacing: '1px',
-                  background: 'rgba(229,85,85,0.12)',
-                  border: '1px solid rgba(229,85,85,0.25)',
-                  padding: '6px 10px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
+                  fontFamily: '"Bebas Neue", sans-serif',
+                  fontSize: 'clamp(36px,5vw,56px)',
+                  color: accent,
                   lineHeight: 1,
                 }}
               >
-                AHORRAS {fmt(originalPrice - salePrice)}
+                {fmt(salePrice)}
               </span>
+              {hasDiscount && originalPrice && (
+                <span
+                  style={{
+                    fontFamily: '"DM Mono", monospace',
+                    fontSize: '16px',
+                    color: 'var(--text-dim)',
+                    textDecoration: 'line-through',
+                    lineHeight: 1,
+                  }}
+                >
+                  {fmt(originalPrice)}
+                </span>
+              )}
+            </div>
+            {/* Badge AHORRAS debajo, alineado a la izquierda bajo el precio */}
+            {hasDiscount && originalPrice && (
+              <div style={{ marginTop: '8px' }}>
+                <span
+                  style={{
+                    fontFamily: '"DM Mono", monospace',
+                    fontSize: '11px',
+                    color: '#e55',
+                    letterSpacing: '1px',
+                    background: 'rgba(229,85,85,0.12)',
+                    border: '1px solid rgba(229,85,85,0.25)',
+                    padding: '5px 10px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  AHORRAS {fmt(originalPrice - salePrice)}
+                </span>
+              </div>
             )}
           </div>
 
@@ -568,22 +599,58 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             </a>
           </div>
 
-          {/* Sub-info */}
+          {/* Sub-info — envíos */}
           <div
             style={{
               fontFamily: '"DM Mono", monospace',
               fontSize: '10px',
               color: 'var(--text-dim)',
               letterSpacing: '0.5px',
-              lineHeight: 1.8,
+              lineHeight: 1.9,
               borderTop: '1px solid var(--border)',
               paddingTop: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '2px',
             }}
           >
-            <div>✓ Envío a todo Colombia — 1 a 3 días hábiles</div>
-            <div>✓ Pago contraentrega disponible</div>
-            <div>✓ Garantía del fabricante incluida</div>
-            <div>✓ Producto 100% original certificado</div>
+            <div style={{ color: 'var(--text-muted)', marginBottom: '6px', letterSpacing: '2px', fontSize: '9px' }}>INFORMACIÓN DE ENVÍO</div>
+            <div>✓ Envíos a todo Colombia</div>
+            <div style={{ paddingLeft: '14px', color: 'var(--text-dim)', fontSize: '9px' }}>
+              · 1–3 días hábiles en ciudades capitales
+            </div>
+            <div style={{ paddingLeft: '14px', color: 'var(--text-dim)', fontSize: '9px' }}>
+              · 3–5 días hábiles en el resto del país
+            </div>
+            <div style={{ marginTop: '4px' }}>
+              ✓ Pago contraentrega disponible{' '}
+              <span style={{ color: '#e55', fontSize: '9px' }}>*</span>
+            </div>
+            <div style={{ paddingLeft: '14px', color: 'var(--text-dim)', fontSize: '9px', fontStyle: 'italic', lineHeight: 1.5, marginBottom: '4px' }}>
+              * Disponible en algunas zonas — no aplica para todas las ciudades.
+            </div>
+            <a
+              href={`https://wa.me/573000000000?text=Hola%21%20Para%20verificar%20si%20en%20mi%20zona%20hay%20cobertura%20de%20contra%20entrega%2C%20me%20encuentro%20en%E2%80%A6`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                paddingLeft: '14px',
+                color: '#25d366',
+                fontSize: '9px',
+                textDecoration: 'none',
+                letterSpacing: '1px',
+                transition: 'opacity 0.2s',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = '0.7'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = '1'; }}
+            >
+              💬 Verifica aquí →
+            </a>
+            <div style={{ marginTop: '4px' }}>✓ Garantía directa con nosotros</div>
+            <div>✓ Producto 100% original</div>
           </div>
 
           {/* Total if qty > 1 */}
