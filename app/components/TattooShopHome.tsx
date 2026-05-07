@@ -1,95 +1,23 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { supabase } from '../lib/supabase';
 
 interface Product {
   id: string;
   name: string;
-  category: 'Kits' | 'Máquinas' | 'Insumos';
+  category: string;
   price: number;
-  tag: string;
+  tag?: string;
   specs: string;
-  icon: string;
-  slug: string;
-  featured?: boolean;
+  image_url?: string;
+  original_price?: number;
+  discount_percentage?: number;
 }
 
-const PRODUCTS = {
-  kits: [
-    {
-      id: 'k1',
-      slug: 'kit-iniciacion-profesional',
-      name: 'Kit Iniciación Pro',
-      category: 'Kits' as const,
-      price: 289000,
-      featured: true,
-      tag: 'Más vendido',
-      specs: '12 piezas — Completo',
-      icon: '✦',
-    },
-    {
-      id: 'k2',
-      slug: 'kit-rotary-completo',
-      name: 'Kit Rotary Completo',
-      category: 'Kits' as const,
-      price: 520000,
-      featured: true,
-      tag: 'Premium',
-      specs: '18 piezas — Pro',
-      icon: '✦',
-    },
-  ],
-  maquinas: [
-    {
-      id: 'm1',
-      slug: 'maquina-rotary-dragonfly',
-      name: 'Dragonfly X2 Rotary',
-      category: 'Máquinas' as const,
-      price: 680000,
-      featured: true,
-      tag: 'Top rated',
-      specs: '4.0mm — Inalámbrica',
-      icon: '⚙',
-    },
-    {
-      id: 'm2',
-      slug: 'maquina-pen-wireless',
-      name: 'Pen Inalámbrica Pro',
-      category: 'Máquinas' as const,
-      price: 420000,
-      featured: true,
-      tag: 'Nueva',
-      specs: '3.5mm — Batería 8h',
-      icon: '⚙',
-    },
-  ],
-  insumos: [
-    {
-      id: 'i1',
-      slug: 'tintas-set-world-famous',
-      name: 'Set Tintas World Famous',
-      category: 'Insumos' as const,
-      price: 195000,
-      featured: true,
-      tag: 'Oferta',
-      specs: '20 colores — 30ml c/u',
-      icon: '◈',
-    },
-    {
-      id: 'i2',
-      slug: 'agujas-cartridge-mixed',
-      name: 'Agujas Cartridge Mixed',
-      category: 'Insumos' as const,
-      price: 98000,
-      featured: true,
-      tag: 'Pack',
-      specs: '50 unidades — Surtidas',
-      icon: '◈',
-    },
-  ],
-};
-
-const ALL_PRODUCTS = [...PRODUCTS.kits, ...PRODUCTS.maquinas, ...PRODUCTS.insumos];
+interface CartItem extends Product {
+  qty: number;
+}
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-CO', {
@@ -98,9 +26,14 @@ const fmt = (n: number) =>
     maximumFractionDigits: 0,
   }).format(n);
 
-interface CartItem extends Product {
-  qty: number;
-}
+const getCategoryIcon = (category: string) => {
+  const icons: { [key: string]: string } = {
+    'Kits': '✦',
+    'Máquinas': '⚙',
+    'Insumos': '◈',
+  };
+  return icons[category] || '◈';
+};
 
 function ProductPlaceholder({ icon, category, accent }: { icon: string; category: string; accent: string }) {
   const gradId = `g-${Math.random().toString(36).slice(2)}`;
@@ -225,7 +158,15 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
             transition: 'transform 0.5s ease',
           }}
         >
-          <ProductPlaceholder icon={product.icon} category={product.category} accent={accent} />
+          {product.image_url ? (
+            <img
+              src={product.image_url}
+              alt={product.name}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          ) : (
+            <ProductPlaceholder icon={getCategoryIcon(product.category)} category={product.category} accent={accent} />
+          )}
         </div>
       </div>
 
@@ -470,6 +411,8 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent }: { cart: CartItem
 
 export default function TattooShopHome() {
   const accent = '#FFD400';
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
@@ -478,12 +421,32 @@ export default function TattooShopHome() {
   const [newsletterDone, setNewsletterDone] = useState(false);
 
   useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setProducts(data || []);
+      } catch (error) {
+        console.error('Error loading products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, []);
+
+  useEffect(() => {
     const onScroll = () => setNavScrolled(window.scrollY > 60);
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const filtered = activeFilter === 'all' ? ALL_PRODUCTS : ALL_PRODUCTS.filter((p) => p.category.toLowerCase() === activeFilter.toLowerCase());
+  const filtered = activeFilter === 'all' ? products : products.filter((p) => p.category.toLowerCase() === activeFilter.toLowerCase());
 
   const addToCart = (product: Product) => {
     setCart((prev) => {
@@ -501,9 +464,9 @@ export default function TattooShopHome() {
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
 
   const categories = [
-    { key: 'kits', label: 'Kits', count: PRODUCTS.kits.length },
-    { key: 'máquinas', label: 'Máquinas', count: PRODUCTS.maquinas.length },
-    { key: 'insumos', label: 'Insumos', count: PRODUCTS.insumos.length },
+    { key: 'kits', label: 'Kits', count: products.filter(p => p.category === 'Kits').length },
+    { key: 'máquinas', label: 'Máquinas', count: products.filter(p => p.category === 'Máquinas').length },
+    { key: 'insumos', label: 'Insumos', count: products.filter(p => p.category === 'Insumos').length },
   ];
 
   const handleNewsletter = (e: React.FormEvent) => {
@@ -802,22 +765,34 @@ export default function TattooShopHome() {
           </div>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3,minmax(0,1fr))',
-            gap: '1px',
-            background: 'var(--border)',
-          }}
-        >
-          {filtered.map((p, i) => (
-            <ProductCard key={p.id} product={p} idx={i} onAdd={addToCart} accent={accent} />
-          ))}
-        </div>
+        {loading ? (
+          <div style={{ padding: '80px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            Cargando productos...
+          </div>
+        ) : filtered.length === 0 ? (
+          <div style={{ padding: '80px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            No hay productos en esta categoría
+          </div>
+        ) : (
+          <>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3,minmax(0,1fr))',
+                gap: '1px',
+                background: 'var(--border)',
+              }}
+            >
+              {filtered.map((p, i) => (
+                <ProductCard key={p.id} product={p} idx={i} onAdd={addToCart} accent={accent} />
+              ))}
+            </div>
 
-        <div style={{ marginTop: '24px', fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-dim)', letterSpacing: '1px', display: 'flex', justifyContent: 'flex-end' }}>
-          {filtered.length} de {ALL_PRODUCTS.length} productos
-        </div>
+            <div style={{ marginTop: '24px', fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-dim)', letterSpacing: '1px', display: 'flex', justifyContent: 'flex-end' }}>
+              {filtered.length} de {products.length} productos
+            </div>
+          </>
+        )}
       </section>
 
       {/* ABOUT */}
