@@ -62,16 +62,24 @@ export default function AdminPageClient() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Calcular automáticamente el descuento % si hay precio original y precio final
+      let finalPrice = formData.price;
       let discountPercentage = formData.discount_percentage;
-      if (formData.original_price && formData.original_price > 0 && formData.price > 0) {
-        discountPercentage = Math.round(((formData.original_price - formData.price) / formData.original_price) * 100);
+      let originalPrice = formData.original_price;
+
+      // Si hay precio original y descuento %, calcular automáticamente el precio final
+      if (originalPrice && originalPrice > 0 && discountPercentage && discountPercentage > 0) {
+        finalPrice = Math.round(originalPrice - (originalPrice * discountPercentage / 100));
+      }
+      // Si hay precio original y precio final, calcular automáticamente el descuento %
+      else if (originalPrice && originalPrice > 0 && finalPrice > 0 && finalPrice < originalPrice) {
+        discountPercentage = Math.round(((originalPrice - finalPrice) / originalPrice) * 100);
       }
 
       const productData = {
         ...formData,
+        price: finalPrice,
         discount_percentage: discountPercentage || null,
-        original_price: formData.original_price || null,
+        original_price: originalPrice || null,
       };
 
       if (editingId) {
@@ -137,6 +145,13 @@ export default function AdminPageClient() {
       setCategories([...categories, newCategory]);
       setNewCategory('');
     }
+  };
+
+  const calculatePrice = (originalPrice: number, discountPercentage: number) => {
+    if (originalPrice && originalPrice > 0 && discountPercentage && discountPercentage > 0) {
+      return Math.round(originalPrice - (originalPrice * discountPercentage / 100));
+    }
+    return formData.price;
   };
 
   const handleImageUpload = async (file: File) => {
@@ -335,7 +350,15 @@ export default function AdminPageClient() {
                 <input
                   type="number"
                   value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                  onChange={(e) => {
+                    const newPrice = Number(e.target.value);
+                    let newDiscountPercentage = formData.discount_percentage;
+                    // Calcular descuento % si hay original_price
+                    if (formData.original_price && formData.original_price > 0 && newPrice < formData.original_price) {
+                      newDiscountPercentage = Math.round(((formData.original_price - newPrice) / formData.original_price) * 100);
+                    }
+                    setFormData({ ...formData, price: newPrice, discount_percentage: newDiscountPercentage });
+                  }}
                   required
                   style={{
                     width: '100%',
@@ -352,7 +375,11 @@ export default function AdminPageClient() {
                 <input
                   type="number"
                   value={formData.original_price}
-                  onChange={(e) => setFormData({ ...formData, original_price: Number(e.target.value) })}
+                  onChange={(e) => {
+                    const newOriginalPrice = Number(e.target.value);
+                    const newPrice = calculatePrice(newOriginalPrice, formData.discount_percentage);
+                    setFormData({ ...formData, original_price: newOriginalPrice, price: newPrice });
+                  }}
                   style={{
                     width: '100%',
                     padding: '10px',
@@ -371,7 +398,11 @@ export default function AdminPageClient() {
                 <input
                   type="number"
                   value={formData.discount_percentage}
-                  onChange={(e) => setFormData({ ...formData, discount_percentage: Number(e.target.value) })}
+                  onChange={(e) => {
+                    const newDiscountPercentage = Number(e.target.value);
+                    const newPrice = calculatePrice(formData.original_price, newDiscountPercentage);
+                    setFormData({ ...formData, discount_percentage: newDiscountPercentage, price: newPrice });
+                  }}
                   min="0"
                   max="100"
                   style={{
