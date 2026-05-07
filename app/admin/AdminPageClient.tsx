@@ -237,7 +237,7 @@ export default function AdminPageClient() {
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Categoría</label>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -289,10 +289,10 @@ export default function AdminPageClient() {
               </div>
             </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Imagen</label>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                <div style={{ flex: 1 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Imagen</label>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <input
                     type="file"
                     accept="image/*"
@@ -302,7 +302,7 @@ export default function AdminPageClient() {
                     }}
                     disabled={uploading}
                     style={{
-                      width: '100%',
+                      flex: 1,
                       padding: '10px',
                       border: '1px solid var(--border)',
                       background: 'var(--bg)',
@@ -311,13 +311,13 @@ export default function AdminPageClient() {
                       cursor: uploading ? 'not-allowed' : 'pointer',
                     }}
                   />
-                  {uploading && <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>Subiendo...</div>}
+                  {formData.image_url && (
+                    <div style={{ width: '80px', height: '80px', flexShrink: 0 }}>
+                      <img src={formData.image_url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
+                    </div>
+                  )}
                 </div>
-                {formData.image_url && (
-                  <div style={{ width: '100px', height: '100px' }}>
-                    <img src={formData.image_url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
-                  </div>
-                )}
+                {uploading && <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>Subiendo...</div>}
               </div>
             </div>
 
