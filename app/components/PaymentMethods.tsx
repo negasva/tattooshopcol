@@ -1,6 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+const accent = '#FFD400';
+
+const METHODS: Record<string, { label: string; icon: string; description: string }> = {
+  card:       { label: 'Tarjeta Débito/Crédito', icon: '💳', description: 'Visa, Mastercard, American Express' },
+  pse:        { label: 'PSE',                    icon: '🏦', description: 'Transferencia bancaria instantánea' },
+  nequi:      { label: 'Nequi',                  icon: '📱', description: 'Billetera digital' },
+  daviplata:  { label: 'Daviplata',              icon: '💰', description: 'Billetera digital' },
+  cash:       { label: 'Pago Contra Entrega',    icon: '🏠', description: 'Pagas cuando recibes tu pedido' },
+};
 
 interface PaymentMethodsProps {
   availableMethods: string[];
@@ -8,89 +16,51 @@ interface PaymentMethodsProps {
   onSelectMethod: (method: string) => void;
 }
 
-const METHOD_LABELS: Record<string, { label: string; icon: string; description: string }> = {
-  card: {
-    label: 'Tarjeta Débito/Crédito',
-    icon: '💳',
-    description: 'Visa, Mastercard, American Express',
-  },
-  pse: {
-    label: 'PSE',
-    icon: '🏦',
-    description: 'Transferencia bancaria instantánea',
-  },
-  nequi: {
-    label: 'Nequi',
-    icon: '📱',
-    description: 'Billetera digital',
-  },
-  daviplata: {
-    label: 'Daviplata',
-    icon: '💰',
-    description: 'Billetera digital',
-  },
-  cash: {
-    label: 'Pago Contra Entrega',
-    icon: '💵',
-    description: 'Paga cuando recibas tu pedido',
-  },
-};
-
-export default function PaymentMethods({
-  availableMethods,
-  selectedMethod,
-  onSelectMethod,
-}: PaymentMethodsProps) {
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSelectMethod = (method: string) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      onSelectMethod(method);
-      setIsLoading(false);
-    }, 300);
-  };
-
+export default function PaymentMethods({ availableMethods, selectedMethod, onSelectMethod }: PaymentMethodsProps) {
   return (
     <div>
-      <label className="block text-sm font-semibold text-trust-dark mb-3">
+      <label style={{ display: 'block', fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '12px' }}>
         Método de Pago
       </label>
 
-      <div className="space-y-3">
-        {availableMethods.map((method) => {
-          const methodInfo = METHOD_LABELS[method];
-          if (!methodInfo) return null;
-
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border)' }}>
+        {availableMethods.map((key) => {
+          const m = METHODS[key];
+          if (!m) return null;
+          const active = selectedMethod === key;
           return (
             <button
-              key={method}
-              onClick={() => handleSelectMethod(method)}
-              disabled={isLoading}
-              className={`w-full p-4 rounded-lg border-2 transition text-left ${
-                selectedMethod === method
-                  ? 'border-trust-green bg-green-50'
-                  : 'border-gray-300 bg-white hover:border-trust-green'
-              } disabled:opacity-50`}
+              key={key}
+              onClick={() => onSelectMethod(key)}
+              style={{
+                background: active ? 'var(--surface2)' : 'var(--surface)',
+                border: 'none',
+                padding: '14px 16px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                textAlign: 'left',
+                transition: 'background 0.15s',
+                borderLeft: active ? `3px solid ${accent}` : '3px solid transparent',
+              }}
+              onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface2)'; }}
+              onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface)'; }}
             >
-              <div className="flex items-start gap-3">
-                <span className="text-2xl">{methodInfo.icon}</span>
-                <div className="flex-1">
-                  <p className="font-semibold text-trust-dark">{methodInfo.label}</p>
-                  <p className="text-xs text-gray-600">{methodInfo.description}</p>
-                </div>
-                {selectedMethod === method && (
-                  <span className="text-trust-green text-xl">✓</span>
-                )}
+              <span style={{ fontSize: '22px', flexShrink: 0 }}>{m.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: active ? accent : 'var(--text)', letterSpacing: '0.5px' }}>{m.label}</div>
+                <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', marginTop: '2px' }}>{m.description}</div>
               </div>
+              {active && <span style={{ color: accent, fontSize: '16px', flexShrink: 0 }}>✓</span>}
             </button>
           );
         })}
       </div>
 
       {availableMethods.length < 5 && (
-        <p className="text-xs text-gray-600 mt-3">
-          * Otros métodos de pago pueden estar disponibles después de seleccionar tu ciudad
+        <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', marginTop: '10px', lineHeight: 1.6 }}>
+          * Otros métodos de pago disponibles según tu ciudad
         </p>
       )}
     </div>

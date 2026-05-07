@@ -1,94 +1,125 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import cities from '@/app/data/colombianCities.json';
+
+const accent = '#FFD400';
 
 interface CitySelectorProps {
   onCitySelect: (city: string, isCashOnDeliveryEligible: boolean) => void;
 }
 
 export default function CitySelector({ onCitySelect }: CitySelectorProps) {
-  const [selectedCity, setSelectedCity] = useState('');
+  const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
   const allCities = useMemo(() => {
-    const cityList: Array<{ name: string; cashOnDelivery: boolean }> = [];
-
-    cities.forEach((city) => {
-      cityList.push({
-        name: city.city,
-        cashOnDelivery: city.cashOnDelivery,
-      });
-
-      city.suburbs.forEach((suburb) => {
-        cityList.push({
-          name: suburb,
-          cashOnDelivery: city.cashOnDelivery,
-        });
-      });
+    const list: { name: string; cashOnDelivery: boolean }[] = [];
+    cities.forEach((c) => {
+      list.push({ name: c.city, cashOnDelivery: c.cashOnDelivery });
+      c.suburbs.forEach((s) => list.push({ name: s, cashOnDelivery: c.cashOnDelivery }));
     });
-
-    return cityList.sort((a, b) => a.name.localeCompare(b.name));
+    return list.sort((a, b) => a.name.localeCompare(b.name));
   }, []);
 
-  const filteredCities = useMemo(() => {
-    if (!selectedCity) return allCities;
+  const filtered = useMemo(
+    () => (query ? allCities.filter((c) => c.name.toLowerCase().includes(query.toLowerCase())) : allCities),
+    [query, allCities]
+  );
 
-    return allCities.filter((city) =>
-      city.name.toLowerCase().includes(selectedCity.toLowerCase())
-    );
-  }, [selectedCity, allCities]);
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
-  const handleCitySelect = (cityName: string) => {
-    const city = allCities.find((c) => c.name === cityName);
-    setSelectedCity(cityName);
+  const handleSelect = (name: string) => {
+    const city = allCities.find((c) => c.name === name);
+    setSelected(name);
+    setQuery(name);
     setIsOpen(false);
-
-    if (city) {
-      onCitySelect(cityName, city.cashOnDelivery);
-    }
+    if (city) onCitySelect(name, city.cashOnDelivery);
   };
 
   return (
-    <div className="relative">
-      <label className="block text-sm font-semibold text-trust-dark mb-2">
+    <div ref={ref} style={{ position: 'relative' }}>
+      <label style={{ display: 'block', fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '10px' }}>
         Ciudad de Entrega
       </label>
+      <input
+        type="text"
+        placeholder="Busca tu ciudad..."
+        value={query}
+        onChange={(e) => { setQuery(e.target.value); setSelected(''); setIsOpen(true); }}
+        onFocus={() => setIsOpen(true)}
+        style={{
+          width: '100%',
+          padding: '12px 14px',
+          background: 'var(--surface)',
+          border: `1px solid ${selected ? accent : 'var(--border)'}`,
+          color: 'var(--text)',
+          fontFamily: '"DM Mono", monospace',
+          fontSize: '13px',
+          outline: 'none',
+          transition: 'border-color 0.2s',
+        }}
+        onFocusCapture={(e) => { (e.target as HTMLInputElement).style.borderColor = accent; }}
+        onBlurCapture={(e) => { if (!selected) (e.target as HTMLInputElement).style.borderColor = 'var(--border)'; }}
+      />
 
-      <div className="relative">
-        <input
-          type="text"
-          placeholder="Busca tu ciudad..."
-          value={selectedCity}
-          onChange={(e) => setSelectedCity(e.target.value)}
-          onFocus={() => setIsOpen(true)}
-          className="w-full px-4 py-2 border border-trust-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-trust-green"
-        />
+      {isOpen && filtered.length > 0 && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          right: 0,
+          background: '#1e1e1e',
+          border: '1px solid var(--border)',
+          borderTop: 'none',
+          maxHeight: '220px',
+          overflowY: 'auto',
+          zIndex: 50,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+        }}>
+          {filtered.slice(0, 20).map((city) => (
+            <button
+              key={city.name}
+              onMouseDown={() => handleSelect(city.name)}
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                padding: '10px 14px',
+                background: 'none',
+                border: 'none',
+                borderBottom: '1px solid var(--border)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface2)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'none'; }}
+            >
+              <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text)' }}>{city.name}</span>
+              {city.cashOnDelivery && (
+                <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '8px', color: '#111', background: accent, padding: '2px 6px', letterSpacing: '1px' }}>
+                  C.ENTREGA ✓
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
 
-        {isOpen && filteredCities.length > 0 && (
-          <div className="absolute top-full left-0 right-0 bg-white border border-trust-dark rounded-lg mt-1 max-h-48 overflow-y-auto shadow-lg z-20">
-            {filteredCities.slice(0, 15).map((city) => (
-              <button
-                key={city.name}
-                onClick={() => handleCitySelect(city.name)}
-                className="w-full text-left px-4 py-2 hover:bg-trust-light transition text-sm"
-              >
-                <span className="text-trust-dark font-medium">{city.name}</span>
-                {city.cashOnDelivery && (
-                  <span className="ml-2 text-xs bg-trust-green text-white px-2 py-1 rounded">
-                    Contra Entrega ✓
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {selectedCity && (
-        <p className="text-xs text-gray-600 mt-2">
-          Seleccionaste: {selectedCity}
-        </p>
+      {selected && (
+        <div style={{ marginTop: '8px', fontFamily: '"DM Mono", monospace', fontSize: '10px', color: accent, letterSpacing: '1px' }}>
+          ✓ {selected}
+        </div>
       )}
     </div>
   );
