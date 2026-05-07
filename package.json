@@ -17,7 +17,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@supabase/supabase-js": "^2.105.3",
     "@tailwindcss/postcss": "^4.2.4",
     "autoprefixer": "^10.5.0",
     "axios": "^1.16.0",
@@ -28,6 +27,7 @@
     "tailwindcss": "^4.2.4"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "^2.105.3",
     "@types/node": "25.6.0",
     "@types/react": "19.2.14",
     "typescript": "6.0.3"
