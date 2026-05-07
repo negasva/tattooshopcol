@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { supabase } from '../lib/supabase';
 
 interface Product {
@@ -443,6 +444,7 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent }: { cart: CartItem
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.background = accent;
               }}
+              onClick={() => { setCartOpen(false); router.push('/checkout'); }}
               onMouseDown={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.98)';
               }}
@@ -487,6 +489,7 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent }: { cart: CartItem
 
 export default function TattooShopHome() {
   const accent = '#FFD400';
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -515,6 +518,24 @@ export default function TattooShopHome() {
 
     loadProducts();
   }, []);
+
+  // Leer carrito desde localStorage al montar y cuando cambie desde otra página
+  useEffect(() => {
+    const load = () => {
+      try {
+        const stored = localStorage.getItem('ts_cart');
+        if (stored) setCart(JSON.parse(stored));
+      } catch {}
+    };
+    load();
+    window.addEventListener('storage', load);
+    return () => window.removeEventListener('storage', load);
+  }, []);
+
+  // Escribir carrito a localStorage cada vez que cambie
+  useEffect(() => {
+    try { localStorage.setItem('ts_cart', JSON.stringify(cart)); } catch {}
+  }, [cart]);
 
   useEffect(() => {
     const onScroll = () => setNavScrolled(window.scrollY > 60);
