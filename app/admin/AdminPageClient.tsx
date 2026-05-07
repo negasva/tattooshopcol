@@ -435,19 +435,29 @@ export default function AdminPageClient() {
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Especificaciones</label>
-              <input
-                type="text"
-                placeholder="ej: 12 piezas — Completo"
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>
+                Especificaciones del Kit
+                <span style={{ marginLeft: '8px', fontSize: '11px', color: 'var(--text-dim)', fontWeight: 'normal' }}>
+                  — Una línea por ítem. Puedes copiar y pegar directamente.
+                </span>
+              </label>
+              <textarea
+                placeholder={"1x Máquina Poseidon Clear\n1x Batería Inalámbrica\n10x Cartuchos de agujas PREMIUM\n1x Bolsita de Cups"}
                 value={formData.specs}
                 onChange={(e) => setFormData({ ...formData, specs: e.target.value })}
+                rows={8}
                 style={{
                   width: '100%',
-                  padding: '10px',
+                  padding: '12px',
                   border: '1px solid var(--border)',
                   background: 'var(--bg)',
                   color: 'var(--text)',
                   borderRadius: '4px',
+                  fontFamily: '"DM Mono", monospace',
+                  fontSize: '13px',
+                  lineHeight: '1.6',
+                  resize: 'vertical',
+                  whiteSpace: 'pre',
                 }}
               />
             </div>

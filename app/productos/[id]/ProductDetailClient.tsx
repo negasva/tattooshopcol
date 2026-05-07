@@ -120,8 +120,11 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     setTimeout(() => setAdded(false), 2000);
   };
 
+  // Si tiene saltos de línea, usar esos; si no, separar por coma/pipe como fallback
   const specsLines = product.specs
-    ? product.specs.split(/[,|·\n]/).map((s) => s.trim()).filter(Boolean)
+    ? product.specs.includes('\n')
+      ? product.specs.split('\n').map((s) => s.trim()).filter(Boolean)
+      : product.specs.split(/[,|·]/).map((s) => s.trim()).filter(Boolean)
     : [];
 
   return (

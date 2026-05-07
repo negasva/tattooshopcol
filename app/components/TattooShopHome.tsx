@@ -237,7 +237,7 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
 
       <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
         <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '2px', textTransform: 'uppercase' }}>
-          {product.category} — {product.specs}
+          {product.category} — {product.specs?.split('\n')[0]}
         </div>
         <Link href={`/productos/${product.id}`} style={{ textDecoration: 'none' }}>
           <div
