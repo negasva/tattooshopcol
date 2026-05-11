@@ -8,6 +8,7 @@ import { toSlug } from '../lib/utils';
 import WhatsAppLogo from './WhatsAppLogo';
 import BrandLogo from './BrandLogo';
 import BrandLogoFull from './BrandLogoFull';
+import BrandLogoCombined from './BrandLogoCombined';
 
 interface Product {
   id: string;
@@ -601,8 +602,12 @@ export default function TattooShopHome() {
           alignItems: 'center',
           justifyContent: 'space-between',
           height: '64px',
+          position: 'relative',
         }}
       >
+        <div style={{ position: 'absolute', right: 'clamp(20px,5vw,80px)', top: '50%', transform: 'translateY(-50%)', color: accent, margin: '8px 0' }}>
+          <BrandLogoCombined width={90} />
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', color: accent }}>
           <BrandLogoFull width="clamp(100px,10vw,140px)" />
         </div>
