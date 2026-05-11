@@ -6,8 +6,6 @@ import { useRouter } from 'next/navigation';
 import { getSupabase } from '../lib/supabase';
 import { toSlug } from '../lib/utils';
 import WhatsAppLogo from './WhatsAppLogo';
-import BrandLogo from './BrandLogo';
-import BrandLogoFull from './BrandLogoFull';
 import BrandLogoCombined from './BrandLogoCombined';
 
 interface Product {
@@ -605,9 +603,6 @@ export default function TattooShopHome() {
           position: 'relative',
         }}
       >
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', color: accent, textDecoration: 'none' }}>
-          <BrandLogo size={32} />
-        </Link>
         <div style={{ position: 'absolute', right: 'clamp(20px,5vw,80px)', top: '50%', transform: 'translateY(-50%)', color: accent, margin: '8px 0' }}>
           <BrandLogoCombined width={90} />
         </div>

@@ -5,7 +5,6 @@ import Link from 'next/link';
 import CitySelector from '../components/CitySelector';
 import PaymentMethods, { COD_FEE } from '../components/PaymentMethods';
 import WhatsAppLogo from '../components/WhatsAppLogo';
-import BrandLogo from '../components/BrandLogo';
 
 const accent = '#FFD400';
 const WHATSAPP = '573000000000';
@@ -147,9 +146,6 @@ export default function CheckoutPage() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px',
         transition: 'all 0.3s ease',
       }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', color: accent, textDecoration: 'none' }}>
-          <BrandLogo size={32} />
-        </Link>
         <Link href="/" style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1.5px', textDecoration: 'none', textTransform: 'uppercase', transition: 'color 0.2s' }}
           onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = accent; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)'; }}

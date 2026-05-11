@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import WhatsAppLogo from '@/app/components/WhatsAppLogo';
-import BrandLogo from '@/app/components/BrandLogo';
 
 interface Product {
   id: string;
@@ -267,10 +266,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           height: '64px',
         }}
       >
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', color: accent, textDecoration: 'none' }}>
-          <BrandLogo size={32} />
-        </Link>
-
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <Link
             href="/"
