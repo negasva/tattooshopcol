@@ -9,8 +9,7 @@ import BrandLogo from '../components/BrandLogo';
 
 const accent = '#FFD400';
 const WHATSAPP = '573000000000';
-// Wompi public key — reemplaza con tu llave real de producción
-const WOMPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY || 'pub_test_XXXXXXXXXXXXXXXX';
+const WOMPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY!;
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n);
@@ -100,9 +99,10 @@ export default function CheckoutPage() {
       const amountCents = total * 100;
       const currency = 'COP';
       // Redirect to Wompi hosted checkout
+      const successUrl = `${window.location.origin}/checkout/success`;
       const wompiUrl = selectedMethod === 'pse'
-        ? `https://checkout.wompi.co/p/?public-key=${WOMPI_PUBLIC_KEY}&currency=${currency}&amount-in-cents=${amountCents}&reference=${reference}&redirect-url=${encodeURIComponent(window.location.origin + '/checkout?success=1')}&payment-method=PSE`
-        : `https://checkout.wompi.co/p/?public-key=${WOMPI_PUBLIC_KEY}&currency=${currency}&amount-in-cents=${amountCents}&reference=${reference}&redirect-url=${encodeURIComponent(window.location.origin + '/checkout?success=1')}`;
+        ? `https://checkout.wompi.co/p/?public-key=${WOMPI_PUBLIC_KEY}&currency=${currency}&amount-in-cents=${amountCents}&reference=${reference}&redirect-url=${encodeURIComponent(successUrl)}&payment-method=PSE`
+        : `https://checkout.wompi.co/p/?public-key=${WOMPI_PUBLIC_KEY}&currency=${currency}&amount-in-cents=${amountCents}&reference=${reference}&redirect-url=${encodeURIComponent(successUrl)}`;
       setTimeout(() => {
         window.location.href = wompiUrl;
         setIsProcessing(false);
