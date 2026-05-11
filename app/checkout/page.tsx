@@ -5,6 +5,7 @@ import Link from 'next/link';
 import CitySelector from '../components/CitySelector';
 import PaymentMethods, { COD_FEE } from '../components/PaymentMethods';
 import WhatsAppLogo from '../components/WhatsAppLogo';
+import BrandLogo from '../components/BrandLogo';
 
 const accent = '#FFD400';
 const WHATSAPP = '573000000000';
@@ -24,17 +25,6 @@ interface CartItem {
   original_price?: number;
 }
 
-function LogoMark() {
-  return (
-    <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style={{ width: 40, height: 40 }}>
-      <circle cx="60" cy="60" r="55" fill="none" stroke={accent} strokeWidth="2" opacity="0.6" />
-      <circle cx="60" cy="60" r="44" fill="none" stroke={accent} strokeWidth="0.5" opacity="0.3" />
-      <line x1="60" y1="20" x2="60" y2="90" stroke={accent} strokeWidth="2.5" strokeLinecap="round" />
-      <polygon points="60,90 55,75 65,75" fill={accent} />
-      <line x1="38" y1="45" x2="82" y2="45" stroke={accent} strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
-    </svg>
-  );
-}
 
 export default function CheckoutPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -157,12 +147,8 @@ export default function CheckoutPage() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px',
         transition: 'all 0.3s ease',
       }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <LogoMark />
-          <div>
-            <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: 'var(--text)', letterSpacing: '1px', lineHeight: 1 }}>TATTOOSHOP</div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '8px', color: accent, letterSpacing: '3px' }}>COLOMBIA</div>
-          </div>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', color: accent, textDecoration: 'none' }}>
+          <BrandLogo size={32} />
         </Link>
         <Link href="/" style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1.5px', textDecoration: 'none', textTransform: 'uppercase', transition: 'color 0.2s' }}
           onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = accent; }}
@@ -305,15 +291,24 @@ export default function CheckoutPage() {
                   const sp = salePrice(item);
                   const hasDisc = sp < item.price;
                   return (
-                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '14px 16px', borderBottom: '1px solid var(--border)', gap: '12px' }}>
+                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid var(--border)', gap: '12px' }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text)', lineHeight: 1.4 }}>{item.name}</div>
-                        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', marginTop: '3px' }}>
-                          {item.qty > 1 ? `${item.qty} uds × ${fmt(sp)}` : '1 unidad'}
-                          {hasDisc && <span style={{ color: '#e55', marginLeft: '8px' }}>-{item.discount_percentage}%</span>}
+                        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <span>
+                            {item.qty > 1 ? `${item.qty} uds × ${fmt(sp)}` : '1 unidad'}
+                            {hasDisc && <span style={{ color: '#e55' }}>-{item.discount_percentage}%</span>}
+                          </span>
+                          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                            <button onClick={() => setCart(prev => prev.map(i => i.id === item.id ? { ...i, qty: Math.max(1, i.qty - 1) } : i).filter(i => i.qty > 0))} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '12px', padding: '0 4px', transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget as HTMLButtonElement).style.color = '#e55'} onMouseLeave={(e) => (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'}>−</button>
+                            <button onClick={() => setCart(prev => prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i))} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '12px', padding: '0 4px', transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget as HTMLButtonElement).style.color = accent} onMouseLeave={(e) => (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'}>+</button>
+                          </div>
                         </div>
                       </div>
-                      <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: accent, flexShrink: 0 }}>{fmt(sp * item.qty)}</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                        <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: accent, flexShrink: 0 }}>{fmt(sp * item.qty)}</div>
+                        <button onClick={() => setCart(prev => prev.filter(i => i.id !== item.id))} style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget as HTMLButtonElement).style.color = '#e55'} onMouseLeave={(e) => (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'}>Eliminar</button>
+                      </div>
                     </div>
                   );
                 })}
@@ -328,7 +323,7 @@ export default function CheckoutPage() {
             </div>
             {codFee > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: '"DM Mono", monospace', fontSize: '10px', color: '#e88' }}>
-                <span>CONTRA ENTREGA</span><span>+ {fmt(COD_FEE)}</span>
+                <span>SERVICIO CONTRA ENTREGA</span><span>+ {fmt(COD_FEE)}</span>
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '8px' }}>
