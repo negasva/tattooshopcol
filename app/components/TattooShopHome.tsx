@@ -604,9 +604,6 @@ export default function TattooShopHome() {
           position: 'relative',
         }}
       >
-        <div style={{ position: 'absolute', right: 'clamp(20px,5vw,80px)', top: '50%', transform: 'translateY(-50%)', color: accent }}>
-          <BrandLogo size={32} />
-        </div>
         <div style={{ display: 'flex', alignItems: 'center', color: accent }}>
           <BrandLogoFull width="clamp(100px,10vw,140px)" />
         </div>
