@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import WhatsAppLogo from '@/app/components/WhatsAppLogo';
+import BrandLogo from '@/app/components/BrandLogo';
 
 interface Product {
   id: string;
@@ -59,19 +60,6 @@ function ProductPlaceholderLarge({ icon, category, accent }: { icon: string; cat
       <text x="300" y="340" textAnchor="middle" fontSize="13" fill={accent} opacity="0.3" fontFamily="monospace" letterSpacing="6">
         {category.toUpperCase()}
       </text>
-    </svg>
-  );
-}
-
-function LogoMark({ accent }: { accent: string }) {
-  return (
-    <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style={{ width: 48, height: 48 }}>
-      <circle cx="60" cy="60" r="55" fill="none" stroke={accent} strokeWidth="2" opacity="0.6" />
-      <circle cx="60" cy="60" r="44" fill="none" stroke={accent} strokeWidth="0.5" opacity="0.3" />
-      <line x1="60" y1="20" x2="60" y2="90" stroke={accent} strokeWidth="2.5" strokeLinecap="round" />
-      <polygon points="60,90 55,75 65,75" fill={accent} />
-      <line x1="38" y1="45" x2="82" y2="45" stroke={accent} strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
-      <line x1="44" y1="36" x2="76" y2="36" stroke={accent} strokeWidth="0.8" strokeLinecap="round" opacity="0.4" />
     </svg>
   );
 }
@@ -279,12 +267,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           height: '64px',
         }}
       >
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
-          <LogoMark accent={accent} />
-          <div>
-            <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: 'var(--text)', letterSpacing: '1px', lineHeight: 1 }}>TATTOOSHOP</div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '8px', color: accent, letterSpacing: '3px' }}>COLOMBIA</div>
-          </div>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', color: accent, textDecoration: 'none' }}>
+          <BrandLogo size={32} />
         </Link>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
