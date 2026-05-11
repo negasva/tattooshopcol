@@ -605,9 +605,6 @@ export default function TattooShopHome() {
           position: 'relative',
         }}
       >
-        <div style={{ position: 'absolute', right: 'clamp(20px,5vw,80px)', top: '50%', transform: 'translateY(-50%)', color: accent, margin: '8px 0' }}>
-          <BrandLogoCombined width={90} />
-        </div>
         <div style={{ display: 'flex', alignItems: 'center', color: accent }}>
           <BrandLogo size={40} />
         </div>
@@ -713,21 +710,8 @@ export default function TattooShopHome() {
           <span>BOGOTÁ, COL</span>
         </div>
 
-        <div
-          style={{
-            fontFamily: '"Bebas Neue", sans-serif',
-            fontSize: 'clamp(72px,14vw,200px)',
-            lineHeight: 0.88,
-            color: 'var(--text)',
-            textTransform: 'uppercase',
-            position: 'relative',
-            zIndex: 1,
-          }}
-        >
-          TATTOO
-          <span style={{ color: accent }}>SHOP</span>
-          <br />
-          <span style={{ fontSize: 'clamp(40px,7vw,100px)', color: 'var(--text-muted)' }}>COLOMBIA</span>
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <BrandLogoFull width="clamp(320px,60vw,860px)" />
         </div>
 
         <div style={{ marginTop: '32px', marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
@@ -893,7 +877,7 @@ export default function TattooShopHome() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gridTemplateColumns: 'repeat(4, 1fr)',
                 gap: '1px',
                 background: 'var(--border)',
               }}
