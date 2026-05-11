@@ -384,6 +384,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               overflow: 'hidden',
               position: 'relative',
               background: 'var(--surface)',
+              maxWidth: '320px',
             }}
           >
             {(product.discount_percentage && product.discount_percentage > 0) && (
