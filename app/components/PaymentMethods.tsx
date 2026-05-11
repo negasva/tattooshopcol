@@ -79,6 +79,7 @@ export default function PaymentMethods({
                   cursor: disabled ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'space-between',
                   gap: '14px',
                   textAlign: 'left',
                   transition: 'background 0.15s',
@@ -88,15 +89,19 @@ export default function PaymentMethods({
                 onMouseEnter={(e) => { if (!active && !disabled) (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface2)'; }}
                 onMouseLeave={(e) => { if (!active && !disabled) (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface)'; }}
               >
-                <span style={{ color: accent, flexShrink: 0 }}>{typeof m.icon === 'function' ? <m.icon /> : m.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: active ? accent : 'var(--text)', letterSpacing: '0.5px' }}>
-                    {m.label}
-                    {m.codOnly && <span style={{ marginLeft: '8px', fontSize: '9px', color: '#e55' }}>+{fmt(COD_FEE)}</span>}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
+                  <span style={{ color: accent, flexShrink: 0 }}>{typeof m.icon === 'function' ? <m.icon /> : m.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: active ? accent : 'var(--text)', letterSpacing: '0.5px' }}>
+                      {m.label}
+                    </div>
+                    <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', marginTop: '2px', lineHeight: 1.5 }}>{m.description}</div>
                   </div>
-                  <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', marginTop: '2px', lineHeight: 1.5 }}>{m.description}</div>
                 </div>
-                {active && <span style={{ color: accent, flexShrink: 0 }}><CheckIcon /></span>}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                  {m.codOnly && <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', color: accent, fontWeight: '700' }}>+{fmt(COD_FEE)}</span>}
+                  {active && <span style={{ color: accent }}><CheckIcon /></span>}
+                </div>
               </button>
 
               {/* Sub-opciones de Transferencia */}
