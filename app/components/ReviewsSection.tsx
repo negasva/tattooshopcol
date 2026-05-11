@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import reviews from '@/app/data/reviews.json';
+import WhatsAppLogo from './WhatsAppLogo';
 
 export default function ReviewsSection() {
   const [displayedReviews, setDisplayedReviews] = useState(reviews);
@@ -60,9 +61,18 @@ export default function ReviewsSection() {
           <p className="text-lg font-semibold mb-4">
             ¿Tienes una experiencia que compartir?
           </p>
-          <p className="text-sm text-trust-light">
+          <p className="text-sm text-trust-light mb-6">
             Tus opiniones nos ayudan a mejorar. Contáctanos en WhatsApp para dejar tu reseña.
           </p>
+          <a
+            href="https://wa.me/573000000000?text=Hola!%20Quiero%20dejar%20una%20reseña%20sobre%20mis%20compras"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition"
+          >
+            <WhatsAppLogo size="1.2em" />
+            Envía tu reseña por WhatsApp
+          </a>
         </div>
       </div>
     </section>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import CitySelector from './CitySelector';
 import PaymentMethods from './PaymentMethods';
+import WhatsAppLogo from './WhatsAppLogo';
 import { isCityEligibleForCashOnDelivery } from '@/app/utils/cashOnDeliveryChecker';
 
 interface CartItem {
@@ -86,8 +87,9 @@ export default function CheckoutForm({ cartItems }: CheckoutFormProps) {
                     href={`https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="ml-2 font-semibold text-green-600 hover:text-green-700 underline"
+                    className="ml-2 font-semibold text-green-600 hover:text-green-700 underline inline-flex items-center gap-1"
                   >
+                    <WhatsAppLogo size="1em" />
                     Contactar Ventas WhatsApp
                   </a>
                 </span>
