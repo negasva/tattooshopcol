@@ -26,6 +26,10 @@ export const metadata: Metadata = {
   title: 'TattooShop Colombia - Tienda de Tatuajes',
   description: 'Tienda en línea de productos para tatuajes con envíos seguros a toda Colombia. Wompi integrado para pagos seguros.',
   keywords: 'tatuajes, tinta, agujas, máquinas de tatuaje, Colombia',
+  icons: {
+    icon: '/logo-marca.svg',
+    shortcut: '/logo-marca.svg',
+  },
 };
 
 export default function RootLayout({

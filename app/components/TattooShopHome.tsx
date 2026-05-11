@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { getSupabase } from '../lib/supabase';
 import { toSlug } from '../lib/utils';
 import WhatsAppLogo from './WhatsAppLogo';
+import BrandLogo from './BrandLogo';
 
 interface Product {
   id: string;
@@ -602,7 +603,9 @@ export default function TattooShopHome() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <LogoMark accent={accent} />
+          <div style={{ color: accent }}>
+            <BrandLogo size={40} />
+          </div>
           <div>
             <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px', color: 'var(--text)', letterSpacing: '1px', lineHeight: 1 }}>TATTOOSHOP</div>
             <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px' }}>COLOMBIA</div>
@@ -984,7 +987,9 @@ export default function TattooShopHome() {
         <div style={{ padding: 'clamp(40px,6vw,72px) clamp(20px,5vw,80px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '40px 60px', borderBottom: '1px solid var(--border)' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <LogoMark accent={accent} />
+              <div style={{ color: accent }}>
+                <BrandLogo size={32} />
+              </div>
               <div>
                 <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: 'var(--text)' }}>TATTOOSHOP</div>
                 <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '8px', color: accent, letterSpacing: '3px' }}>COLOMBIA</div>
