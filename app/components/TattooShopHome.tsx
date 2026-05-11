@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { getSupabase } from '../lib/supabase';
 import { toSlug } from '../lib/utils';
 import WhatsAppLogo from './WhatsAppLogo';
+import BrandLogoFull from './BrandLogoFull';
 import BrandLogoCombined from './BrandLogoCombined';
 
 interface Product {
