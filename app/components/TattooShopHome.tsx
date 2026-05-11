@@ -742,10 +742,9 @@ export default function TattooShopHome() {
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-            gap: '1px',
-            marginLeft: '-clamp(20px,5vw,80px)',
-            marginRight: '-clamp(20px,5vw,80px)',
-            borderTop: '1px solid var(--border)',
+            gap: '12px',
+            marginLeft: '0',
+            marginRight: '0',
           }}
         >
           {categories.map((cat, i) => (
@@ -756,32 +755,39 @@ export default function TattooShopHome() {
                 document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
               style={{
-                background: 'transparent',
-                border: 'none',
-                borderRight: i < 2 ? '1px solid var(--border)' : 'none',
+                background: 'var(--surface)',
+                border: `2px solid ${accent}`,
+                borderRadius: '4px',
                 padding: 'clamp(28px,5vw,56px) clamp(20px,4vw,48px)',
                 cursor: 'pointer',
                 textAlign: 'left',
-                transition: 'background 0.25s',
+                transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 position: 'relative',
                 overflow: 'hidden',
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = accent + '14';
+                (e.currentTarget as HTMLButtonElement).style.background = accent;
+                (e.currentTarget as HTMLButtonElement).style.color = '#111';
+                (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-4px)';
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 12px 32px ${accent}44`;
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface)';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)';
+                (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
               }}
             >
               <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>0{i + 1}</span>
-                <span style={{ height: '1px', width: '20px', background: accent, opacity: 0.5 }} />
+                <span style={{ height: '2px', width: '20px', background: accent }} />
               </div>
-              <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(32px,5vw,64px)', lineHeight: 0.9, color: 'var(--text)' }}>
+              <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(32px,5vw,64px)', lineHeight: 0.9, color: 'var(--text)', marginBottom: '16px' }}>
                 {cat.label.toUpperCase()}
               </div>
-              <div style={{ position: 'absolute', bottom: '20px', right: '24px', fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>
-                {cat.count} productos →
+              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-dim)', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>{cat.count} productos</span>
+                <span style={{ transition: 'transform 0.3s' }}>→</span>
               </div>
             </button>
           ))}
