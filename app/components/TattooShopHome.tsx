@@ -795,7 +795,7 @@ export default function TattooShopHome() {
       </section>
 
       {/* TICKER */}
-      <div style={{ borderBottom: '1px solid var(--border)', padding: '12px 0', overflow: 'hidden', background: 'var(--surface)' }}>
+      <div style={{ borderBottom: '1px solid var(--border)', padding: '12px 0', overflow: 'hidden', background: 'var(--surface)', marginTop: '32px' }}>
         <div
           style={{
             display: 'flex',
