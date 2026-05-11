@@ -605,7 +605,7 @@ export default function TattooShopHome() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', color: accent }}>
-          <BrandLogoFull width="clamp(100px,10vw,140px)" />
+          <BrandLogo size={40} />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
