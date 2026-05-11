@@ -7,6 +7,7 @@ import { getSupabase } from '../lib/supabase';
 import { toSlug } from '../lib/utils';
 import WhatsAppLogo from './WhatsAppLogo';
 import BrandLogo from './BrandLogo';
+import BrandLogoFull from './BrandLogoFull';
 
 interface Product {
   id: string;
@@ -602,14 +603,8 @@ export default function TattooShopHome() {
           height: '64px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ color: accent }}>
-            <BrandLogo size={40} />
-          </div>
-          <div>
-            <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px', color: 'var(--text)', letterSpacing: '1px', lineHeight: 1 }}>TATTOOSHOP</div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px' }}>COLOMBIA</div>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', color: accent }}>
+          <BrandLogoFull width="clamp(100px,10vw,140px)" />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
@@ -986,14 +981,8 @@ export default function TattooShopHome() {
 
         <div style={{ padding: 'clamp(40px,6vw,72px) clamp(20px,5vw,80px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '40px 60px', borderBottom: '1px solid var(--border)' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <div style={{ color: accent }}>
-                <BrandLogo size={32} />
-              </div>
-              <div>
-                <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: 'var(--text)' }}>TATTOOSHOP</div>
-                <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '8px', color: accent, letterSpacing: '3px' }}>COLOMBIA</div>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px', color: accent }}>
+              <BrandLogoFull width={120} />
             </div>
             <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-dim)', lineHeight: 1.7, letterSpacing: '0.5px' }}>
               Tu proveedor profesional<br />
