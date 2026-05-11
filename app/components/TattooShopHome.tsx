@@ -605,9 +605,6 @@ export default function TattooShopHome() {
           position: 'relative',
         }}
       >
-        <div style={{ position: 'absolute', right: 'clamp(20px,5vw,80px)', top: '50%', transform: 'translateY(-50%)', color: accent, margin: '8px 0' }}>
-          <BrandLogoCombined width={90} />
-        </div>
         <div style={{ display: 'flex', alignItems: 'center', color: accent }}>
           <BrandLogo size={40} />
         </div>
@@ -893,7 +890,7 @@ export default function TattooShopHome() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gridTemplateColumns: 'repeat(4, 1fr)',
                 gap: '1px',
                 background: 'var(--border)',
               }}
