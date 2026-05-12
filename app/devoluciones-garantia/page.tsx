@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BrandLogo } from '@/app/components/BrandLogo';
+import BrandLogo from '@/app/components/BrandLogo';
 
 export default function DevolucionesGarantia() {
   const accent = '#FFD400';
