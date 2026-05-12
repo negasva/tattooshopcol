@@ -85,11 +85,15 @@ function ProductPlaceholder({ icon, category, accent }: { icon: string; category
 }
 
 
-function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: number; onAdd: (p: Product) => void; accent: string }) {
+function ProductCard({ product, idx, onAdd, accent, cartQty }: { product: Product; idx: number; onAdd: (p: Product) => void; accent: string; cartQty: number }) {
   const [hovered, setHovered] = useState(false);
   const [added, setAdded] = useState(false);
 
+  const outOfStock = (product.inventory ?? 0) <= 0;
+  const atLimit = !outOfStock && cartQty >= (product.inventory ?? 0);
+
   const handleAdd = () => {
+    if (outOfStock || atLimit) return;
     onAdd(product);
     setAdded(true);
     setTimeout(() => setAdded(false), 1400);
@@ -121,10 +125,30 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: hasDiscount ? `0 0 24px rgba(229, 85, 85, 0.3)` : 'none',
+        boxShadow: hasDiscount && !outOfStock ? `0 0 24px rgba(229, 85, 85, 0.3)` : 'none',
+        opacity: outOfStock ? 0.7 : 1,
       }}
     >
-      {(product.discount_percentage && product.discount_percentage > 0) ? (
+      {outOfStock ? (
+        <div
+          style={{
+            position: 'absolute',
+            top: 12,
+            left: 12,
+            zIndex: 2,
+            background: '#555',
+            color: '#ccc',
+            fontFamily: '"DM Mono", monospace',
+            fontSize: '9px',
+            letterSpacing: '2px',
+            padding: '3px 8px',
+            textTransform: 'uppercase',
+            fontWeight: '700',
+          }}
+        >
+          AGOTADO
+        </div>
+      ) : (product.discount_percentage && product.discount_percentage > 0) ? (
         <div
           style={{
             position: 'absolute',
@@ -258,33 +282,34 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
           </div>
           <button
             onClick={handleAdd}
+            disabled={outOfStock || atLimit}
             style={{
-              background: added ? accent : 'transparent',
-              color: added ? '#111' : accent,
-              border: `1px solid ${accent}`,
+              background: outOfStock || atLimit ? '#2a2a2a' : added ? accent : 'transparent',
+              color: outOfStock || atLimit ? '#555' : added ? '#111' : accent,
+              border: `1px solid ${outOfStock || atLimit ? '#444' : accent}`,
               fontFamily: '"DM Mono", monospace',
               fontSize: '10px',
               letterSpacing: '1.5px',
               padding: '8px 14px',
-              cursor: 'pointer',
+              cursor: outOfStock || atLimit ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s',
               textTransform: 'uppercase',
               whiteSpace: 'nowrap',
             }}
             onMouseEnter={(e) => {
-              if (!added) {
+              if (!added && !outOfStock && !atLimit) {
                 (e.currentTarget as HTMLButtonElement).style.background = accent;
                 (e.currentTarget as HTMLButtonElement).style.color = '#111';
               }
             }}
             onMouseLeave={(e) => {
-              if (!added) {
+              if (!added && !outOfStock && !atLimit) {
                 (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
                 (e.currentTarget as HTMLButtonElement).style.color = accent;
               }
             }}
           >
-            {added ? '✓ Agregado' : '+ Carrito'}
+            {outOfStock ? 'Agotado' : atLimit ? 'Límite' : added ? '✓ Agregado' : '+ Carrito'}
           </button>
         </div>
       </div>
@@ -393,7 +418,8 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent, onCheckout }: { ca
                     <span style={{ width: '28px', textAlign: 'center', fontFamily: '"DM Mono", monospace', fontSize: '12px' }}>{item.qty}</span>
                     <button
                       onClick={() => onQty(item.id, 1)}
-                      style={{ width: '28px', height: '28px', background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      disabled={item.qty >= (item.inventory ?? 0)}
+                      style={{ width: '28px', height: '28px', background: 'none', border: 'none', color: item.qty >= (item.inventory ?? 0) ? '#444' : 'var(--text)', cursor: item.qty >= (item.inventory ?? 0) ? 'not-allowed' : 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       +
                     </button>
@@ -550,7 +576,12 @@ export default function TattooShopHome() {
   const addToCart = (product: Product) => {
     setCart((prev) => {
       const existing = prev.find((i) => i.id === product.id);
-      if (existing) return prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + 1 } : i));
+      const stock = product.inventory ?? 0;
+      if (stock <= 0) return prev;
+      if (existing) {
+        if (existing.qty >= stock) return prev;
+        return prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + 1 } : i));
+      }
       return [...prev, { ...product, qty: 1 }];
     });
     setCartOpen(true);
@@ -558,7 +589,14 @@ export default function TattooShopHome() {
 
   const removeFromCart = (id: string) => setCart((prev) => prev.filter((i) => i.id !== id));
   const changeQty = (id: string, delta: number) =>
-    setCart((prev) => prev.map((i) => (i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i)).filter((i) => i.qty > 0));
+    setCart((prev) =>
+      prev.map((i) => {
+        if (i.id !== id) return i;
+        const stock = i.inventory ?? 0;
+        const newQty = Math.max(1, i.qty + delta);
+        return { ...i, qty: Math.min(newQty, stock) };
+      }).filter((i) => i.qty > 0)
+    );
 
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
 
@@ -876,7 +914,7 @@ export default function TattooShopHome() {
               }}
             >
               {filtered.map((p, i) => (
-                <ProductCard key={p.id} product={p} idx={i} onAdd={addToCart} accent={accent} />
+                <ProductCard key={p.id} product={p} idx={i} onAdd={addToCart} accent={accent} cartQty={cart.find((c) => c.id === p.id)?.qty ?? 0} />
               ))}
             </div>
 
