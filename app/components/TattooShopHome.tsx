@@ -542,7 +542,10 @@ export default function TattooShopHome() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const filtered = (activeFilter === 'all' ? products : products.filter((p) => p.category.toLowerCase() === activeFilter.toLowerCase())).slice(0, 4);
+  const filtered = (activeFilter === 'all'
+    ? products
+    : products.filter((p) => p.category && p.category.toLowerCase() === activeFilter.toLowerCase())
+  ).slice(0, 4);
 
   const addToCart = (product: Product) => {
     setCart((prev) => {
@@ -598,11 +601,11 @@ export default function TattooShopHome() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
-          {['Kits', 'Máquinas', 'Insumos'].map((cat) => (
+          {categories.map((cat) => (
             <button
-              key={cat}
+              key={cat.key}
               onClick={() => {
-                setActiveFilter(cat.toLowerCase());
+                setActiveFilter(cat.key);
                 document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
               style={{
@@ -627,7 +630,7 @@ export default function TattooShopHome() {
                 (e.currentTarget as HTMLButtonElement).style.borderBottomColor = 'transparent';
               }}
             >
-              {cat}
+              {cat.label}
             </button>
           ))}
           <button
