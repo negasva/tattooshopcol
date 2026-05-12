@@ -58,7 +58,7 @@ export default function PaymentMethods({
 }: PaymentMethodsProps) {
   return (
     <div>
-      <label style={{ display: 'block', fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '12px' }}>
+      <label style={{ display: 'block', fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '12px', fontWeight: '700' }}>
         Método de Pago
       </label>
 
@@ -92,7 +92,7 @@ export default function PaymentMethods({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
                   <span style={{ color: accent, flexShrink: 0 }}>{typeof m.icon === 'function' ? <m.icon /> : m.icon}</span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: active ? accent : 'var(--text)', letterSpacing: '0.5px' }}>
+                    <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: active ? accent : 'var(--text)', letterSpacing: '0.5px', fontWeight: '700' }}>
                       {m.label}
                     </div>
                     <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.5 }}>{m.description}</div>

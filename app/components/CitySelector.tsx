@@ -52,7 +52,7 @@ export default function CitySelector({ onCitySelect }: CitySelectorProps) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* DEPARTAMENTO */}
       <div ref={deptRef} style={{ position: 'relative' }}>
-        <label style={{ display: 'block', fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '10px' }}>
+        <label style={{ display: 'block', fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '10px', fontWeight: '700' }}>
           Departamento
         </label>
         <button
@@ -119,7 +119,7 @@ export default function CitySelector({ onCitySelect }: CitySelectorProps) {
       {/* CIUDAD */}
       {selectedDept && (
         <div ref={cityRef} style={{ position: 'relative' }}>
-          <label style={{ display: 'block', fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '10px' }}>
+          <label style={{ display: 'block', fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '10px', fontWeight: '700' }}>
             Ciudad de Entrega
           </label>
           <input
