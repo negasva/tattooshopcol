@@ -150,7 +150,7 @@ export default function CheckoutPage() {
         <Link href="/" style={{ display: 'flex', alignItems: 'center', color: accent, textDecoration: 'none' }}>
           <BrandLogo size={32} />
         </Link>
-        <Link href="/" style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1.5px', textDecoration: 'none', textTransform: 'uppercase', transition: 'color 0.2s' }}
+        <Link href="/" style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '1.5px', textDecoration: 'none', textTransform: 'uppercase', transition: 'color 0.2s' }}
           onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = accent; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)'; }}
         >
@@ -160,7 +160,7 @@ export default function CheckoutPage() {
 
       {/* HEADER */}
       <div style={{ padding: 'clamp(32px,5vw,56px) clamp(20px,5vw,80px) 0', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '8px' }}>CHECKOUT</div>
+        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '3px', marginBottom: '8px' }}>CHECKOUT</div>
         <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(36px,6vw,72px)', lineHeight: 0.92, color: 'var(--text)', paddingBottom: 'clamp(24px,4vw,40px)' }}>
           FINALIZAR<br /><span style={{ color: accent }}>COMPRA</span>
         </h1>
@@ -176,7 +176,7 @@ export default function CheckoutPage() {
 
           {selectedCity && !cashEligible && (
             <div style={{ background: 'rgba(255,212,0,0.06)', border: `1px solid ${accent}33`, padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-start' }}>
-              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text)', lineHeight: 1.7 }}>
+              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text)', lineHeight: 1.7 }}>
                 Para pago contra entrega en esta ciudad es necesario verificar via whatsapp
               </div>
               <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Quiero verificar la disponibilidad de contra entrega en mi ciudad…')}`}
@@ -188,7 +188,7 @@ export default function CheckoutPage() {
                   borderRadius: '4px',
                   textDecoration: 'none',
                   fontFamily: '"DM Mono", monospace',
-                  fontSize: '11px',
+                  fontSize: '13px',
                   fontWeight: 'bold',
                   letterSpacing: '1px',
                   transition: 'background 0.2s',
@@ -203,7 +203,7 @@ export default function CheckoutPage() {
           )}
 
           {selectedCity && cashEligible && (
-            <div style={{ background: 'rgba(37,211,102,0.06)', border: '1px solid rgba(37,211,102,0.25)', padding: '10px 16px', fontFamily: '"DM Mono", monospace', fontSize: '10px', color: '#25d366', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ background: 'rgba(37,211,102,0.06)', border: '1px solid rgba(37,211,102,0.25)', padding: '10px 16px', fontFamily: '"DM Mono", monospace', fontSize: '12px', color: '#25d366', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '16px', height: '16px', flexShrink: 0 }}>
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
@@ -221,7 +221,7 @@ export default function CheckoutPage() {
 
           {/* Info Wompi */}
           {(selectedMethod === 'card' || selectedMethod === 'pse') && (
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', padding: '12px 14px', fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', lineHeight: 1.7, display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', padding: '12px 14px', fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.7, display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '16px', height: '16px', flexShrink: 0, marginTop: '2px' }}>
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
@@ -271,7 +271,7 @@ export default function CheckoutPage() {
           </button>
 
           {!canCheckout && (
-            <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', textAlign: 'center', letterSpacing: '1px', marginTop: '-16px' }}>
+            <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', letterSpacing: '1px', marginTop: '-16px' }}>
               {!selectedCity ? 'Selecciona tu ciudad para continuar' : !selectedMethod ? 'Selecciona un método de pago' : 'Selecciona la plataforma de transferencia'}
             </p>
           )}
@@ -280,9 +280,9 @@ export default function CheckoutPage() {
         {/* RIGHT — Resumen */}
         <div style={{ background: 'var(--surface)', padding: 'clamp(24px,4vw,56px)', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '16px' }}>RESUMEN DEL PEDIDO</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: accent, letterSpacing: '3px', marginBottom: '16px' }}>RESUMEN DEL PEDIDO</div>
             {cart.length === 0 ? (
-              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-dim)', padding: '40px 0', textAlign: 'center' }}>
+              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '14px', color: 'var(--text-muted)', padding: '40px 0', textAlign: 'center' }}>
                 <div style={{ fontSize: '32px', opacity: 0.3, marginBottom: '12px' }}>∅</div>Tu carrito está vacío
               </div>
             ) : (
@@ -293,8 +293,8 @@ export default function CheckoutPage() {
                   return (
                     <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid var(--border)', gap: '12px' }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text)', lineHeight: 1.4 }}>{item.name}</div>
-                        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text)', lineHeight: 1.4 }}>{item.name}</div>
+                        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <span>
                             {item.qty > 1 ? `${item.qty} uds × ${fmt(sp)}` : '1 unidad'}
                             {hasDisc && <span style={{ color: '#e55' }}>-{item.discount_percentage}%</span>}
@@ -307,7 +307,7 @@ export default function CheckoutPage() {
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                         <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: accent, flexShrink: 0 }}>{fmt(sp * item.qty)}</div>
-                        <button onClick={() => setCart(prev => prev.filter(i => i.id !== item.id))} style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget as HTMLButtonElement).style.color = '#e55'} onMouseLeave={(e) => (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'}>Eliminar</button>
+                        <button onClick={() => setCart(prev => prev.filter(i => i.id !== item.id))} style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget as HTMLButtonElement).style.color = '#e55'} onMouseLeave={(e) => (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'}>Eliminar</button>
                       </div>
                     </div>
                   );
@@ -318,30 +318,30 @@ export default function CheckoutPage() {
 
           {/* Totales */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-dim)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)' }}>
               <span>SUBTOTAL</span><span>{fmt(subtotal)}</span>
             </div>
             {codFee > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: '"DM Mono", monospace', fontSize: '10px', color: '#e88' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: '"DM Mono", monospace', fontSize: '12px', color: '#e88' }}>
                 <span>SERVICIO CONTRA ENTREGA</span><span>+ {fmt(COD_FEE)}</span>
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '8px' }}>
-              <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '2px' }}>TOTAL</span>
+              <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', letterSpacing: '2px' }}>TOTAL</span>
               <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '36px', color: accent }}>{fmt(total)}</span>
             </div>
           </div>
 
           {selectedCity && (
             <div style={{ background: 'var(--bg)', border: `1px solid ${accent}33`, padding: '12px 16px' }}>
-              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '2px', marginBottom: '4px' }}>ENTREGA EN</div>
-              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text)' }}>{selectedCity}</div>
+              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '2px', marginBottom: '4px' }}>ENTREGA EN</div>
+              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '14px', color: 'var(--text)' }}>{selectedCity}</div>
             </div>
           )}
 
           {/* Sellos */}
           <div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', letterSpacing: '3px', marginBottom: '12px' }}>COMPRA SEGURA</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '3px', marginBottom: '12px' }}>COMPRA SEGURA</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'var(--border)' }}>
               {[
                 { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, label: 'SSL', sub: 'Encriptado' },
@@ -351,8 +351,8 @@ export default function CheckoutPage() {
               ].map((b) => (
                 <div key={b.label} style={{ background: 'var(--bg)', padding: '12px', textAlign: 'center' }}>
                   <div style={{ fontSize: '18px', marginBottom: '4px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-muted)' }}>{b.icon}</div>
-                  <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '1px' }}>{b.label}</div>
-                  <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '8px', color: 'var(--text-dim)', marginTop: '2px' }}>{b.sub}</div>
+                  <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '1px' }}>{b.label}</div>
+                  <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{b.sub}</div>
                 </div>
               ))}
             </div>
@@ -361,8 +361,8 @@ export default function CheckoutPage() {
       </div>
 
       <footer style={{ borderTop: '1px solid var(--border)', padding: '20px clamp(20px,5vw,80px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--surface)', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>TattooShop Colombia ©2026</div>
-        <Link href="/" style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: accent, letterSpacing: '2px', textDecoration: 'none' }}>← Ver todos los productos</Link>
+        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '1px' }}>TattooShop Colombia ©2026</div>
+        <Link href="/" style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '2px', textDecoration: 'none' }}>← Ver todos los productos</Link>
       </footer>
     </div>
   );

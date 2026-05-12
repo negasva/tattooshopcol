@@ -58,7 +58,7 @@ export default function PaymentMethods({
 }: PaymentMethodsProps) {
   return (
     <div>
-      <label style={{ display: 'block', fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '12px' }}>
+      <label style={{ display: 'block', fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '12px' }}>
         Método de Pago
       </label>
 
@@ -95,7 +95,7 @@ export default function PaymentMethods({
                     <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: active ? accent : 'var(--text)', letterSpacing: '0.5px' }}>
                       {m.label}
                     </div>
-                    <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', marginTop: '2px', lineHeight: 1.5 }}>{m.description}</div>
+                    <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.5 }}>{m.description}</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
@@ -130,8 +130,8 @@ export default function PaymentMethods({
                       >
                         <span style={{ color: accent }}>{typeof sub.icon === 'function' ? <sub.icon /> : sub.icon}</span>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: subActive ? accent : 'var(--text-muted)' }}>{sub.label}</div>
-                          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '8px', color: 'var(--text-dim)', marginTop: '1px' }}>{sub.desc}</div>
+                          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: subActive ? accent : 'var(--text-muted)' }}>{sub.label}</div>
+                          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>{sub.desc}</div>
                         </div>
                         {subActive && <span style={{ color: accent }}><CheckIcon /></span>}
                       </button>
