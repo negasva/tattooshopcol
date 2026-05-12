@@ -99,10 +99,25 @@ export default function CheckoutPage() {
       const reference = `order-${Date.now()}`;
       const amountCents = total * 100;
       const currency = 'COP';
-      // Redirect to Wompi hosted checkout
+
+      // Guardar resumen del pedido para mostrarlo en la página de éxito
+      try {
+        localStorage.setItem('ts_pending_order', JSON.stringify({
+          reference,
+          cart,
+          subtotal,
+          codFee,
+          total,
+          city: selectedCity,
+          method: selectedMethod,
+          createdAt: new Date().toISOString(),
+        }));
+      } catch {}
+
+      const redirectUrl = `${window.location.origin}/checkout/exito?ref=${reference}`;
       const wompiUrl = selectedMethod === 'pse'
-        ? `https://checkout.wompi.co/p/?public-key=${WOMPI_PUBLIC_KEY}&currency=${currency}&amount-in-cents=${amountCents}&reference=${reference}&redirect-url=${encodeURIComponent(window.location.origin + '/checkout?success=1')}&payment-method=PSE`
-        : `https://checkout.wompi.co/p/?public-key=${WOMPI_PUBLIC_KEY}&currency=${currency}&amount-in-cents=${amountCents}&reference=${reference}&redirect-url=${encodeURIComponent(window.location.origin + '/checkout?success=1')}`;
+        ? `https://checkout.wompi.co/p/?public-key=${WOMPI_PUBLIC_KEY}&currency=${currency}&amount-in-cents=${amountCents}&reference=${reference}&redirect-url=${encodeURIComponent(redirectUrl)}&payment-method=PSE`
+        : `https://checkout.wompi.co/p/?public-key=${WOMPI_PUBLIC_KEY}&currency=${currency}&amount-in-cents=${amountCents}&reference=${reference}&redirect-url=${encodeURIComponent(redirectUrl)}`;
       setTimeout(() => {
         window.location.href = wompiUrl;
         setIsProcessing(false);
@@ -167,7 +182,7 @@ export default function CheckoutPage() {
       </div>
 
       {/* MAIN GRID */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1px', background: 'var(--border)' }}>
+      <div data-checkout-grid="" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1px', background: 'var(--border)' }}>
 
         {/* LEFT */}
         <div style={{ background: 'var(--bg)', padding: 'clamp(24px,4vw,56px)', display: 'flex', flexDirection: 'column', gap: '32px' }}>

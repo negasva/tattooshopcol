@@ -82,7 +82,7 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent, onCheckout }: { ca
   return (
     <>
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 800, backdropFilter: 'blur(4px)' }} />
-      <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'clamp(320px,40vw,480px)', background: '#181818', zIndex: 900, display: 'flex', flexDirection: 'column', borderLeft: '1px solid #2e2e2e', boxShadow: '-20px 0 60px rgba(0,0,0,0.6)' }}>
+      <div data-cart-drawer="" style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'clamp(320px,40vw,480px)', background: '#181818', zIndex: 900, display: 'flex', flexDirection: 'column', borderLeft: '1px solid #2e2e2e', boxShadow: '-20px 0 60px rgba(0,0,0,0.6)' }}>
         <div style={{ padding: '28px 28px 20px', borderBottom: '1px solid #2e2e2e', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '2px', textTransform: 'uppercase' }}>Carrito</span>

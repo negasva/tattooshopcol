@@ -492,7 +492,7 @@ export default function TattooShopHome() {
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState('kits');
   const [navScrolled, setNavScrolled] = useState(false);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterDone, setNewsletterDone] = useState(false);
@@ -696,13 +696,13 @@ export default function TattooShopHome() {
         </div>
 
         <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '4px', marginBottom: '28px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span>EST. 2018</span>
+          <span>EST. 2021</span>
           <span style={{ flex: 1, height: '1px', background: 'var(--border)', maxWidth: '80px' }} />
-          <span>BOGOTÁ, COL</span>
+          <span>MEDELLÍN, COL</span>
         </div>
 
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <BrandLogoFull width="clamp(320px,60vw,860px)" />
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <BrandLogoFull width="clamp(260px,60vw,860px)" />
         </div>
 
         <div style={{ marginTop: '32px', marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
@@ -866,6 +866,7 @@ export default function TattooShopHome() {
         ) : (
           <>
             <div
+              data-products-grid=""
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(4, 1fr)',
@@ -896,7 +897,7 @@ export default function TattooShopHome() {
             <span style={{ color: accent }}>REALES.</span>
           </h3>
           <p style={{ color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: '400px', fontSize: '14px' }}>
-            Desde 2018 somos el proveedor de confianza de tatuadores profesionales en Colombia. Trabajamos directamente con fabricantes certificados para garantizar insumos de alta calidad a precios justos. Envío a todas las ciudades del país.
+            Desde 2021 somos el proveedor de confianza de tatuadores profesionales en Colombia. Trabajamos directamente con fabricantes certificados para garantizar insumos de alta calidad a precios justos. Envío a todas las ciudades del país.
           </p>
         </div>
         <div style={{ padding: 'clamp(48px,8vw,96px) clamp(24px,5vw,80px)', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--surface)' }}>
