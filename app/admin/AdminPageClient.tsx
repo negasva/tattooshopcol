@@ -230,12 +230,12 @@ export default function AdminPageClient() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: '40px 20px', color: 'var(--text)' }}>
+    <div data-admin-page="" style={{ minHeight: '100vh', background: 'var(--bg)', padding: '40px 20px', color: 'var(--text)' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '48px', marginBottom: '40px', color: 'var(--accent)' }}>PANEL ADMIN</h1>
 
         {/* FORM */}
-        <div style={{ background: 'var(--surface)', padding: '30px', marginBottom: '40px', borderRadius: '8px' }}>
+        <div data-admin-form="" style={{ background: 'var(--surface)', padding: '30px', marginBottom: '40px', borderRadius: '8px' }}>
           <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '24px', marginBottom: '20px' }}>
             {editingId ? 'Editar Producto' : 'Agregar Producto'}
           </h2>
@@ -260,31 +260,32 @@ export default function AdminPageClient() {
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Categoría</label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    style={{
-                      flex: 1,
-                      padding: '10px',
-                      border: '1px solid var(--border)',
-                      background: 'var(--bg)',
-                      color: 'var(--text)',
-                      borderRadius: '4px',
-                    }}
-                  >
-                    {categories.map((cat) => (
-                      <option key={cat}>{cat}</option>
-                    ))}
-                  </select>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg)',
+                    color: 'var(--text)',
+                    borderRadius: '4px',
+                  }}
+                >
+                  {categories.map((cat) => (
+                    <option key={cat}>{cat}</option>
+                  ))}
+                </select>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                   <input
                     type="text"
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
-                    placeholder="Nueva"
+                    placeholder="Nueva categoría"
                     style={{
                       flex: 1,
+                      minWidth: 0,
                       padding: '10px',
                       border: '1px solid var(--border)',
                       background: 'var(--bg)',
@@ -304,6 +305,7 @@ export default function AdminPageClient() {
                       cursor: 'pointer',
                       fontWeight: '600',
                       fontSize: '16px',
+                      flexShrink: 0,
                     }}
                   >
                     +
@@ -530,7 +532,7 @@ export default function AdminPageClient() {
           ) : products.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Sin productos</div>
           ) : (
-            <div style={{ overflowX: 'auto', background: 'var(--surface)', borderRadius: '8px' }}>
+            <div data-admin-table="" style={{ overflowX: 'auto', background: 'var(--surface)', borderRadius: '8px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: '"DM Sans", sans-serif', fontSize: '14px' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border)' }}>
