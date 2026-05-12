@@ -23,6 +23,7 @@ interface CartItem {
   category?: string;
   discount_percentage?: number;
   original_price?: number;
+  inventory?: number;
 }
 
 
@@ -69,9 +70,13 @@ export default function CheckoutPage() {
     setSelectedSub(sub || '');
   };
 
+  const outOfStockItems = cart.filter((i) => (i.inventory ?? 0) <= 0);
+  const overStockItems = cart.filter((i) => (i.inventory ?? 0) > 0 && i.qty > (i.inventory ?? 0));
+  const hasStockIssues = outOfStockItems.length > 0 || overStockItems.length > 0;
+
   const canCheckout = selectedCity && selectedMethod &&
     (selectedMethod !== 'transfer' || selectedSub) &&
-    cart.length > 0;
+    cart.length > 0 && !hasStockIssues;
 
   const isCash = selectedMethod === 'cash';
 
@@ -285,7 +290,22 @@ export default function CheckoutPage() {
             {btnLabel}
           </button>
 
-          {!canCheckout && (
+          {hasStockIssues && (
+            <div style={{ background: '#2a1a1a', border: '1px solid #e55', padding: '12px 16px', borderRadius: '4px', marginTop: '-16px' }}>
+              <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: '#e88', letterSpacing: '1px', marginBottom: '6px', fontWeight: '700' }}>⚠ PROBLEMA DE INVENTARIO</p>
+              {outOfStockItems.map((i) => (
+                <p key={i.id} style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '13px', color: '#e55', lineHeight: 1.5 }}>
+                  "{i.name}" está agotado — elimínalo del carrito para continuar.
+                </p>
+              ))}
+              {overStockItems.map((i) => (
+                <p key={i.id} style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '13px', color: '#e88', lineHeight: 1.5 }}>
+                  "{i.name}" solo tiene {i.inventory} unidad(es) disponible(s).
+                </p>
+              ))}
+            </div>
+          )}
+          {!canCheckout && !hasStockIssues && (
             <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', letterSpacing: '1px', marginTop: '-16px' }}>
               {!selectedCity ? 'Selecciona tu ciudad para continuar' : !selectedMethod ? 'Selecciona un método de pago' : 'Selecciona la plataforma de transferencia'}
             </p>
@@ -309,14 +329,20 @@ export default function CheckoutPage() {
                     <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid var(--border)', gap: '12px' }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text)', lineHeight: 1.4 }}>{item.name}</div>
-                        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                           <span>
                             {item.qty > 1 ? `${item.qty} uds × ${fmt(sp)}` : '1 unidad'}
-                            {hasDisc && <span style={{ color: '#e55' }}>-{item.discount_percentage}%</span>}
+                            {hasDisc && <span style={{ color: '#e55' }}> -{item.discount_percentage}%</span>}
                           </span>
+                          {(item.inventory ?? 0) <= 0 && (
+                            <span style={{ color: '#e55', fontSize: '11px', fontWeight: '700' }}>AGOTADO</span>
+                          )}
+                          {(item.inventory ?? 0) > 0 && item.qty > (item.inventory ?? 0) && (
+                            <span style={{ color: '#e88', fontSize: '11px', fontWeight: '700' }}>Stock disponible: {item.inventory}</span>
+                          )}
                           <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                             <button onClick={() => setCart(prev => prev.map(i => i.id === item.id ? { ...i, qty: Math.max(1, i.qty - 1) } : i).filter(i => i.qty > 0))} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '12px', padding: '0 4px', transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget as HTMLButtonElement).style.color = '#e55'} onMouseLeave={(e) => (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'}>−</button>
-                            <button onClick={() => setCart(prev => prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i))} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '12px', padding: '0 4px', transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget as HTMLButtonElement).style.color = accent} onMouseLeave={(e) => (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'}>+</button>
+                            <button onClick={() => setCart(prev => prev.map(i => i.id === item.id ? { ...i, qty: Math.min(i.qty + 1, i.inventory ?? 0) } : i))} disabled={(item.inventory ?? 0) <= 0 || item.qty >= (item.inventory ?? 0)} style={{ background: 'none', border: 'none', color: (item.inventory ?? 0) <= 0 || item.qty >= (item.inventory ?? 0) ? '#444' : 'var(--text-muted)', cursor: (item.inventory ?? 0) <= 0 || item.qty >= (item.inventory ?? 0) ? 'not-allowed' : 'pointer', fontSize: '12px', padding: '0 4px', transition: 'color 0.2s' }} onMouseEnter={(e) => { if ((item.inventory ?? 0) > 0 && item.qty < (item.inventory ?? 0)) (e.currentTarget as HTMLButtonElement).style.color = accent; }} onMouseLeave={(e) => { if ((item.inventory ?? 0) > 0 && item.qty < (item.inventory ?? 0)) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; }}>+</button>
                           </div>
                         </div>
                       </div>

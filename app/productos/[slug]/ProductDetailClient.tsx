@@ -164,6 +164,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
 
+  const stock = product.inventory ?? 0;
+  const outOfStock = stock <= 0;
+
   const hasDiscount = !!(product.discount_percentage && product.discount_percentage > 0);
   const originalPrice = (product.original_price && product.original_price > product.price)
     ? product.original_price
@@ -193,15 +196,17 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   }, []);
 
   const handleAddToCart = () => {
+    if (outOfStock) return;
     try {
       const stored = localStorage.getItem('ts_cart');
       const cart: CartItem[] = stored ? JSON.parse(stored) : [];
       const existing = cart.find((i) => i.id === product.id);
       let updated: CartItem[];
       if (existing) {
-        updated = cart.map((i) => (i.id === product.id ? { ...i, qty: i.qty + qty } : i));
+        const newQty = Math.min(existing.qty + qty, stock);
+        updated = cart.map((i) => (i.id === product.id ? { ...i, qty: newQty } : i));
       } else {
-        updated = [...cart, { ...product, qty }];
+        updated = [...cart, { ...product, qty: Math.min(qty, stock) }];
       }
       localStorage.setItem('ts_cart', JSON.stringify(updated));
       setCartCount(updated.reduce((s, i) => s + i.qty, 0));
@@ -211,13 +216,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   };
 
   const handleBuyNow = () => {
+    if (outOfStock) return;
     try {
       const stored = localStorage.getItem('ts_cart');
       const c: CartItem[] = stored ? JSON.parse(stored) : [];
       const existing = c.find((i) => i.id === product.id);
       const updated = existing
-        ? c.map((i) => (i.id === product.id ? { ...i, qty: i.qty + qty } : i))
-        : [...c, { ...product, qty }];
+        ? c.map((i) => (i.id === product.id ? { ...i, qty: Math.min(i.qty + qty, stock) } : i))
+        : [...c, { ...product, qty: Math.min(qty, stock) }];
       localStorage.setItem('ts_cart', JSON.stringify(updated));
     } catch {}
     router.push('/checkout');
@@ -231,7 +237,12 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   };
 
   const changeQty = (id: string, delta: number) => {
-    const updated = cart.map((i) => (i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i)).filter((i) => i.qty > 0);
+    const updated = cart.map((i) => {
+      if (i.id !== id) return i;
+      const itemStock = i.inventory ?? 0;
+      const newQty = Math.max(1, i.qty + delta);
+      return { ...i, qty: Math.min(newQty, itemStock) };
+    }).filter((i) => i.qty > 0);
     setCart(updated);
     localStorage.setItem('ts_cart', JSON.stringify(updated));
     setCartCount(updated.reduce((s, i) => s + i.qty, 0));
@@ -634,65 +645,68 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 {qty}
               </div>
               <button
-                onClick={() => setQty((q) => q + 1)}
-                style={{ width: '48px', height: '48px', background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color 0.2s' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = accent; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)'; }}
+                onClick={() => setQty((q) => Math.min(q + 1, stock))}
+                disabled={outOfStock || qty >= stock}
+                style={{ width: '48px', height: '48px', background: 'none', border: 'none', color: outOfStock || qty >= stock ? '#444' : 'var(--text)', cursor: outOfStock || qty >= stock ? 'not-allowed' : 'pointer', fontSize: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color 0.2s' }}
+                onMouseEnter={(e) => { if (!outOfStock && qty < stock) (e.currentTarget as HTMLButtonElement).style.color = accent; }}
+                onMouseLeave={(e) => { if (!outOfStock && qty < stock) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)'; }}
               >+</button>
             </div>
 
-            {/* COMPRAR — botón principal, el más llamativo */}
+            {/* COMPRAR — botón principal */}
             <button
               onClick={handleBuyNow}
+              disabled={outOfStock}
               style={{
                 width: '100%',
                 padding: '20px',
-                background: accent,
-                color: '#111',
+                background: outOfStock ? '#2a2a2a' : accent,
+                color: outOfStock ? '#555' : '#111',
                 border: 'none',
                 fontFamily: '"Bebas Neue", sans-serif',
                 fontSize: '28px',
                 letterSpacing: '2px',
-                cursor: 'pointer',
+                cursor: outOfStock ? 'not-allowed' : 'pointer',
                 transition: 'background 0.2s, transform 0.1s',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '12px',
-                boxShadow: `0 0 32px ${accent}44`,
+                boxShadow: outOfStock ? 'none' : `0 0 32px ${accent}44`,
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#ffe033'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = accent; }}
-              onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.98)'; }}
-              onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
+              onMouseEnter={(e) => { if (!outOfStock) (e.currentTarget as HTMLButtonElement).style.background = '#ffe033'; }}
+              onMouseLeave={(e) => { if (!outOfStock) (e.currentTarget as HTMLButtonElement).style.background = accent; }}
+              onMouseDown={(e) => { if (!outOfStock) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.98)'; }}
+              onMouseUp={(e) => { if (!outOfStock) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7.4 17H19v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H15.5c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0 0 20 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-              COMPRAR AHORA
+              {outOfStock ? 'PRODUCTO AGOTADO' : 'COMPRAR AHORA'}
             </button>
 
             {/* Agregar al carrito — secundario */}
             <button
               onClick={handleAddToCart}
+              disabled={outOfStock}
               style={{
                 width: '100%',
                 padding: '14px',
-                background: added ? accent : 'transparent',
-                color: added ? '#111' : accent,
-                border: `1px solid ${accent}`,
+                background: outOfStock ? '#1e1e1e' : added ? accent : 'transparent',
+                color: outOfStock ? '#555' : added ? '#111' : accent,
+                border: `1px solid ${outOfStock ? '#444' : accent}`,
                 fontFamily: '"Bebas Neue", sans-serif',
                 fontSize: '18px',
                 letterSpacing: '1px',
-                cursor: 'pointer',
+                cursor: outOfStock ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
               }}
-              onMouseEnter={(e) => { if (!added) { (e.currentTarget as HTMLButtonElement).style.background = accent; (e.currentTarget as HTMLButtonElement).style.color = '#111'; } }}
-              onMouseLeave={(e) => { if (!added) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = accent; } }}
+              onMouseEnter={(e) => { if (!added && !outOfStock) { (e.currentTarget as HTMLButtonElement).style.background = accent; (e.currentTarget as HTMLButtonElement).style.color = '#111'; } }}
+              onMouseLeave={(e) => { if (!added && !outOfStock) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = accent; } }}
             >
-              {added ? '✓ AGREGADO AL CARRITO' : '+ AGREGAR AL CARRITO'}
+              {outOfStock ? 'SIN STOCK' : added ? '✓ AGREGADO AL CARRITO' : '+ AGREGAR AL CARRITO'}
             </button>
 
             {/* WhatsApp — terciario */}
