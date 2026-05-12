@@ -2,7 +2,7 @@
 
 import WhatsAppLogo from './WhatsAppLogo';
 
-const WHATSAPP_NUMBER = '573001234567';
+const WHATSAPP_NUMBER = '573332910220';
 const WHATSAPP_MESSAGE = encodeURIComponent(
   'Hola! Estoy interesado en un producto. Me ayudan?'
 );

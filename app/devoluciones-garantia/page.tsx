@@ -115,10 +115,27 @@ export default function DevolucionesGarantia() {
               ¿NECESITAS AYUDA?
             </h2>
             <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '16px', color: 'var(--text)', lineHeight: 1.8 }}>
-              Contacta a nuestro equipo de soporte por WhatsApp: <span style={{ color: accent, fontWeight: '700' }}>+57 3001234567</span>
+              Contacta a nuestro equipo de soporte por WhatsApp: <span style={{ color: accent, fontWeight: '700' }}>+57 333 291 0220</span>
             </p>
           </section>
 
+          <div style={{ paddingTop: '8px', paddingBottom: '16px' }}>
+            <Link
+              href="/"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                background: accent, color: '#111',
+                fontFamily: '"DM Mono", monospace', fontSize: '13px', fontWeight: '700',
+                letterSpacing: '1.5px', textTransform: 'uppercase',
+                padding: '14px 28px', borderRadius: '4px',
+                textDecoration: 'none', transition: 'opacity 0.2s',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = '0.85'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = '1'; }}
+            >
+              ← Volver a la página principal
+            </Link>
+          </div>
         </div>
       </div>
 
