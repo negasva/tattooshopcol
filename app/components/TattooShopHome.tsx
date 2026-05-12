@@ -984,18 +984,18 @@ export default function TattooShopHome() {
             <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '3px', marginBottom: '18px', fontWeight: '700' }}>CATÁLOGO</div>
             {['Kits de Inicio', 'Máquinas Rotary', 'Máquinas Coil', 'Agujas y Cartridges', 'Tintas', 'Insumos Descartables'].map((l) => (
               <div key={l} style={{ marginBottom: '10px' }}>
-                <a
-                  href="#"
-                  style={{ color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '13px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s' }}
+                <button
+                  onClick={(e) => e.preventDefault()}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '13px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s', cursor: 'pointer', padding: 0, textAlign: 'left' }}
                   onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLAnchorElement).style.color = accent;
+                    (e.currentTarget as HTMLButtonElement).style.color = accent;
                   }}
                   onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)';
+                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
                   }}
                 >
                   {l}
-                </a>
+                </button>
               </div>
             ))}
           </div>
@@ -1065,9 +1065,9 @@ export default function TattooShopHome() {
             <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '3px', marginBottom: '12px', fontWeight: '700' }}>REDES SOCIALES</div>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               {['Instagram', 'TikTok', 'Facebook', 'YouTube'].map((s) => (
-                <a
+                <button
                   key={s}
-                  href="#"
+                  onClick={(e) => e.preventDefault()}
                   style={{
                     color: 'var(--text-muted)',
                     fontFamily: '"DM Mono", monospace',
@@ -1077,18 +1077,20 @@ export default function TattooShopHome() {
                     padding: '6px 10px',
                     letterSpacing: '1px',
                     transition: 'all 0.2s',
+                    background: 'none',
+                    cursor: 'pointer',
                   }}
                   onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLAnchorElement).style.color = accent;
-                    (e.currentTarget as HTMLAnchorElement).style.borderColor = accent;
+                    (e.currentTarget as HTMLButtonElement).style.color = accent;
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = accent;
                   }}
                   onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)';
-                    (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border)';
+                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)';
                   }}
                 >
                   {s}
-                </a>
+                </button>
               ))}
             </div>
           </div>
