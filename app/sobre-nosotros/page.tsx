@@ -103,7 +103,7 @@ export default function SobreNosotros() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div>
                   <h3 style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: accent, fontWeight: '700', marginBottom: '4px' }}>UBICACIÓN</h3>
-                  <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '14px', color: 'var(--text-muted)' }}>Cra 7 #45-23, Bogotá, Colombia</p>
+                  <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '14px', color: 'var(--text-muted)' }}>Medellín, Antioquia, Colombia</p>
                 </div>
                 <div>
                   <h3 style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: accent, fontWeight: '700', marginBottom: '4px' }}>HORARIO</h3>

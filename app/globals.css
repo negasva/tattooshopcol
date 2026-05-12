@@ -36,11 +36,24 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
-  -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+  max-width: 100vw;
+  width: 100%;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
-  -webkit-text-size-adjust: 100%; /* Prevent font scaling on orientation change */
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+}
+
+/* Prevent any direct descendant of body/main from breaking horizontally */
+body > main,
+body > main > * {
+  max-width: 100vw;
+  overflow-x: clip;
 }
 
 ::-webkit-scrollbar {
@@ -111,9 +124,14 @@ input:focus {
 
 /* Tablet & below */
 @media (max-width: 900px) {
-  /* Home: products grid (hardcoded repeat(4, 1fr)) → 2 columns */
+  /* Home: products grid (hardcoded repeat(4, 1fr)) → 2 columns max */
   [data-products-grid] {
     grid-template-columns: 1fr 1fr !important;
+  }
+  /* Ensure cards don't overflow their grid track */
+  [data-products-grid] > * {
+    min-width: 0 !important;
+    overflow: hidden;
   }
 
   /* Admin form rows (1fr 1fr) → stack */
@@ -153,15 +171,88 @@ input:focus {
 }
 
 @media (max-width: 700px) {
-  /* Home: products grid → 1 column on small */
+  /* Keep 2 columns even on small phones (user preference: max 2) */
   [data-products-grid] {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr 1fr !important;
+  }
+  /* Slightly tighter card paddings so 2-col fits comfortably */
+  [data-products-grid] > div > div:last-child {
+    padding: 12px !important;
+  }
+  /* Tone down inner typography inside product cards on small screens */
+  [data-products-grid] [style*="font-size: 24px"] {
+    font-size: 18px !important;
+    line-height: 1.15 !important;
+  }
+  [data-products-grid] [style*="font-size: 22px"] {
+    font-size: 18px !important;
   }
 }
 
 @media (max-width: 600px) {
   [class*="grid-3"] {
     grid-template-columns: 1fr !important;
+  }
+
+  /* ===== FOOTER COMPACT MOBILE LAYOUT ===== */
+  /* Newsletter block: tighter padding */
+  footer > div:first-child {
+    padding: 24px 18px !important;
+    gap: 16px !important;
+  }
+  footer h4 {
+    font-size: 22px !important;
+    line-height: 1.05 !important;
+  }
+  /* Columns grid: 2 columns instead of 1 to halve vertical length */
+  footer > div:nth-child(2) {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 24px 16px !important;
+    padding: 24px 18px !important;
+  }
+  /* Brand block spans full width on top */
+  footer > div:nth-child(2) > div:first-child {
+    grid-column: 1 / -1 !important;
+    padding-bottom: 8px !important;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  footer > div:nth-child(2) > div:first-child p {
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+  }
+  /* Compact column titles & links */
+  footer > div:nth-child(2) > div > div:first-child {
+    font-size: 11px !important;
+    margin-bottom: 10px !important;
+    letter-spacing: 2px !important;
+  }
+  footer > div:nth-child(2) a,
+  footer > div:nth-child(2) button {
+    font-size: 12px !important;
+    letter-spacing: 0.3px !important;
+  }
+  footer > div:nth-child(2) > div > div {
+    margin-bottom: 6px !important;
+  }
+  footer > div:nth-child(2) p {
+    font-size: 12px !important;
+    line-height: 1.55 !important;
+  }
+  /* Contact block also full-width to avoid cramped multi-line address */
+  footer > div:nth-child(2) > div:last-child {
+    grid-column: 1 / -1 !important;
+    padding-top: 8px !important;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+  }
+  /* Copyright row */
+  footer > div:last-child {
+    padding: 14px 18px !important;
+    font-size: 11px !important;
+  }
+  footer > div:last-child > div {
+    font-size: 11px !important;
   }
 
   /* Product detail page: stack image and info vertically on mobile */
