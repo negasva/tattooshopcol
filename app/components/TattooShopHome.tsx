@@ -978,7 +978,10 @@ export default function TattooShopHome() {
             {['Kits', 'Máquinas', 'Insumos'].map((l) => (
               <div key={l} style={{ marginBottom: '10px' }}>
                 <button
-                  onClick={(e) => e.preventDefault()}
+                  onClick={() => {
+                    setActiveFilter(l.toLowerCase());
+                    document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
                   style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '13px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s', cursor: 'pointer', padding: 0, textAlign: 'left' }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLButtonElement).style.color = accent;
