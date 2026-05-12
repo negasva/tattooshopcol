@@ -1000,7 +1000,7 @@ export default function TattooShopHome() {
             <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '3px', marginBottom: '18px', fontWeight: '700' }}>INFORMACIÓN</div>
             {[
               { label: 'Políticas de Envíos', href: '/politica-envios' },
-              { label: 'Devoluciones y Garantía', href: '/devoluciones-garantia' },
+              { label: 'Garantía', href: '/devoluciones-garantia' },
               { label: 'Preguntas Frecuentes', href: '/preguntas-frecuentes' },
               { label: 'Métodos de Pago', href: '/metodos-pago' },
             ].map((item) => (

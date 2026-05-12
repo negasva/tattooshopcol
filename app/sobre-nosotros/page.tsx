@@ -91,7 +91,7 @@ export default function SobreNosotros() {
               <li>✓ Envío rápido a todo Colombia</li>
               <li>✓ Atención al cliente dedicada 24/7</li>
               <li>✓ Garantía de autenticidad en todos los productos</li>
-              <li>✓ Devoluciones sin complicaciones</li>
+              <li>✓ Garantía de 6 meses en equipos</li>
             </ul>
           </section>
 
