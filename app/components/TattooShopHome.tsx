@@ -542,7 +542,7 @@ export default function TattooShopHome() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const filtered = activeFilter === 'all' ? products : products.filter((p) => p.category.toLowerCase() === activeFilter.toLowerCase());
+  const filtered = (activeFilter === 'all' ? products : products.filter((p) => p.category.toLowerCase() === activeFilter.toLowerCase())).slice(0, 4);
 
   const addToCart = (product: Product) => {
     setCart((prev) => {
@@ -865,7 +865,7 @@ export default function TattooShopHome() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gridTemplateColumns: 'repeat(4, 1fr)',
                 gap: '1px',
                 background: 'var(--border)',
                 maxWidth: '100%',
