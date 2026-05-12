@@ -985,8 +985,8 @@ export default function TattooShopHome() {
             {['Kits de Inicio', 'Máquinas Rotary', 'Máquinas Coil', 'Agujas y Cartridges', 'Tintas', 'Insumos Descartables'].map((l) => (
               <div key={l} style={{ marginBottom: '10px' }}>
                 <a
-                  href="#"
-                  style={{ color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '13px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s' }}
+                  href="javascript:void(0)"
+                  style={{ color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '13px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s', cursor: 'pointer' }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLAnchorElement).style.color = accent;
                   }}
@@ -1067,7 +1067,7 @@ export default function TattooShopHome() {
               {['Instagram', 'TikTok', 'Facebook', 'YouTube'].map((s) => (
                 <a
                   key={s}
-                  href="#"
+                  href="javascript:void(0)"
                   style={{
                     color: 'var(--text-muted)',
                     fontFamily: '"DM Mono", monospace',
@@ -1077,6 +1077,7 @@ export default function TattooShopHome() {
                     padding: '6px 10px',
                     letterSpacing: '1px',
                     transition: 'all 0.2s',
+                    cursor: 'pointer',
                   }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLAnchorElement).style.color = accent;
