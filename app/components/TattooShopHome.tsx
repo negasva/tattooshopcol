@@ -84,18 +84,6 @@ function ProductPlaceholder({ icon, category, accent }: { icon: string; category
   );
 }
 
-function LogoMark({ accent }: { accent: string }) {
-  return (
-    <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style={{ width: 80, height: 80 }}>
-      <circle cx="60" cy="60" r="55" fill="none" stroke={accent} strokeWidth="2" opacity="0.6" />
-      <circle cx="60" cy="60" r="44" fill="none" stroke={accent} strokeWidth="0.5" opacity="0.3" />
-      <line x1="60" y1="20" x2="60" y2="90" stroke={accent} strokeWidth="2.5" strokeLinecap="round" />
-      <polygon points="60,90 55,75 65,75" fill={accent} />
-      <line x1="38" y1="45" x2="82" y2="45" stroke={accent} strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
-      <line x1="44" y1="36" x2="76" y2="36" stroke={accent} strokeWidth="0.8" strokeLinecap="round" opacity="0.4" />
-    </svg>
-  );
-}
 
 function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: number; onAdd: (p: Product) => void; accent: string }) {
   const [hovered, setHovered] = useState(false);
@@ -877,7 +865,7 @@ export default function TattooShopHome() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
                 gap: '1px',
                 background: 'var(--border)',
               }}
