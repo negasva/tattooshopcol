@@ -868,6 +868,7 @@ export default function TattooShopHome() {
                 gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
                 gap: '1px',
                 background: 'var(--border)',
+                maxWidth: '100%',
               }}
             >
               {filtered.map((p, i) => (
@@ -923,7 +924,7 @@ export default function TattooShopHome() {
       <footer style={{ borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
         <div style={{ padding: 'clamp(40px,6vw,80px) clamp(20px,5vw,80px)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '40px', flexWrap: 'wrap' }}>
           <div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '12px' }}>NEWSLETTER</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '3px', marginBottom: '12px', fontWeight: '700' }}>NEWSLETTER</div>
             <h4 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(24px,3vw,42px)', lineHeight: 0.95, color: 'var(--text)' }}>
               OFERTAS EXCLUSIVAS<br />
               PARA TATUADORES
@@ -961,7 +962,7 @@ export default function TattooShopHome() {
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px', color: accent }}>
               <BrandLogoFull width={120} />
             </div>
-            <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-dim)', lineHeight: 1.7, letterSpacing: '0.5px' }}>
+            <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, letterSpacing: '0.5px' }}>
               Tu proveedor profesional<br />
               de insumos para tatuaje<br />
               en Colombia.
@@ -969,12 +970,37 @@ export default function TattooShopHome() {
           </div>
 
           <div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>CATÁLOGO</div>
-            {['Kits de Inicio', 'Máquinas Rotary', 'Máquinas Coil', 'Agujas y Cartridges', 'Tintas', 'Insumos Descartables'].map((l) => (
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '3px', marginBottom: '18px', fontWeight: '700' }}>CATÁLOGO</div>
+            {['Kits', 'Máquinas', 'Insumos'].map((l) => (
               <div key={l} style={{ marginBottom: '10px' }}>
-                <a
-                  href="#"
-                  style={{ color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '12px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s' }}
+                <button
+                  onClick={(e) => e.preventDefault()}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '13px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s', cursor: 'pointer', padding: 0, textAlign: 'left' }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.color = accent;
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
+                  }}
+                >
+                  {l}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '3px', marginBottom: '18px', fontWeight: '700' }}>INFORMACIÓN</div>
+            {[
+              { label: 'Políticas de Envíos', href: '/politica-envios' },
+              { label: 'Devoluciones y Garantía', href: '/devoluciones-garantia' },
+              { label: 'Preguntas Frecuentes', href: '/preguntas-frecuentes' },
+              { label: 'Métodos de Pago', href: '/metodos-pago' },
+            ].map((item) => (
+              <div key={item.label} style={{ marginBottom: '10px' }}>
+                <Link
+                  href={item.href}
+                  style={{ color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '13px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s' }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLAnchorElement).style.color = accent;
                   }}
@@ -982,82 +1008,44 @@ export default function TattooShopHome() {
                     (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)';
                   }}
                 >
-                  {l}
-                </a>
+                  {item.label}
+                </Link>
               </div>
             ))}
           </div>
 
           <div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>INFORMACIÓN</div>
-            {['Política de Envíos', 'Devoluciones y Garantía', 'Preguntas Frecuentes', 'Métodos de Pago', 'Sobre Nosotros', 'Términos y Condiciones'].map((l) => (
-              <div key={l} style={{ marginBottom: '10px' }}>
-                <a
-                  href="#"
-                  style={{ color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '12px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s' }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLAnchorElement).style.color = accent;
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)';
-                  }}
-                >
-                  {l}
-                </a>
-              </div>
-            ))}
-          </div>
-
-          <div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>CONTACTO</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '3px', marginBottom: '18px', fontWeight: '700' }}>CONTACTO</div>
             <div style={{ marginBottom: '20px' }}>
-              <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.8 }}>
-                Cra 7 #45-23<br />
-                Bogotá, Colombia<br />
-                Lun-Vie 8am-6pm
+              <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.8 }}>
+                Tienda Virtual<br />
+                Medellín, Antioquia<br />
+                Abierto todos los días<br />
+                8am - 7pm
               </p>
             </div>
-            <a
-              href="https://wa.me/573000000000"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: accent,
-                color: '#111',
-                textDecoration: 'none',
-                padding: '10px 16px',
-                fontFamily: '"DM Mono", monospace',
-                fontSize: '11px',
-                letterSpacing: '1px',
-                marginBottom: '24px',
-                transition: 'background 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.background = '#ffe033';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.background = accent;
-              }}
-            >
-              <WhatsAppLogo size="16px" />
-              WHATSAPP
-            </a>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '12px' }}>REDES SOCIALES</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '3px', marginBottom: '12px', fontWeight: '700' }}>REDES SOCIALES</div>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              {['Instagram', 'TikTok', 'Facebook', 'YouTube'].map((s) => (
+              {[
+                { label: 'Instagram', href: 'https://instagram.com' },
+                { label: 'Facebook', href: 'https://facebook.com' },
+                { label: 'WhatsApp', href: 'https://wa.me/573000000000' },
+              ].map((s) => (
                 <a
-                  key={s}
-                  href="#"
+                  key={s.label}
+                  href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     color: 'var(--text-muted)',
                     fontFamily: '"DM Mono", monospace',
-                    fontSize: '10px',
+                    fontSize: '12px',
                     textDecoration: 'none',
                     border: '1px solid var(--border)',
                     padding: '6px 10px',
                     letterSpacing: '1px',
                     transition: 'all 0.2s',
+                    display: 'inline-block',
                   }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLAnchorElement).style.color = accent;
@@ -1068,36 +1056,16 @@ export default function TattooShopHome() {
                     (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border)';
                   }}
                 >
-                  {s}
+                  {s.label}
                 </a>
               ))}
             </div>
           </div>
-
-          <div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>PAGAMOS CON</div>
-            {['PSE / Bancolombia', 'Nequi / Daviplata', 'Contraentrega', 'Tarjeta Crédito/Débito', 'Efecty / Baloto'].map((p) => (
-              <div
-                key={p}
-                style={{
-                  marginBottom: '8px',
-                  padding: '8px 12px',
-                  border: '1px solid var(--border)',
-                  fontFamily: '"DM Mono", monospace',
-                  fontSize: '10px',
-                  color: 'var(--text-muted)',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                {p}
-              </div>
-            ))}
-          </div>
         </div>
 
         <div style={{ padding: '20px clamp(20px,5vw,80px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>TattooShop Colombia ©2026 — Todos los derechos reservados</div>
-          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>
+          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '1px' }}>TattooShop Colombia ©2026 — Todos los derechos reservados</div>
+          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '1px' }}>
             Hecho con <span style={{ color: accent }}>✦</span> en Colombia
           </div>
         </div>

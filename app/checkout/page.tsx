@@ -160,8 +160,8 @@ export default function CheckoutPage() {
 
       {/* HEADER */}
       <div style={{ padding: 'clamp(32px,5vw,56px) clamp(20px,5vw,80px) 0', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '3px', marginBottom: '8px' }}>CHECKOUT</div>
-        <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(36px,6vw,72px)', lineHeight: 0.92, color: 'var(--text)', paddingBottom: 'clamp(24px,4vw,40px)' }}>
+        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '3px', marginBottom: '8px', fontWeight: '700' }}>CHECKOUT</div>
+        <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(36px,6vw,72px)', lineHeight: 0.92, color: 'var(--text)', paddingBottom: 'clamp(24px,4vw,40px)', fontWeight: '900' }}>
           FINALIZAR<br /><span style={{ color: accent }}>COMPRA</span>
         </h1>
       </div>
@@ -280,7 +280,7 @@ export default function CheckoutPage() {
         {/* RIGHT — Resumen */}
         <div style={{ background: 'var(--surface)', padding: 'clamp(24px,4vw,56px)', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: accent, letterSpacing: '3px', marginBottom: '16px' }}>RESUMEN DEL PEDIDO</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: accent, letterSpacing: '3px', marginBottom: '16px', fontWeight: '700' }}>RESUMEN DEL PEDIDO</div>
             {cart.length === 0 ? (
               <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '14px', color: 'var(--text-muted)', padding: '40px 0', textAlign: 'center' }}>
                 <div style={{ fontSize: '32px', opacity: 0.3, marginBottom: '12px' }}>∅</div>Tu carrito está vacío
@@ -318,30 +318,30 @@ export default function CheckoutPage() {
 
           {/* Totales */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', fontWeight: '700' }}>
               <span>SUBTOTAL</span><span>{fmt(subtotal)}</span>
             </div>
             {codFee > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: '"DM Mono", monospace', fontSize: '12px', color: '#e88' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: '"DM Mono", monospace', fontSize: '12px', color: '#e88', fontWeight: '700' }}>
                 <span>SERVICIO CONTRA ENTREGA</span><span>+ {fmt(COD_FEE)}</span>
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '8px' }}>
-              <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', letterSpacing: '2px' }}>TOTAL</span>
-              <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '36px', color: accent }}>{fmt(total)}</span>
+              <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', letterSpacing: '2px', fontWeight: '700' }}>TOTAL</span>
+              <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '36px', color: accent, fontWeight: '900' }}>{fmt(total)}</span>
             </div>
           </div>
 
           {selectedCity && (
             <div style={{ background: 'var(--bg)', border: `1px solid ${accent}33`, padding: '12px 16px' }}>
-              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '2px', marginBottom: '4px' }}>ENTREGA EN</div>
+              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '2px', marginBottom: '4px', fontWeight: '700' }}>ENTREGA EN</div>
               <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '14px', color: 'var(--text)' }}>{selectedCity}</div>
             </div>
           )}
 
           {/* Sellos */}
           <div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '3px', marginBottom: '12px' }}>COMPRA SEGURA</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '3px', marginBottom: '12px', fontWeight: '700' }}>COMPRA SEGURA</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'var(--border)' }}>
               {[
                 { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, label: 'SSL', sub: 'Encriptado' },
