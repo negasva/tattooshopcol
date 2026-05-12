@@ -902,9 +902,9 @@ export default function TattooShopHome() {
         </div>
         <div style={{ padding: 'clamp(48px,8vw,96px) clamp(24px,5vw,80px)', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--surface)' }}>
           {[
-            { n: '500+', label: 'Clientes activos' },
-            { n: '48h', label: 'Tiempo de entrega promedio' },
-            { n: '100%', label: 'Garantía en productos' },
+            { n: '1000+', label: 'Clientes activos' },
+            { n: '2 a 4 días', label: 'Tiempo de entrega promedio' },
+            { n: 'Garantía 6 meses', label: 'Por defectos de fábrica' },
           ].map((s, i) => (
             <div
               key={i}
