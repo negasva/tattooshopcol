@@ -877,7 +877,7 @@ export default function TattooShopHome() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(calc(25% - 1px), 1fr))',
                 gap: '1px',
                 background: 'var(--border)',
               }}
