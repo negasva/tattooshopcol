@@ -132,7 +132,7 @@ export default function TerminosCondiciones() {
               10. CONTACTO
             </h2>
             <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '15px', color: 'var(--text-muted)', lineHeight: 1.8 }}>
-              Si tienes preguntas sobre estos términos, contáctanos en: <span style={{ color: accent, fontWeight: '700' }}>info@tattooshopcolombia.com</span> o por WhatsApp: <span style={{ color: accent, fontWeight: '700' }}>+57 3001234567</span>
+              Si tienes preguntas sobre estos términos, contáctanos en: <span style={{ color: accent, fontWeight: '700' }}>info@tattooshopcolombia.com</span> o por WhatsApp: <span style={{ color: accent, fontWeight: '700' }}>+57 333 291 0220</span>
             </p>
           </section>
 
@@ -142,6 +142,23 @@ export default function TerminosCondiciones() {
             </p>
           </div>
 
+          <div style={{ paddingTop: '8px', paddingBottom: '16px' }}>
+            <Link
+              href="/"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                background: accent, color: '#111',
+                fontFamily: '"DM Mono", monospace', fontSize: '13px', fontWeight: '700',
+                letterSpacing: '1.5px', textTransform: 'uppercase',
+                padding: '14px 28px', borderRadius: '4px',
+                textDecoration: 'none', transition: 'opacity 0.2s',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = '0.85'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = '1'; }}
+            >
+              ← Volver a la página principal
+            </Link>
+          </div>
         </div>
       </div>
 

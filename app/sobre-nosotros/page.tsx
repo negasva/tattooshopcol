@@ -91,7 +91,7 @@ export default function SobreNosotros() {
               <li>✓ Envío rápido a todo Colombia</li>
               <li>✓ Atención al cliente dedicada 24/7</li>
               <li>✓ Garantía de autenticidad en todos los productos</li>
-              <li>✓ Devoluciones sin complicaciones</li>
+              <li>✓ Garantía de 6 meses en equipos</li>
             </ul>
           </section>
 
@@ -111,7 +111,7 @@ export default function SobreNosotros() {
                 </div>
                 <div>
                   <h3 style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: accent, fontWeight: '700', marginBottom: '4px' }}>WHATSAPP</h3>
-                  <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '14px', color: 'var(--text-muted)' }}>+57 3001234567</p>
+                  <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '14px', color: 'var(--text-muted)' }}>+57 333 291 0220</p>
                 </div>
                 <div>
                   <h3 style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: accent, fontWeight: '700', marginBottom: '4px' }}>REDES SOCIALES</h3>
