@@ -52,7 +52,7 @@ export default function CitySelector({ onCitySelect }: CitySelectorProps) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* DEPARTAMENTO */}
       <div ref={deptRef} style={{ position: 'relative' }}>
-        <label style={{ display: 'block', fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '10px' }}>
+        <label style={{ display: 'block', fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '10px' }}>
           Departamento
         </label>
         <button
@@ -119,7 +119,7 @@ export default function CitySelector({ onCitySelect }: CitySelectorProps) {
       {/* CIUDAD */}
       {selectedDept && (
         <div ref={cityRef} style={{ position: 'relative' }}>
-          <label style={{ display: 'block', fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '10px' }}>
+          <label style={{ display: 'block', fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '10px' }}>
             Ciudad de Entrega
           </label>
           <input
@@ -179,7 +179,7 @@ export default function CitySelector({ onCitySelect }: CitySelectorProps) {
                 >
                   <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text)' }}>{city.name}</span>
                   {city.cashOnDelivery && (
-                    <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '8px', color: '#111', background: accent, padding: '2px 6px', letterSpacing: '1px' }}>
+                    <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: '#111', background: accent, padding: '2px 6px', letterSpacing: '1px' }}>
                       C.ENTREGA ✓
                     </span>
                   )}
@@ -189,7 +189,7 @@ export default function CitySelector({ onCitySelect }: CitySelectorProps) {
           )}
 
           {selectedCity && (
-            <div style={{ marginTop: '8px', fontFamily: '"DM Mono", monospace', fontSize: '10px', color: accent, letterSpacing: '1px' }}>
+            <div style={{ marginTop: '8px', fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '1px' }}>
               ✓ {selectedCity}
             </div>
           )}
