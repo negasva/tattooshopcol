@@ -140,6 +140,66 @@ input:focus {
   }
 }
 
+/* ===== ADMIN MOBILE ===== */
+@media (max-width: 768px) {
+  /* Reduce outer page padding */
+  [data-admin-page] {
+    padding: 16px 10px !important;
+  }
+  /* Tighter form padding */
+  [data-admin-form] {
+    padding: 16px !important;
+  }
+  /* File input doesn't overflow */
+  [data-admin-form] input[type="file"] {
+    max-width: 100%;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Image preview a bit smaller next to file input */
+  [data-admin-form] img {
+    max-width: 64px !important;
+    max-height: 64px !important;
+  }
+
+  /* === Admin products TABLE: show only essentials === */
+  /* Columns: 1 Imagen | 2 Nombre | 3 Categoría | 4 Precio Orig | 5 Precio Final | 6 Descuento | 7 Inventario | 8 Acciones */
+  /* Hide: Imagen, Categoría, Precio Original, Descuento */
+  [data-admin-table] th:nth-child(1),
+  [data-admin-table] td:nth-child(1),
+  [data-admin-table] th:nth-child(3),
+  [data-admin-table] td:nth-child(3),
+  [data-admin-table] th:nth-child(4),
+  [data-admin-table] td:nth-child(4),
+  [data-admin-table] th:nth-child(6),
+  [data-admin-table] td:nth-child(6) {
+    display: none !important;
+  }
+  /* Compact remaining cells */
+  [data-admin-table] th,
+  [data-admin-table] td {
+    padding: 10px 6px !important;
+    font-size: 12px !important;
+  }
+  [data-admin-table] th {
+    font-size: 11px !important;
+    letter-spacing: 0.5px;
+  }
+  /* Action buttons compact and stacked vertically */
+  [data-admin-table] td:last-child {
+    white-space: nowrap;
+    text-align: right !important;
+  }
+  [data-admin-table] td:last-child button {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+    margin: 2px !important;
+    min-height: 32px !important;
+    display: inline-block !important;
+  }
+}
+
 @media (max-width: 768px) {
   /* Hide secondary nav buttons (categories) on mobile — cart stays */
   nav > div:last-child > button:not(:last-child) {
