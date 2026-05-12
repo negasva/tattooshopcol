@@ -179,7 +179,7 @@ export default function CitySelector({ onCitySelect }: CitySelectorProps) {
                 >
                   <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text)' }}>{city.name}</span>
                   {city.cashOnDelivery && (
-                    <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: '#111', background: accent, padding: '2px 6px', letterSpacing: '1px' }}>
+                    <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: '#111', background: accent, padding: '3px 8px', letterSpacing: '1px' }}>
                       C.ENTREGA ✓
                     </span>
                   )}

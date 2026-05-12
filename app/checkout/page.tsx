@@ -271,7 +271,7 @@ export default function CheckoutPage() {
           </button>
 
           {!canCheckout && (
-            <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', letterSpacing: '1px', marginTop: '-16px' }}>
+            <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', letterSpacing: '1px', marginTop: '-16px' }}>
               {!selectedCity ? 'Selecciona tu ciudad para continuar' : !selectedMethod ? 'Selecciona un método de pago' : 'Selecciona la plataforma de transferencia'}
             </p>
           )}
@@ -280,7 +280,7 @@ export default function CheckoutPage() {
         {/* RIGHT — Resumen */}
         <div style={{ background: 'var(--surface)', padding: 'clamp(24px,4vw,56px)', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '3px', marginBottom: '16px' }}>RESUMEN DEL PEDIDO</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: accent, letterSpacing: '3px', marginBottom: '16px' }}>RESUMEN DEL PEDIDO</div>
             {cart.length === 0 ? (
               <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '14px', color: 'var(--text-muted)', padding: '40px 0', textAlign: 'center' }}>
                 <div style={{ fontSize: '32px', opacity: 0.3, marginBottom: '12px' }}>∅</div>Tu carrito está vacío
@@ -294,7 +294,7 @@ export default function CheckoutPage() {
                     <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid var(--border)', gap: '12px' }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text)', lineHeight: 1.4 }}>{item.name}</div>
-                        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <span>
                             {item.qty > 1 ? `${item.qty} uds × ${fmt(sp)}` : '1 unidad'}
                             {hasDisc && <span style={{ color: '#e55' }}>-{item.discount_percentage}%</span>}
@@ -307,7 +307,7 @@ export default function CheckoutPage() {
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                         <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: accent, flexShrink: 0 }}>{fmt(sp * item.qty)}</div>
-                        <button onClick={() => setCart(prev => prev.filter(i => i.id !== item.id))} style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget as HTMLButtonElement).style.color = '#e55'} onMouseLeave={(e) => (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'}>Eliminar</button>
+                        <button onClick={() => setCart(prev => prev.filter(i => i.id !== item.id))} style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget as HTMLButtonElement).style.color = '#e55'} onMouseLeave={(e) => (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'}>Eliminar</button>
                       </div>
                     </div>
                   );
@@ -334,14 +334,14 @@ export default function CheckoutPage() {
 
           {selectedCity && (
             <div style={{ background: 'var(--bg)', border: `1px solid ${accent}33`, padding: '12px 16px' }}>
-              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '2px', marginBottom: '4px' }}>ENTREGA EN</div>
+              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '2px', marginBottom: '4px' }}>ENTREGA EN</div>
               <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '14px', color: 'var(--text)' }}>{selectedCity}</div>
             </div>
           )}
 
           {/* Sellos */}
           <div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '3px', marginBottom: '12px' }}>COMPRA SEGURA</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '3px', marginBottom: '12px' }}>COMPRA SEGURA</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'var(--border)' }}>
               {[
                 { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, label: 'SSL', sub: 'Encriptado' },
@@ -351,8 +351,8 @@ export default function CheckoutPage() {
               ].map((b) => (
                 <div key={b.label} style={{ background: 'var(--bg)', padding: '12px', textAlign: 'center' }}>
                   <div style={{ fontSize: '18px', marginBottom: '4px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-muted)' }}>{b.icon}</div>
-                  <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '1px' }}>{b.label}</div>
-                  <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>{b.sub}</div>
+                  <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '1px' }}>{b.label}</div>
+                  <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{b.sub}</div>
                 </div>
               ))}
             </div>
