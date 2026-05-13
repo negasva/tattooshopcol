@@ -146,6 +146,41 @@ export default function CheckoutPage() {
           const button = wompiContainer.querySelector('button');
           if (button) {
             button.click();
+
+            // Iniciar polling para detectar cuando el pago se completa
+            let pollCount = 0;
+            const maxPolls = 120; // máximo 2 minutos (120 * 1 segundo)
+            const pollInterval = 1000; // 1 segundo
+
+            const pollTransaction = async () => {
+              try {
+                const res = await fetch(`/api/check-wompi-transaction?reference=${reference}`);
+                const data = await res.json();
+
+                if (data.status === 'found' && data.transaction?.status === 'APPROVED') {
+                  // Pago completado exitosamente, redirigir a la página de éxito
+                  window.location.href = redirectUrl;
+                  return;
+                } else if (data.status === 'found' && data.transaction?.status && data.transaction.status !== 'PENDING') {
+                  // Pago rechazado o cancelado
+                  window.location.href = `${redirectUrl}&status=${data.transaction.status}`;
+                  return;
+                }
+              } catch (error) {
+                console.error('Error polling transaction:', error);
+              }
+
+              pollCount++;
+              if (pollCount < maxPolls) {
+                setTimeout(pollTransaction, pollInterval);
+              } else {
+                setIsProcessing(false);
+                // Timeout alcanzado, el usuario debe hacer click en "Volver al comercio" manualmente
+              }
+            };
+
+            // Esperar 2 segundos antes de empezar a hacer polling (dar tiempo para que Wompi procese)
+            setTimeout(pollTransaction, 2000);
           } else {
             setIsProcessing(false);
             alert('Error inicializando el sistema de pago. Por favor intenta de nuevo.');
