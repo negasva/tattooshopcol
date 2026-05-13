@@ -25,6 +25,9 @@ export default function AdminPageClient() {
   const [discountType, setDiscountType] = useState<'percentage' | 'amount'>('percentage');
   const [uploading, setUploading] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+  const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
+  const [inlineEditPrice, setInlineEditPrice] = useState<number>(0);
+  const [inlineEditInventory, setInlineEditInventory] = useState<number>(0);
 
   const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123';
 
@@ -122,6 +125,37 @@ export default function AdminPageClient() {
       console.error('Error:', error);
       alert('Error eliminando producto');
     }
+  };
+
+  const startInlineEdit = (product: Product) => {
+    setInlineEditingId(product.id);
+    setInlineEditPrice(product.price);
+    setInlineEditInventory(product.inventory);
+  };
+
+  const saveInlineEdit = async (id: string) => {
+    try {
+      const sb = getSupabase();
+      const { error } = await sb
+        .from('products')
+        .update({
+          price: inlineEditPrice,
+          inventory: inlineEditInventory,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id);
+      if (error) throw error;
+      loadProducts();
+      setInlineEditingId(null);
+      alert('Producto actualizado');
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error actualizando producto');
+    }
+  };
+
+  const cancelInlineEdit = () => {
+    setInlineEditingId(null);
   };
 
   const handleEdit = (product: Product) => {
@@ -588,45 +622,122 @@ export default function AdminPageClient() {
                       <td style={{ padding: '16px', textAlign: 'right', color: product.original_price ? 'var(--accent)' : 'var(--text-muted)' }}>
                         {product.original_price ? `$${product.original_price.toLocaleString('es-CO')}` : '—'}
                       </td>
-                      <td style={{ padding: '16px', textAlign: 'right', color: 'var(--accent)', fontWeight: '600' }}>
-                        ${product.price.toLocaleString('es-CO')}
+                      <td style={{ padding: '16px', textAlign: 'right' }}>
+                        {inlineEditingId === product.id ? (
+                          <input
+                            type="number"
+                            value={inlineEditPrice}
+                            onChange={(e) => setInlineEditPrice(Number(e.target.value))}
+                            style={{
+                              width: '100px',
+                              padding: '6px',
+                              border: '1px solid var(--accent)',
+                              background: 'var(--bg)',
+                              color: 'var(--accent)',
+                              borderRadius: '4px',
+                              textAlign: 'right',
+                              fontWeight: '600',
+                            }}
+                          />
+                        ) : (
+                          <span style={{ color: 'var(--accent)', fontWeight: '600', cursor: 'pointer' }} onClick={() => startInlineEdit(product)}>
+                            ${product.price.toLocaleString('es-CO')}
+                          </span>
+                        )}
                       </td>
                       <td style={{ padding: '16px', textAlign: 'right', color: product.discount_percentage && product.discount_percentage > 0 ? '#e55' : 'var(--text-muted)' }}>
                         {product.discount_percentage && product.discount_percentage > 0 ? `${product.discount_percentage}%` : '—'}
                       </td>
-                      <td style={{ padding: '16px', textAlign: 'center', color: product.inventory > 0 ? 'var(--text)' : '#e55' }}>
-                        {product.inventory}
+                      <td style={{ padding: '16px', textAlign: 'center' }}>
+                        {inlineEditingId === product.id ? (
+                          <input
+                            type="number"
+                            value={inlineEditInventory}
+                            onChange={(e) => setInlineEditInventory(Number(e.target.value))}
+                            style={{
+                              width: '70px',
+                              padding: '6px',
+                              border: '1px solid var(--accent)',
+                              background: 'var(--bg)',
+                              color: 'var(--accent)',
+                              borderRadius: '4px',
+                              textAlign: 'center',
+                              fontWeight: '600',
+                            }}
+                          />
+                        ) : (
+                          <span style={{ color: product.inventory > 0 ? 'var(--text)' : '#e55', cursor: 'pointer' }} onClick={() => startInlineEdit(product)}>
+                            {product.inventory}
+                          </span>
+                        )}
                       </td>
                       <td style={{ padding: '16px', textAlign: 'center' }}>
-                        <button
-                          onClick={() => handleEdit(product)}
-                          style={{
-                            marginRight: '8px',
-                            padding: '6px 12px',
-                            background: 'var(--surface2)',
-                            color: 'var(--accent)',
-                            border: '1px solid var(--border)',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                          }}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product.id)}
-                          style={{
-                            padding: '6px 12px',
-                            background: 'transparent',
-                            color: '#e55',
-                            border: '1px solid #e55',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                          }}
-                        >
-                          Eliminar
-                        </button>
+                        {inlineEditingId === product.id ? (
+                          <>
+                            <button
+                              onClick={() => saveInlineEdit(product.id)}
+                              style={{
+                                marginRight: '8px',
+                                padding: '6px 12px',
+                                background: 'var(--accent)',
+                                color: '#111',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                              }}
+                            >
+                              Guardar
+                            </button>
+                            <button
+                              onClick={cancelInlineEdit}
+                              style={{
+                                padding: '6px 12px',
+                                background: 'transparent',
+                                color: 'var(--text-muted)',
+                                border: '1px solid var(--border)',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                              }}
+                            >
+                              Cancelar
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleEdit(product)}
+                              style={{
+                                marginRight: '8px',
+                                padding: '6px 12px',
+                                background: 'var(--surface2)',
+                                color: 'var(--accent)',
+                                border: '1px solid var(--border)',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                              }}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => handleDelete(product.id)}
+                              style={{
+                                padding: '6px 12px',
+                                background: 'transparent',
+                                color: '#e55',
+                                border: '1px solid #e55',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                              }}
+                            >
+                              Eliminar
+                            </button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}
