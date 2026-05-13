@@ -441,20 +441,15 @@ export default function CategoryPage({ category, slug }: CategoryPageProps) {
       </nav>
 
       {/* HEADER */}
-      <header style={{ padding: 'clamp(48px,8vw,96px) clamp(20px,5vw,80px) clamp(32px,5vw,56px)', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '4px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span>{icon}</span>
-          <span>CATÁLOGO</span>
-          <span style={{ height: '1px', width: '40px', background: accent, opacity: 0.4 }} />
-          <span style={{ opacity: 0.6 }}>{products.length} productos</span>
-        </div>
-        <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(48px,10vw,120px)', lineHeight: 0.85, color: 'var(--text)', fontWeight: 900 }}>
+      <header style={{ padding: 'clamp(48px,8vh,96px) clamp(20px,5vw,80px) 0', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '8px' }}>CATÁLOGO</div>
+        <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(36px,5vw,72px)', lineHeight: 0.9, color: 'var(--text)', marginBottom: '32px' }}>
           {category.toUpperCase()}
         </h1>
       </header>
 
-      {/* PRODUCTS GRID */}
-      <main style={{ padding: 'clamp(32px,5vw,64px) clamp(20px,5vw,80px)' }}>
+      {/* PRODUCTS */}
+      <section style={{ padding: 'clamp(48px,8vh,96px) clamp(20px,5vw,80px)' }}>
         {loading ? (
           <div style={{ padding: '80px 20px', textAlign: 'center', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '12px', letterSpacing: '2px' }}>
             Cargando productos...
@@ -467,9 +462,10 @@ export default function CategoryPage({ category, slug }: CategoryPageProps) {
           <>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+              gridTemplateColumns: 'repeat(4, 1fr)',
               gap: '1px',
               background: 'var(--border)',
+              maxWidth: '100%',
             }}>
               {products.map((p) => (
                 <ProductCard
@@ -481,39 +477,11 @@ export default function CategoryPage({ category, slug }: CategoryPageProps) {
               ))}
             </div>
             <div style={{ marginTop: '24px', fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-dim)', letterSpacing: '1px', display: 'flex', justifyContent: 'flex-end' }}>
-              {products.length} productos en {category}
+              {products.length} de {products.length} productos
             </div>
           </>
         )}
-      </main>
-
-      {/* FOOTER CATEGORÍAS */}
-      <footer style={{ borderTop: '1px solid var(--border)', padding: 'clamp(32px,5vw,56px) clamp(20px,5vw,80px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '24px' }}>
-        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-dim)', letterSpacing: '1px' }}>
-          © {new Date().getFullYear()} TATTOO SHOP COLOMBIA — MEDELLÍN
-        </div>
-        <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-          {otherCategories.map((c) => (
-            <Link
-              key={c.slug}
-              href={`/${c.slug}`}
-              style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', textDecoration: 'none', letterSpacing: '1.5px', textTransform: 'uppercase', transition: 'color 0.2s' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = accent; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)'; }}
-            >
-              {c.label}
-            </Link>
-          ))}
-          <Link
-            href="/"
-            style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', textDecoration: 'none', letterSpacing: '1.5px', transition: 'color 0.2s' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = accent; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)'; }}
-          >
-            ← Inicio
-          </Link>
-        </div>
-      </footer>
+      </section>
 
       {cartOpen && (
         <CartDrawer
