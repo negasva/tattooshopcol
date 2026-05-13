@@ -24,6 +24,7 @@ export default function AdminPageClient() {
   const [newCategory, setNewCategory] = useState('');
   const [discountType, setDiscountType] = useState<'percentage' | 'amount'>('percentage');
   const [uploading, setUploading] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
 
   const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123';
 
@@ -136,6 +137,7 @@ export default function AdminPageClient() {
       inventory: product.inventory,
     });
     setEditingId(product.id);
+    setFormOpen(true);
     window.scrollTo(0, 0);
   };
 
@@ -235,11 +237,34 @@ export default function AdminPageClient() {
         <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '48px', marginBottom: '40px', color: 'var(--accent)' }}>PANEL ADMIN</h1>
 
         {/* FORM */}
-        <div data-admin-form="" style={{ background: 'var(--surface)', padding: '30px', marginBottom: '40px', borderRadius: '8px' }}>
-          <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '24px', marginBottom: '20px' }}>
-            {editingId ? 'Editar Producto' : 'Agregar Producto'}
-          </h2>
-          <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
+        <div data-admin-form="" style={{ marginBottom: '40px' }}>
+          <button
+            type="button"
+            onClick={() => setFormOpen(!formOpen)}
+            style={{
+              width: '100%',
+              padding: '16px',
+              background: 'var(--accent)',
+              color: '#111',
+              border: 'none',
+              fontFamily: '"Bebas Neue", sans-serif',
+              fontSize: '18px',
+              cursor: 'pointer',
+              borderRadius: '8px',
+              fontWeight: '600',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <span>{editingId ? 'Editar Producto' : 'Agregar Producto'}</span>
+            <span style={{ fontSize: '24px', fontWeight: 'bold' }}>{formOpen ? '−' : '+'}</span>
+          </button>
+
+          {formOpen && (
+            <div style={{ background: 'var(--surface)', padding: '30px', borderRadius: '8px' }}>
+              <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
             <div data-admin-row="" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Nombre</label>
@@ -521,7 +546,9 @@ export default function AdminPageClient() {
                 </button>
               )}
             </div>
-          </form>
+              </form>
+            </div>
+          )}
         </div>
 
         {/* PRODUCTS TABLE */}
