@@ -128,21 +128,13 @@ function ProductCard({ product, onAdd, cartQty }: { product: Product; onAdd: (p:
       </Link>
 
       <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-dim)', letterSpacing: '2px', marginBottom: '8px', textTransform: 'uppercase' }}>
-          {product.category} {product.tag ? `· ${product.tag}` : ''}
-        </div>
-        <Link href={`/productos/${toSlug(product.name)}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-          <h3 style={{ fontSize: '14px', fontWeight: 600, lineHeight: 1.3, color: 'var(--text)', marginBottom: '8px', transition: 'color 0.2s', ...(hovered ? { color: accent } : {}) }}>
+        <Link href={`/productos/${toSlug(product.name)}`} style={{ textDecoration: 'none', color: 'inherit', flex: 1 }}>
+          <h3 style={{ fontSize: '14px', fontWeight: 600, lineHeight: 1.3, color: 'var(--text)', marginBottom: '16px', transition: 'color 0.2s', ...(hovered ? { color: accent } : {}) }}>
             {product.name}
           </h3>
         </Link>
-        {product.specs && (
-          <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '16px', flex: 1 }}>
-            {product.specs}
-          </p>
-        )}
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '16px' }}>
-          <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px', color: accent }}>{fmt(salePrice)}</span>
+          <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '32px', color: accent }}>{fmt(salePrice)}</span>
           {originalPrice && (
             <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-dim)', textDecoration: 'line-through' }}>{fmt(originalPrice)}</span>
           )}
