@@ -601,9 +601,9 @@ export default function TattooShopHome() {
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
 
   const categories = [
-    { key: 'kits', label: 'Kits', count: products.filter(p => p.category === 'Kits').length },
-    { key: 'máquinas', label: 'Máquinas', count: products.filter(p => p.category === 'Máquinas').length },
-    { key: 'insumos', label: 'Insumos', count: products.filter(p => p.category === 'Insumos').length },
+    { key: 'kits', label: 'Kits', count: products.filter(p => p.category === 'Kits').length, slug: 'kits' },
+    { key: 'máquinas', label: 'Máquinas', count: products.filter(p => p.category === 'Máquinas').length, slug: 'maquinas' },
+    { key: 'insumos', label: 'Insumos', count: products.filter(p => p.category === 'Insumos').length, slug: 'insumos' },
   ];
 
   const handleNewsletter = (e: React.FormEvent) => {
@@ -631,7 +631,6 @@ export default function TattooShopHome() {
           alignItems: 'center',
           justifyContent: 'space-between',
           height: '64px',
-          position: 'relative',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', color: accent }}>
@@ -640,36 +639,31 @@ export default function TattooShopHome() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
           {categories.map((cat) => (
-            <button
+            <Link
               key={cat.key}
-              onClick={() => {
-                setActiveFilter(cat.key);
-                document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }}
+              href={`/${cat.slug}`}
               style={{
-                background: 'none',
-                border: 'none',
                 color: 'var(--text-muted)',
                 fontFamily: '"DM Mono", monospace',
                 fontSize: '11px',
                 letterSpacing: '1.5px',
-                cursor: 'pointer',
                 textTransform: 'uppercase',
                 padding: '4px 0',
                 borderBottom: '1px solid transparent',
                 transition: 'all 0.2s',
+                textDecoration: 'none',
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.color = accent;
-                (e.currentTarget as HTMLButtonElement).style.borderBottomColor = accent;
+                (e.currentTarget as HTMLAnchorElement).style.color = accent;
+                (e.currentTarget as HTMLAnchorElement).style.borderBottomColor = accent;
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
-                (e.currentTarget as HTMLButtonElement).style.borderBottomColor = 'transparent';
+                (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)';
+                (e.currentTarget as HTMLAnchorElement).style.borderBottomColor = 'transparent';
               }}
             >
               {cat.label}
-            </button>
+            </Link>
           ))}
           <button
             onClick={() => setCartOpen(true)}
@@ -764,48 +758,47 @@ export default function TattooShopHome() {
           }}
         >
           {categories.map((cat, i) => (
-            <button
+            <Link
               key={cat.key}
-              onClick={() => {
-                setActiveFilter(cat.key);
-                document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }}
+              href={`/${cat.slug}`}
               style={{
                 background: 'var(--surface)',
                 border: `2px solid ${accent}`,
                 borderRadius: '4px',
                 padding: 'clamp(28px,5vw,56px) clamp(20px,4vw,48px)',
-                cursor: 'pointer',
                 textAlign: 'left',
                 transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 position: 'relative',
                 overflow: 'hidden',
+                display: 'block',
+                textDecoration: 'none',
+                color: 'var(--text)',
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = accent;
-                (e.currentTarget as HTMLButtonElement).style.color = '#111';
-                (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-4px)';
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 12px 32px ${accent}44`;
+                (e.currentTarget as HTMLAnchorElement).style.background = accent;
+                (e.currentTarget as HTMLAnchorElement).style.color = '#111';
+                (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-4px)';
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow = `0 12px 32px ${accent}44`;
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface)';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)';
-                (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
+                (e.currentTarget as HTMLAnchorElement).style.background = 'var(--surface)';
+                (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text)';
+                (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)';
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow = 'none';
               }}
             >
               <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>0{i + 1}</span>
                 <span style={{ height: '2px', width: '20px', background: accent }} />
               </div>
-              <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(32px,5vw,64px)', lineHeight: 0.9, color: 'var(--text)', marginBottom: '16px' }}>
+              <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(32px,5vw,64px)', lineHeight: 0.9, color: 'inherit', marginBottom: '16px' }}>
                 {cat.label.toUpperCase()}
               </div>
               <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-dim)', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span>{cat.count} productos</span>
                 <span style={{ transition: 'transform 0.3s' }}>→</span>
               </div>
-            </button>
+            </Link>
           ))}
         </div>
       </section>
@@ -1013,23 +1006,24 @@ export default function TattooShopHome() {
 
           <div>
             <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '3px', marginBottom: '18px', fontWeight: '700' }}>CATÁLOGO</div>
-            {['Kits', 'Máquinas', 'Insumos'].map((l) => (
-              <div key={l} style={{ marginBottom: '10px' }}>
-                <button
-                  onClick={() => {
-                    setActiveFilter(l.toLowerCase());
-                    document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }}
-                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '13px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s', cursor: 'pointer', padding: 0, textAlign: 'left' }}
+            {[
+              { label: 'Kits', slug: 'kits' },
+              { label: 'Máquinas', slug: 'maquinas' },
+              { label: 'Insumos', slug: 'insumos' },
+            ].map((l) => (
+              <div key={l.slug} style={{ marginBottom: '10px' }}>
+                <Link
+                  href={`/${l.slug}`}
+                  style={{ color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '13px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s' }}
                   onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.color = accent;
+                    (e.currentTarget as HTMLAnchorElement).style.color = accent;
                   }}
                   onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
+                    (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)';
                   }}
                 >
-                  {l}
-                </button>
+                  {l.label}
+                </Link>
               </div>
             ))}
           </div>
