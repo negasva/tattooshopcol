@@ -100,10 +100,11 @@ export default function CheckoutPage() {
     }
 
     if (selectedMethod === 'card' || selectedMethod === 'pse') {
-      // Wompi checkout
+      // Wompi widget checkout con auto-redirect
       const reference = `order-${Date.now()}`;
       const amountCents = total * 100;
       const currency = 'COP';
+      const redirectUrl = `${window.location.origin}/checkout/exito?ref=${reference}`;
 
       // Guardar resumen del pedido para mostrarlo en la página de éxito
       try {
@@ -119,14 +120,80 @@ export default function CheckoutPage() {
         }));
       } catch {}
 
-      const redirectUrl = `${window.location.origin}/checkout/exito?ref=${reference}`;
-      const wompiUrl = selectedMethod === 'pse'
-        ? `https://checkout.wompi.co/p/?public-key=${WOMPI_PUBLIC_KEY}&currency=${currency}&amount-in-cents=${amountCents}&reference=${reference}&redirect-url=${encodeURIComponent(redirectUrl)}&payment-method=PSE`
-        : `https://checkout.wompi.co/p/?public-key=${WOMPI_PUBLIC_KEY}&currency=${currency}&amount-in-cents=${amountCents}&reference=${reference}&redirect-url=${encodeURIComponent(redirectUrl)}`;
-      setTimeout(() => {
-        window.location.href = wompiUrl;
+      // Crear contenedor para el widget de Wompi
+      const wompiContainer = document.createElement('div');
+      wompiContainer.id = 'wompi-checkout-container';
+      wompiContainer.style.display = 'none';
+      document.body.appendChild(wompiContainer);
+
+      // Crear script del widget de Wompi
+      const script = document.createElement('script');
+      script.src = 'https://checkout.wompi.co/widget.js';
+      script.async = true;
+      script.dataset.render = 'button';
+      script.dataset.publicKey = WOMPI_PUBLIC_KEY;
+      script.dataset.currency = currency;
+      script.dataset.amountInCents = amountCents.toString();
+      script.dataset.reference = reference;
+      script.dataset.redirectUrl = redirectUrl;
+      if (selectedMethod === 'pse') {
+        script.dataset.paymentMethod = 'PSE';
+      }
+
+      script.onload = () => {
+        // El widget está listo, buscar el botón y hacerle click automáticamente
+        setTimeout(() => {
+          const button = wompiContainer.querySelector('button');
+          if (button) {
+            button.click();
+
+            // Iniciar polling para detectar cuando el pago se completa
+            let pollCount = 0;
+            const maxPolls = 120; // máximo 2 minutos (120 * 1 segundo)
+            const pollInterval = 1000; // 1 segundo
+
+            const pollTransaction = async () => {
+              try {
+                const res = await fetch(`/api/check-wompi-transaction?reference=${reference}`);
+                const data = await res.json();
+
+                if (data.status === 'found' && data.transaction?.status === 'APPROVED') {
+                  // Pago completado exitosamente, redirigir a la página de éxito
+                  window.location.href = redirectUrl;
+                  return;
+                } else if (data.status === 'found' && data.transaction?.status && data.transaction.status !== 'PENDING') {
+                  // Pago rechazado o cancelado
+                  window.location.href = `${redirectUrl}&status=${data.transaction.status}`;
+                  return;
+                }
+              } catch (error) {
+                console.error('Error polling transaction:', error);
+              }
+
+              pollCount++;
+              if (pollCount < maxPolls) {
+                setTimeout(pollTransaction, pollInterval);
+              } else {
+                setIsProcessing(false);
+                // Timeout alcanzado, el usuario debe hacer click en "Volver al comercio" manualmente
+              }
+            };
+
+            // Esperar 2 segundos antes de empezar a hacer polling (dar tiempo para que Wompi procese)
+            setTimeout(pollTransaction, 2000);
+          } else {
+            setIsProcessing(false);
+            alert('Error inicializando el sistema de pago. Por favor intenta de nuevo.');
+          }
+        }, 500);
+      };
+
+      script.onerror = () => {
         setIsProcessing(false);
-      }, 400);
+        alert('Error cargando el sistema de pago. Por favor intenta de nuevo.');
+      };
+
+      wompiContainer.appendChild(script);
       return;
     }
 

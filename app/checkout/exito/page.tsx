@@ -125,7 +125,7 @@ function CheckoutSuccessContent() {
   const meta = statusMeta[status] || statusMeta.PENDING;
   const isApproved = status === 'APPROVED';
   const reference = tx?.reference || referenceFromUrl || order?.reference || '—';
-  const paidAmount = tx ? tx.amount_in_cents / 100 : order?.total ?? 0;
+  const paidAmount = isApproved ? (tx ? tx.amount_in_cents / 100 : order?.total ?? 0) : 0;
 
   const customerName = tx?.customer_data?.full_name || '';
   const customerEmail = tx?.customer_email || '';
@@ -406,7 +406,11 @@ function CheckoutSuccessContent() {
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '8px' }}>
               <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', letterSpacing: '2px', fontWeight: 700 }}>TOTAL PAGADO</span>
-              <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '36px', color: accent, fontWeight: 900 }}>{fmt(paidAmount)}</span>
+              {isApproved ? (
+                <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '36px', color: accent, fontWeight: 900 }}>{fmt(paidAmount)}</span>
+              ) : (
+                <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '24px', color: '#e55', fontWeight: 900, letterSpacing: '1px' }}>ANULADO</span>
+              )}
             </div>
           </div>
 
