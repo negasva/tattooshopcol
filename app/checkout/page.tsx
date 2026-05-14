@@ -157,7 +157,7 @@ export default function CheckoutPage() {
       script.dataset.amountInCents = amountCents.toString();
       script.dataset.reference = reference;
       script.dataset.redirectUrl = redirectUrl;
-      script.dataset.signature = integritySignature;
+      script.setAttribute('data-signature:integrity', integritySignature);
       if (selectedMethod === 'pse') {
         script.dataset.paymentMethod = 'PSE';
       }
