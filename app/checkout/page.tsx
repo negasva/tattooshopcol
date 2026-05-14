@@ -35,6 +35,8 @@ export default function CheckoutPage() {
   const [selectedSub, setSelectedSub] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [navScrolled, setNavScrolled] = useState(false);
+  const [email, setEmail] = useState('');
+  const [emailSaved, setEmailSaved] = useState(false);
 
   useEffect(() => {
     try {
@@ -74,9 +76,29 @@ export default function CheckoutPage() {
   const overStockItems = cart.filter((i) => (i.inventory ?? 0) > 0 && i.qty > (i.inventory ?? 0));
   const hasStockIssues = outOfStockItems.length > 0 || overStockItems.length > 0;
 
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
   const canCheckout = selectedCity && selectedMethod &&
     (selectedMethod !== 'transfer' || selectedSub) &&
-    cart.length > 0 && !hasStockIssues;
+    cart.length > 0 && !hasStockIssues && emailValid;
+
+  const saveCartToDb = async (ref: string) => {
+    if (!emailValid) return;
+    try {
+      await fetch('/api/save-cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          reference: ref,
+          cart,
+          total,
+          city: selectedCity,
+          method: selectedMethod,
+        }),
+      });
+    } catch {}
+  };
 
   const isCash = selectedMethod === 'cash';
 
@@ -125,6 +147,9 @@ export default function CheckoutPage() {
       wompiContainer.id = 'wompi-checkout-container';
       wompiContainer.style.display = 'none';
       document.body.appendChild(wompiContainer);
+
+      // Guardar carrito en DB para recordatorio en caso de abandono
+      await saveCartToDb(reference);
 
       // Obtener firma de integridad del servidor
       let integritySignature = '';
@@ -319,6 +344,45 @@ export default function CheckoutPage() {
               Pago contra entrega disponible en {selectedCity}
             </div>
           )}
+
+          {/* Email */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '2px', textTransform: 'uppercase' }}>
+              Correo electrónico
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setEmailSaved(false); }}
+                onBlur={() => {
+                  if (emailValid) setEmailSaved(true);
+                }}
+                placeholder="tu@correo.com"
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  background: 'var(--surface)',
+                  border: `1px solid ${email && !emailValid ? '#e55' : emailSaved ? '#25d366' : 'var(--border)'}`,
+                  color: 'var(--text)',
+                  fontFamily: '"DM Mono", monospace',
+                  fontSize: '14px',
+                  padding: '12px 16px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                }}
+              />
+              {emailSaved && (
+                <svg viewBox="0 0 24 24" fill="none" stroke="#25d366" strokeWidth="2.5"
+                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', pointerEvents: 'none' }}>
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              )}
+            </div>
+            <p style={{ margin: 0, fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+              Te enviaremos la confirmación y guía de envío a este correo.
+            </p>
+          </div>
 
           <PaymentMethods
             availableMethods={methods}

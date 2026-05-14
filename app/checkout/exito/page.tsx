@@ -114,6 +114,15 @@ function CheckoutSuccessContent() {
           setTx(json.data as WompiTransaction);
           if (json.data.status === 'APPROVED') {
             try { localStorage.removeItem('ts_cart'); } catch {}
+            // Marcar carrito como completado en DB
+            const ref = json.data.reference || referenceFromUrl;
+            if (ref) {
+              fetch('/api/save-cart', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reference: ref, status: 'completed' }),
+              }).catch(() => {});
+            }
           }
         } else {
           setError('No pudimos leer los datos de la transacción.');
