@@ -80,7 +80,7 @@ export default function CheckoutPage() {
 
   const isCash = selectedMethod === 'cash';
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (!canCheckout) return;
     setIsProcessing(true);
 
@@ -126,6 +126,27 @@ export default function CheckoutPage() {
       wompiContainer.style.display = 'none';
       document.body.appendChild(wompiContainer);
 
+      // Obtener firma de integridad del servidor
+      let integritySignature = '';
+      try {
+        const sigRes = await fetch('/api/wompi-integrity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reference, amountInCents: amountCents, currency }),
+        });
+        const sigData = await sigRes.json();
+        if (!sigRes.ok || !sigData.signature) {
+          console.error('Error obteniendo firma de integridad:', sigData);
+          setIsProcessing(false);
+          return;
+        }
+        integritySignature = sigData.signature;
+      } catch (err) {
+        console.error('Error obteniendo firma de integridad:', err);
+        setIsProcessing(false);
+        return;
+      }
+
       // Crear script del widget de Wompi
       const script = document.createElement('script');
       script.src = 'https://checkout.wompi.co/widget.js';
@@ -136,6 +157,7 @@ export default function CheckoutPage() {
       script.dataset.amountInCents = amountCents.toString();
       script.dataset.reference = reference;
       script.dataset.redirectUrl = redirectUrl;
+      script.dataset.signature = integritySignature;
       if (selectedMethod === 'pse') {
         script.dataset.paymentMethod = 'PSE';
       }

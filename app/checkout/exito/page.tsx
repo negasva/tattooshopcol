@@ -83,6 +83,8 @@ function CheckoutSuccessContent() {
   const transactionId = params.get('id');
   const envFromUrl = params.get('env');
   const referenceFromUrl = params.get('ref');
+  const statusFromUrl = params.get('status')?.toUpperCase() as WompiTransaction['status'] | undefined;
+  const statusMessageFromUrl = params.get('status_message') || null;
 
   const [order, setOrder] = useState<PendingOrder | null>(null);
   const [tx, setTx] = useState<WompiTransaction | null>(null);
@@ -121,7 +123,7 @@ function CheckoutSuccessContent() {
       .finally(() => setLoading(false));
   }, [transactionId, envFromUrl]);
 
-  const status = tx?.status || (transactionId ? 'PENDING' : 'APPROVED');
+  const status = tx?.status || statusFromUrl || (transactionId ? 'PENDING' : 'PENDING');
   const meta = statusMeta[status] || statusMeta.PENDING;
   const isApproved = status === 'APPROVED';
   const reference = tx?.reference || referenceFromUrl || order?.reference || '—';
@@ -212,7 +214,7 @@ function CheckoutSuccessContent() {
         <p style={{ marginTop: '18px', fontFamily: '"DM Sans", sans-serif', fontSize: '15px', color: 'var(--text-muted)', maxWidth: '560px', margin: '18px auto 0', lineHeight: 1.6 }}>
           {isApproved
             ? `Recibimos tu pedido y ya está en proceso. Te enviaremos la guía de envío a tu correo apenas despachemos. Si necesitas ayuda, escríbenos por WhatsApp.`
-            : meta.sub}
+            : (statusMessageFromUrl || tx?.status_message || meta.sub)}
         </p>
       </section>
 
