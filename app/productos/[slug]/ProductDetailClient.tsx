@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import BrandLogo from '@/app/components/BrandLogo';
 import WhatsAppLogo from '@/app/components/WhatsAppLogo';
+import ReviewsSection from '@/app/components/ReviewsSection';
+import BoughtTogether from '@/app/components/BoughtTogether';
 
 interface Product {
   id: string;
@@ -828,6 +830,18 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           ← Ver todos los productos
         </Link>
       </footer>
+
+      {/* COMPRADO JUNTO CON */}
+      <BoughtTogether currentProduct={product} onAddToCart={(p) => {
+        setCart((prev) => {
+          const existing = prev.find((i) => i.id === p.id);
+          if (existing) return prev.map((i) => i.id === p.id ? { ...i, qty: i.qty + 1 } : i);
+          return [...prev, { ...p, qty: 1 }];
+        });
+      }} />
+
+      {/* RESEÑAS */}
+      <ReviewsSection productId={product.id} />
 
       {cartOpen && <CartDrawer cart={cart} onClose={() => setCartOpen(false)} onRemove={removeFromCart} onQty={changeQty} accent={accent} onCheckout={() => { setCartOpen(false); router.push('/checkout'); }} />}
     </div>

@@ -37,6 +37,10 @@ export default function CheckoutPage() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [email, setEmail] = useState('');
   const [emailSaved, setEmailSaved] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponMsg, setCouponMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
 
   useEffect(() => {
     try {
@@ -61,7 +65,32 @@ export default function CheckoutPage() {
 
   const subtotal = cart.reduce((s, i) => s + salePrice(i) * i.qty, 0);
   const codFee = selectedMethod === 'cash' ? COD_FEE : 0;
-  const total = subtotal + codFee;
+  const total = subtotal + codFee - couponDiscount;
+
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    setCouponMsg(null);
+    try {
+      const res = await fetch('/api/coupons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: couponCode, subtotal }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setCouponDiscount(data.discount);
+        setCouponMsg({ text: `✓ ${data.description || `Descuento de ${fmt(data.discount)} aplicado`}`, ok: true });
+      } else {
+        setCouponDiscount(0);
+        setCouponMsg({ text: data.error || 'Cupón no válido', ok: false });
+      }
+    } catch {
+      setCouponMsg({ text: 'Error validando el cupón', ok: false });
+    } finally {
+      setCouponLoading(false);
+    }
+  };
 
   const methods = cashEligible
     ? ['card', 'pse', 'transfer', 'cash']
@@ -384,6 +413,44 @@ export default function CheckoutPage() {
             </p>
           </div>
 
+          {/* Cupón de descuento */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '2px', textTransform: 'uppercase' }}>
+              Cupón de descuento
+            </label>
+            <div style={{ display: 'flex', gap: '1px' }}>
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponMsg(null); if (!e.target.value) setCouponDiscount(0); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') applyCoupon(); }}
+                placeholder="CÓDIGO"
+                style={{
+                  flex: 1, background: 'var(--surface)', border: '1px solid var(--border)',
+                  color: 'var(--text)', fontFamily: '"DM Mono", monospace', fontSize: '13px',
+                  padding: '10px 14px', outline: 'none', letterSpacing: '2px',
+                }}
+              />
+              <button
+                onClick={applyCoupon}
+                disabled={couponLoading || !couponCode.trim()}
+                style={{
+                  background: accent, color: '#111', border: 'none',
+                  fontFamily: '"DM Mono", monospace', fontSize: '11px', letterSpacing: '1.5px',
+                  padding: '10px 16px', cursor: couponLoading || !couponCode.trim() ? 'not-allowed' : 'pointer',
+                  textTransform: 'uppercase', opacity: couponLoading || !couponCode.trim() ? 0.5 : 1,
+                }}
+              >
+                {couponLoading ? '...' : 'Aplicar'}
+              </button>
+            </div>
+            {couponMsg && (
+              <p style={{ margin: 0, fontFamily: '"DM Mono", monospace', fontSize: '11px', color: couponMsg.ok ? '#25d366' : '#e55' }}>
+                {couponMsg.text}
+              </p>
+            )}
+          </div>
+
           <PaymentMethods
             availableMethods={methods}
             selectedMethod={selectedMethod}
@@ -518,6 +585,11 @@ export default function CheckoutPage() {
             {codFee > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: '"DM Mono", monospace', fontSize: '12px', color: '#e88', fontWeight: '700' }}>
                 <span>SERVICIO CONTRA ENTREGA</span><span>+ {fmt(COD_FEE)}</span>
+              </div>
+            )}
+            {couponDiscount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: '"DM Mono", monospace', fontSize: '12px', color: '#25d366', fontWeight: '700' }}>
+                <span>CUPÓN {couponCode}</span><span>- {fmt(couponDiscount)}</span>
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '8px' }}>
