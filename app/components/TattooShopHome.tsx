@@ -9,6 +9,7 @@ import WhatsAppLogo from './WhatsAppLogo';
 import BrandLogo from './BrandLogo';
 import BrandLogoFull from './BrandLogoFull';
 import BrandLogoCombined from './BrandLogoCombined';
+import ReviewsSection from './ReviewsSection';
 
 interface Product {
   id: string;
@@ -85,7 +86,7 @@ function ProductPlaceholder({ icon, category, accent }: { icon: string; category
 }
 
 
-function ProductCard({ product, idx, onAdd, accent, cartQty }: { product: Product; idx: number; onAdd: (p: Product) => void; accent: string; cartQty: number }) {
+function ProductCard({ product, idx, onAdd, accent, cartQty, onCompare, inCompare }: { product: Product; idx: number; onAdd: (p: Product) => void; accent: string; cartQty: number; onCompare?: (id: string) => void; inCompare?: boolean }) {
   const [hovered, setHovered] = useState(false);
   const [added, setAdded] = useState(false);
 
@@ -311,6 +312,27 @@ function ProductCard({ product, idx, onAdd, accent, cartQty }: { product: Produc
           >
             {outOfStock ? 'Agotado' : atLimit ? 'Límite' : added ? '✓ Agregado' : '+ Carrito'}
           </button>
+          {onCompare && (
+            <button
+              onClick={() => onCompare(product.id)}
+              style={{
+                background: inCompare ? accent : 'transparent',
+                color: inCompare ? '#111' : 'var(--text-muted)',
+                border: `1px solid ${inCompare ? accent : 'var(--border)'}`,
+                fontFamily: '"DM Mono", monospace',
+                fontSize: '10px',
+                letterSpacing: '1px',
+                padding: '8px 10px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                textTransform: 'uppercase',
+                whiteSpace: 'nowrap',
+              }}
+              title={inCompare ? 'Quitar de comparación' : 'Comparar'}
+            >
+              {inCompare ? '✓' : '⇔'}
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -520,6 +542,9 @@ export default function TattooShopHome() {
   const [cartOpen, setCartOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('kits');
   const [navScrolled, setNavScrolled] = useState(false);
+  const [search, setSearch] = useState('');
+  const [compareList, setCompareList] = useState<string[]>([]);
+  const [showCompare, setShowCompare] = useState(false);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterDone, setNewsletterDone] = useState(false);
 
@@ -568,10 +593,23 @@ export default function TattooShopHome() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  const searchTerm = search.trim().toLowerCase();
   const filtered = (activeFilter === 'all'
     ? products
     : products.filter((p) => p.category && p.category.toLowerCase() === activeFilter.toLowerCase())
-  ).slice(0, 4);
+  ).filter((p) =>
+    !searchTerm ||
+    p.name.toLowerCase().includes(searchTerm) ||
+    (p.specs || '').toLowerCase().includes(searchTerm) ||
+    (p.category || '').toLowerCase().includes(searchTerm)
+  ).slice(0, searchTerm ? products.length : 4);
+
+  const toggleCompare = (id: string) => {
+    setCompareList((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 3 ? [...prev, id] : prev
+    );
+  };
+  const compareProducts = products.filter((p) => compareList.includes(p.id));
 
   const addToCart = (product: Product) => {
     setCart((prev) => {
@@ -665,6 +703,16 @@ export default function TattooShopHome() {
               {cat.label}
             </Link>
           ))}
+          <Link href="/calculadora" style={{ color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '11px', letterSpacing: '1.5px', textTransform: 'uppercase', padding: '4px 0', textDecoration: 'none', borderBottom: '1px solid transparent', transition: 'all 0.2s' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = accent; (e.currentTarget as HTMLAnchorElement).style.borderBottomColor = accent; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLAnchorElement).style.borderBottomColor = 'transparent'; }}>
+            Calculadora
+          </Link>
+          <Link href="/blog" style={{ color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '11px', letterSpacing: '1.5px', textTransform: 'uppercase', padding: '4px 0', textDecoration: 'none', borderBottom: '1px solid transparent', transition: 'all 0.2s' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = accent; (e.currentTarget as HTMLAnchorElement).style.borderBottomColor = accent; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLAnchorElement).style.borderBottomColor = 'transparent'; }}>
+            Blog
+          </Link>
           <button
             onClick={() => setCartOpen(true)}
             style={{
@@ -850,7 +898,33 @@ export default function TattooShopHome() {
             </h2>
           </div>
 
-          <div style={{ display: 'flex', gap: '1px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-end' }}>
+            {/* Search */}
+            <div style={{ position: 'relative' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '14px', height: '14px', color: 'var(--text-muted)', pointerEvents: 'none' }}>
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setActiveFilter('all'); }}
+                placeholder="Buscar productos..."
+                style={{
+                  background: 'var(--surface)', border: '1px solid var(--border)',
+                  color: 'var(--text)', fontFamily: '"DM Mono", monospace', fontSize: '11px',
+                  padding: '9px 32px 9px 30px', outline: 'none', width: '220px',
+                  letterSpacing: '0.5px', transition: 'border-color 0.2s',
+                }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; }}
+              />
+              {search && (
+                <button onClick={() => setSearch('')} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '14px', padding: '0', lineHeight: 1 }}>×</button>
+              )}
+            </div>
+            {/* Category filters */}
+            <div style={{ display: 'flex', gap: '1px', flexWrap: 'wrap' }}>
             {[{ key: 'all', label: 'Todos' }, ...categories.map((c) => ({ key: c.key, label: c.label }))].map((f) => (
               <button
                 key={f.key}
@@ -883,6 +957,7 @@ export default function TattooShopHome() {
                 {f.label}
               </button>
             ))}
+            </div>
           </div>
         </div>
 
@@ -892,7 +967,7 @@ export default function TattooShopHome() {
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: '80px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
-            No hay productos en esta categoría
+            {search ? `Sin resultados para "${search}"` : 'No hay productos en esta categoría'}
           </div>
         ) : (
           <>
@@ -907,7 +982,7 @@ export default function TattooShopHome() {
               }}
             >
               {filtered.map((p, i) => (
-                <ProductCard key={p.id} product={p} idx={i} onAdd={addToCart} accent={accent} cartQty={cart.find((c) => c.id === p.id)?.qty ?? 0} />
+                <ProductCard key={p.id} product={p} idx={i} onAdd={addToCart} accent={accent} cartQty={cart.find((c) => c.id === p.id)?.qty ?? 0} onCompare={toggleCompare} inCompare={compareList.includes(p.id)} />
               ))}
             </div>
 
@@ -954,6 +1029,9 @@ export default function TattooShopHome() {
           ))}
         </div>
       </section>
+
+      {/* RESEÑAS */}
+      <ReviewsSection />
 
       {/* FOOTER */}
       <footer style={{ borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
@@ -1112,6 +1190,63 @@ export default function TattooShopHome() {
 
       {/* CART DRAWER */}
       {cartOpen && <CartDrawer cart={cart} onClose={() => setCartOpen(false)} onRemove={removeFromCart} onQty={changeQty} accent={accent} onCheckout={() => { setCartOpen(false); router.push('/checkout'); }} />}
+
+      {/* COMPARE BAR */}
+      {compareList.length > 0 && (
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 500, background: 'rgba(17,17,17,0.97)', borderTop: `2px solid ${accent}`, backdropFilter: 'blur(12px)', padding: '12px clamp(20px,5vw,80px)', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '2px', flexShrink: 0 }}>COMPARAR ({compareList.length}/3)</span>
+          <div style={{ display: 'flex', gap: '8px', flex: 1, flexWrap: 'wrap' }}>
+            {compareProducts.map((p) => (
+              <span key={p.id} style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text)', background: 'var(--surface)', border: '1px solid var(--border)', padding: '4px 10px' }}>{p.name}</span>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+            {compareList.length >= 2 && (
+              <button onClick={() => setShowCompare(true)} style={{ background: accent, color: '#111', border: 'none', fontFamily: '"Bebas Neue", sans-serif', fontSize: '16px', padding: '8px 20px', cursor: 'pointer', letterSpacing: '1px' }}>
+                VER COMPARACIÓN
+              </button>
+            )}
+            <button onClick={() => setCompareList([])} style={{ background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', fontFamily: '"DM Mono", monospace', fontSize: '10px', padding: '8px 14px', cursor: 'pointer', letterSpacing: '1px' }}>
+              LIMPIAR
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* COMPARE MODAL */}
+      {showCompare && (
+        <div onClick={() => setShowCompare(false)} style={{ position: 'fixed', inset: 0, zIndex: 600, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: 'var(--bg)', border: `1px solid ${accent}`, maxWidth: '900px', width: '100%', maxHeight: '90vh', overflow: 'auto', padding: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '28px', color: accent, letterSpacing: '2px' }}>COMPARACIÓN DE PRODUCTOS</span>
+              <button onClick={() => setShowCompare(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${compareProducts.length}, 1fr)`, gap: '1px', background: 'var(--border)' }}>
+              {compareProducts.map((p) => {
+                const sp = p.discount_percentage && p.discount_percentage > 0 ? Math.round(p.price - p.price * (p.discount_percentage / 100)) : p.price;
+                return (
+                  <div key={p.id} style={{ background: 'var(--surface)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {p.image_url && <img src={p.image_url} alt={p.name} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover' }} />}
+                    <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', color: 'var(--text)' }}>{p.name}</div>
+                    <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '24px', color: accent }}>{fmt(sp)}</div>
+                    {p.discount_percentage && p.discount_percentage > 0 && <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: '#e55' }}>-{p.discount_percentage}% descuento</div>}
+                    <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '8px' }}>CATEGORÍA</div>
+                    <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text)' }}>{p.category}</div>
+                    <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '8px' }}>ESPECIFICACIONES</div>
+                    <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text)', lineHeight: 1.7, whiteSpace: 'pre-line' }}>{p.specs || '—'}</div>
+                    <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: (p.inventory ?? 0) > 0 ? '#25d366' : '#e55', marginTop: '4px' }}>
+                      {(p.inventory ?? 0) > 0 ? `✓ En stock (${p.inventory} uds)` : '✗ Agotado'}
+                    </div>
+                    <Link href={`/productos/${toSlug(p.name)}`} style={{ background: accent, color: '#111', textAlign: 'center', padding: '10px', fontFamily: '"Bebas Neue", sans-serif', fontSize: '16px', letterSpacing: '1px', textDecoration: 'none', marginTop: 'auto' }}>
+                      VER PRODUCTO
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
