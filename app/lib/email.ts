@@ -1,6 +1,9 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy init — evita error en build cuando RESEND_API_KEY no está definida
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 const FROM = process.env.RESEND_FROM_EMAIL || 'TattooShop Colombia <noreply@tattooshopcol.shop>';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://tattooshopcol.shop';
@@ -95,7 +98,7 @@ export async function sendAbandonedCartEmail(opts: {
       COMPLETAR COMPRA →
     </a>`;
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to,
     subject: '¿Olvidaste tu carrito? 🛒 Tus productos te esperan',
@@ -138,7 +141,7 @@ export async function sendPaymentFailedEmail(opts: {
       INTENTAR DE NUEVO →
     </a>`;
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to,
     subject: `Tu pago no se completó — ref ${reference}`,
