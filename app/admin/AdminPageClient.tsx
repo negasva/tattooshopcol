@@ -112,7 +112,7 @@ function CategoryTable({ category, products, onSaveField, onEdit, onDelete, acce
         <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: '"DM Mono", monospace', fontSize: '12px' }}>
           <thead>
             <tr style={{ borderBottom: `2px solid ${accent}33`, background: 'var(--surface2)' }}>
-              {['Imagen', 'Nombre', 'Precio Original', 'Precio Final', 'Descuento %', 'Inventario', 'Etiqueta', 'Acciones'].map((h) => (
+              {['Imagen', 'Nombre', 'Precio Original', 'Precio Final', 'Descuento %', 'Inventario', 'Etiqueta', 'Nivel', 'Tipo de uso', 'Complejidad', 'Acciones'].map((h) => (
                 <th key={h} style={{ padding: '10px 12px', textAlign: h === 'Acciones' ? 'center' : 'left', color: accent, fontWeight: 700, letterSpacing: '1px', fontSize: '11px', whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
@@ -142,6 +142,15 @@ function CategoryTable({ category, products, onSaveField, onEdit, onDelete, acce
                 </td>
                 <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>
                   <EditableCell value={p.tag ?? ''} field="tag" onSave={(f, v) => onSaveField(p.id, f, v)} accent={accent} />
+                </td>
+                <td style={{ padding: '10px 12px' }}>
+                  <EditableCell value={p.nivel_recomendado ?? ''} field="nivel_recomendado" options={['', 'principiante', 'intermedio', 'profesional']} onSave={(f, v) => onSaveField(p.id, f, v)} accent={accent} />
+                </td>
+                <td style={{ padding: '10px 12px' }}>
+                  <EditableCell value={p.tipo_uso ?? ''} field="tipo_uso" options={['', 'liner', 'shader', 'ambos', 'colorear']} onSave={(f, v) => onSaveField(p.id, f, v)} accent={accent} />
+                </td>
+                <td style={{ padding: '10px 12px' }}>
+                  <EditableCell value={p.complejidad_uso ?? ''} field="complejidad_uso" type="number" onSave={(f, v) => onSaveField(p.id, f, v)} accent={accent} />
                 </td>
                 <td style={{ padding: '10px 12px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                   <button onClick={() => onEdit(p)} style={{ marginRight: '6px', padding: '5px 10px', background: 'transparent', color: accent, border: `1px solid ${accent}33`, cursor: 'pointer', fontSize: '11px', fontFamily: '"DM Mono", monospace' }}>
