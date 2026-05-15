@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: NextRequest) {
-  const { code, subtotal } = await req.json();
+  const { code, subtotal, cart, paymentMethod } = await req.json();
   if (!code || !subtotal) return NextResponse.json({ error: 'Faltan campos' }, { status: 400 });
 
   const supabase = createClient(
@@ -24,6 +24,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Cupón agotado' }, { status: 400 });
   if (coupon.min_order && subtotal < coupon.min_order)
     return NextResponse.json({ error: `Mínimo de compra: ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(coupon.min_order)}` }, { status: 400 });
+
+  if (coupon.kit_only) {
+    const hasKit = Array.isArray(cart) && cart.some((i: { category?: string }) => i.category === 'Kits');
+    if (!hasKit) return NextResponse.json({ error: 'Este cupón aplica solo para Kits' }, { status: 400 });
+  }
+  if (coupon.online_only && paymentMethod === 'cash')
+    return NextResponse.json({ error: 'Este cupón no aplica para pago contra entrega' }, { status: 400 });
 
   const discount = coupon.discount_type === 'percent'
     ? Math.round(subtotal * (coupon.discount_value / 100))
