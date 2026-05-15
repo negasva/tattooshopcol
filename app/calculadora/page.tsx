@@ -16,6 +16,7 @@ function toSlug(name: string) {
 interface Product {
   id: string; name: string; category: string; price: number;
   image_url?: string; discount_percentage?: number; original_price?: number; inventory?: number; tag?: string; specs?: string;
+  nivel_recomendado?: string; tipo_uso?: string; complejidad_uso?: number;
 }
 
 function salePrice(p: Product) {
@@ -57,36 +58,68 @@ const STEPS = [
   },
 ];
 
-// Scoring: higher weight = more recommended for this combination
+// Qué tipo_uso encaja con cada estilo
+const STYLE_TIPO: Record<string, string[]> = {
+  blackwork:   ['liner', 'ambos'],
+  realismo:    ['shader', 'ambos'],
+  tradicional: ['ambos', 'colorear'],
+  acuarela:    ['colorear', 'ambos'],
+};
+
+// Rango de complejidad_uso ideal por nivel (min, max)
+const LEVEL_COMPLEJIDAD: Record<string, [number, number]> = {
+  principiante: [1, 2],
+  intermedio:   [2, 4],
+  profesional:  [4, 5],
+};
+
 function scoreProduct(p: Product, answers: Record<string, string>): number {
   let score = 0;
+  const { level, budget, style } = answers;
   const cat = p.category;
-  const level = answers.level;
-  const budget = answers.budget;
-  const style = answers.style;
 
-  // Inventory check
   if ((p.inventory ?? 0) <= 0) return -1;
 
   const sp = salePrice(p);
 
-  // Budget filter
+  // ── Budget filter ────────────────────────────────────────────────────────────
   if (budget === 'bajo' && sp > 200000) return 0;
   if (budget === 'medio' && (sp < 50000 || sp > 600000)) return 0;
   if (budget === 'alto' && sp < 200000) score -= 5;
+  if (budget === 'alto' && sp >= 600000) score += 3;
+  if (budget === 'medio' && sp >= 200000 && sp <= 400000) score += 2;
 
-  // Level preferences
-  if (level === 'principiante' && cat === 'Kits') score += 10;
-  if (level === 'intermedio' && (cat === 'Máquinas' || cat === 'Kits')) score += 8;
-  if (level === 'profesional' && cat === 'Máquinas') score += 10;
-  if (cat === 'Insumos') score += 5; // always useful
+  // ── nivel_recomendado ────────────────────────────────────────────────────────
+  if (p.nivel_recomendado) {
+    if (p.nivel_recomendado === level) score += 12;          // exact match
+    else if (
+      (level === 'intermedio' && p.nivel_recomendado === 'principiante') ||
+      (level === 'profesional' && p.nivel_recomendado === 'intermedio')
+    ) score += 4;                                            // one step below
+    else score -= 6;                                         // mismatch
+  } else {
+    // fallback: category affinity when field not set
+    if (level === 'principiante' && cat === 'Kits') score += 6;
+    if (level === 'intermedio' && (cat === 'Máquinas' || cat === 'Kits')) score += 5;
+    if (level === 'profesional' && cat === 'Máquinas') score += 6;
+    if (cat === 'Insumos') score += 3;
+  }
 
-  // Style preferences
-  if (style === 'blackwork' && cat === 'Insumos') score += 3;
-  if (style === 'realismo' && cat === 'Máquinas') score += 5;
-  if (style === 'tradicional' && cat === 'Kits') score += 5;
+  // ── complejidad_uso ──────────────────────────────────────────────────────────
+  if (p.complejidad_uso) {
+    const [min, max] = LEVEL_COMPLEJIDAD[level];
+    if (p.complejidad_uso >= min && p.complejidad_uso <= max) score += 8;
+    else score -= Math.abs(p.complejidad_uso - ((min + max) / 2)) * 3;
+  }
 
-  // Tag bonus
+  // ── tipo_uso ─────────────────────────────────────────────────────────────────
+  if (p.tipo_uso) {
+    const compatibles = STYLE_TIPO[style] ?? [];
+    if (compatibles.includes(p.tipo_uso)) score += 8;
+    else score -= 4;
+  }
+
+  // ── Tag bonus ────────────────────────────────────────────────────────────────
   if (p.tag === 'BESTSELLER') score += 3;
   if (p.tag === 'NUEVO') score += 1;
 
