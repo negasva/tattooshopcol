@@ -32,36 +32,36 @@ const STEPS = [
     id: 'level',
     question: '¿Cuál es tu nivel de experiencia?',
     options: [
-      { value: 'principiante', label: 'Principiante', desc: 'Estoy empezando, nunca he tatuado', icon: '🌱' },
-      { value: 'intermedio', label: 'Intermedio', desc: 'Ya tengo algo de práctica', icon: '⚡' },
-      { value: 'profesional', label: 'Profesional', desc: 'Trabajo como tatuador/a', icon: '✦' },
+      { value: 'principiante', label: 'Principiante', desc: 'Estoy empezando, nunca he tatuado', icon: '01' },
+      { value: 'intermedio', label: 'Intermedio', desc: 'Ya tengo algo de práctica', icon: '02' },
+      { value: 'profesional', label: 'Profesional', desc: 'Trabajo como tatuador/a', icon: '03' },
     ],
   },
   {
     id: 'tipo_producto',
     question: '¿Qué estás buscando?',
     options: [
-      { value: 'kit', label: 'Kit completo', desc: 'Máquina + insumos + todo lo necesario para empezar', icon: '📦' },
-      { value: 'maquina', label: 'Solo la máquina', desc: 'Ya tengo los insumos, busco actualizar o ampliar mi equipo', icon: '⚙️' },
+      { value: 'kit', label: 'Kit completo', desc: 'Máquina + insumos + todo lo necesario para empezar', icon: 'KIT' },
+      { value: 'maquina', label: 'Solo la máquina', desc: 'Ya tengo los insumos, busco actualizar o ampliar mi equipo', icon: 'MAQ' },
     ],
   },
   {
     id: 'style',
     question: '¿Qué estilo de tatuaje practicas?',
     options: [
-      { value: 'blackwork', label: 'Blackwork / Tribal', desc: 'Líneas y rellenos en negro', icon: '◼' },
-      { value: 'realismo', label: 'Realismo / Retrato', desc: 'Alta definición y sombreado', icon: '👁' },
-      { value: 'tradicional', label: 'Tradicional / Old School', desc: 'Colores sólidos y contornos', icon: '🌹' },
-      { value: 'acuarela', label: 'Acuarela / Geométrico', desc: 'Degradados y formas', icon: '◇' },
+      { value: 'blackwork', label: 'Blackwork / Tribal', desc: 'Líneas y rellenos en negro', icon: 'BLK' },
+      { value: 'realismo', label: 'Realismo / Retrato', desc: 'Alta definición y sombreado', icon: 'REA' },
+      { value: 'tradicional', label: 'Tradicional / Old School', desc: 'Colores sólidos y contornos', icon: 'TRA' },
+      { value: 'acuarela', label: 'Acuarela / Geométrico', desc: 'Degradados y formas', icon: 'ACU' },
     ],
   },
   {
     id: 'budget',
     question: '¿Cuánto quieres invertir?',
     options: [
-      { value: 'bajo', label: 'Básico', desc: 'Menos de $200.000 COP', icon: '💡' },
-      { value: 'medio', label: 'Intermedio', desc: '$200.000 – $600.000 COP', icon: '🔧' },
-      { value: 'alto', label: 'Profesional', desc: 'Más de $600.000 COP', icon: '🏆' },
+      { value: 'bajo', label: 'Básico', desc: 'Menos de $200.000 COP', icon: '$' },
+      { value: 'medio', label: 'Intermedio', desc: '$200.000 – $600.000 COP', icon: '$$' },
+      { value: 'alto', label: 'Profesional', desc: 'Más de $600.000 COP', icon: '$$$' },
     ],
   },
 ];
@@ -250,7 +250,7 @@ export default function CalculadoraPage() {
                   onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = accent; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,212,0,0.05)'; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface)'; }}
                 >
-                  <span style={{ fontSize: '24px', flexShrink: 0 }}>{opt.icon}</span>
+                  <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '1px', background: 'rgba(255,212,0,0.1)', border: '1px solid rgba(255,212,0,0.3)', padding: '4px 7px', flexShrink: 0, fontWeight: 700 }}>{opt.icon}</span>
                   <div>
                     <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', letterSpacing: '1px', color: 'var(--text)', lineHeight: 1 }}>{opt.label}</div>
                     <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>{opt.desc}</div>

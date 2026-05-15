@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Bebas_Neue, DM_Sans, DM_Mono } from 'next/font/google';
 import './globals.css';
 import WhatsAppButton from './components/WhatsAppButton';
+import StarburstButton from './components/StarburstButton';
 
 const displayFont = Bebas_Neue({
   weight: '400',
@@ -43,6 +44,7 @@ export default function RootLayout({
       <body>
         <main>{children}</main>
         <WhatsAppButton />
+        <StarburstButton />
       </body>
     </html>
   );
