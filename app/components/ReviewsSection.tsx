@@ -127,7 +127,7 @@ export default function ReviewsSection({ productId }: { productId?: string }) {
 
       {submitted && (
         <div style={{ background: 'rgba(37,211,102,0.08)', border: '1px solid rgba(37,211,102,0.3)', padding: '14px 18px', marginBottom: '24px', fontFamily: '"DM Mono", monospace', fontSize: '13px', color: '#25d366' }}>
-          ✓ Reseña recibida. Aparecerá en cuanto sea aprobada.
+          ✓ Reseña recibida. Aparecerá en las próximas horas.
         </div>
       )}
 
