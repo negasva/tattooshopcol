@@ -75,7 +75,7 @@ export default function CheckoutPage() {
       const res = await fetch('/api/coupons', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: couponCode, subtotal }),
+        body: JSON.stringify({ code: couponCode, subtotal, cart, paymentMethod: selectedMethod }),
       });
       const data = await res.json();
       if (res.ok && data.ok) {
@@ -99,6 +99,11 @@ export default function CheckoutPage() {
   const handleMethodSelect = (method: string, sub?: string) => {
     setSelectedMethod(method);
     setSelectedSub(sub || '');
+    // Limpiar cupones online_only si el usuario cambia a contraentrega
+    if (method === 'cash' && couponDiscount > 0) {
+      setCouponDiscount(0);
+      setCouponMsg({ text: 'Cupón removido: no aplica para pago contra entrega', ok: false });
+    }
   };
 
   const outOfStockItems = cart.filter((i) => (i.inventory ?? 0) <= 0);

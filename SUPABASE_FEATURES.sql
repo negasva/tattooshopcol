@@ -79,3 +79,13 @@ VALUES (
 <p>Limpia tu máquina después de cada sesión con alcohol isopropílico. Revisa las barras y resortes cada mes. Una máquina bien mantenida dura años.</p>',
   'Guías', 5, true, NOW()
 ) ON CONFLICT (slug) DO NOTHING;
+
+-- Agregar columnas de restricción a coupons
+ALTER TABLE coupons
+  ADD COLUMN IF NOT EXISTS kit_only BOOLEAN DEFAULT false,
+  ADD COLUMN IF NOT EXISTS online_only BOOLEAN DEFAULT false;
+
+-- Cupón: 10% en kits con pago online
+INSERT INTO coupons (code, description, discount_type, discount_value, active, kit_only, online_only)
+VALUES ('KIT10', '10% de descuento en kits — solo pago online', 'percent', 10, true, true, true)
+ON CONFLICT (code) DO NOTHING;
