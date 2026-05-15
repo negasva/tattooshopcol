@@ -38,6 +38,14 @@ const STEPS = [
     ],
   },
   {
+    id: 'tipo_producto',
+    question: '¿Qué estás buscando?',
+    options: [
+      { value: 'kit', label: 'Kit completo', desc: 'Máquina + insumos + todo lo necesario para empezar', icon: '📦' },
+      { value: 'maquina', label: 'Solo la máquina', desc: 'Ya tengo los insumos, busco actualizar o ampliar mi equipo', icon: '⚙️' },
+    ],
+  },
+  {
     id: 'style',
     question: '¿Qué estilo de tatuaje practicas?',
     options: [
@@ -75,10 +83,17 @@ const LEVEL_COMPLEJIDAD: Record<string, [number, number]> = {
 
 function scoreProduct(p: Product, answers: Record<string, string>): number {
   let score = 0;
-  const { level, budget, style } = answers;
+  const { level, budget, style, tipo_producto } = answers;
   const cat = p.category;
 
   if ((p.inventory ?? 0) <= 0) return -1;
+
+  // ── Excluir Insumos siempre ──────────────────────────────────────────────────
+  if (cat === 'Insumos') return 0;
+
+  // ── Filtro duro por tipo de producto elegido ─────────────────────────────────
+  if (tipo_producto === 'kit' && cat !== 'Kits') return 0;
+  if (tipo_producto === 'maquina' && cat !== 'Máquinas') return 0;
 
   const sp = salePrice(p);
 
@@ -91,18 +106,16 @@ function scoreProduct(p: Product, answers: Record<string, string>): number {
 
   // ── nivel_recomendado ────────────────────────────────────────────────────────
   if (p.nivel_recomendado) {
-    if (p.nivel_recomendado === level) score += 12;          // exact match
+    if (p.nivel_recomendado === level) score += 12;
     else if (
       (level === 'intermedio' && p.nivel_recomendado === 'principiante') ||
       (level === 'profesional' && p.nivel_recomendado === 'intermedio')
-    ) score += 4;                                            // one step below
-    else score -= 6;                                         // mismatch
+    ) score += 4;
+    else score -= 6;
   } else {
-    // fallback: category affinity when field not set
     if (level === 'principiante' && cat === 'Kits') score += 6;
     if (level === 'intermedio' && (cat === 'Máquinas' || cat === 'Kits')) score += 5;
     if (level === 'profesional' && cat === 'Máquinas') score += 6;
-    if (cat === 'Insumos') score += 3;
   }
 
   // ── complejidad_uso ──────────────────────────────────────────────────────────
@@ -112,8 +125,8 @@ function scoreProduct(p: Product, answers: Record<string, string>): number {
     else score -= Math.abs(p.complejidad_uso - ((min + max) / 2)) * 3;
   }
 
-  // ── tipo_uso ─────────────────────────────────────────────────────────────────
-  if (p.tipo_uso) {
+  // ── tipo_uso (solo relevante para máquinas) ──────────────────────────────────
+  if (p.tipo_uso && cat === 'Máquinas') {
     const compatibles = STYLE_TIPO[style] ?? [];
     if (compatibles.includes(p.tipo_uso)) score += 8;
     else score -= 4;
@@ -253,10 +266,12 @@ export default function CalculadoraPage() {
         {!loading && isResults && (
           <div>
             <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(28px,4vw,48px)', color: 'var(--text)', margin: '0 0 8px' }}>
-              TU KIT <span style={{ color: accent }}>RECOMENDADO</span>
+              {answers.tipo_producto === 'kit' ? 'TU KIT' : 'TU MÁQUINA'} <span style={{ color: accent }}>RECOMENDADO</span>
             </h2>
             <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 32px' }}>
-              Basado en tus respuestas, estos productos son los más adecuados para ti.
+              {answers.tipo_producto === 'kit'
+                ? 'Kits completos seleccionados según tu nivel, estilo y presupuesto.'
+                : 'Máquinas seleccionadas según tu nivel, estilo de trabajo y presupuesto.'}
             </p>
 
             {results.length === 0 ? (
