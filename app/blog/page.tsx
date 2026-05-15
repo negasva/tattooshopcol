@@ -2,6 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Blog — TattooShop Colombia',
   description: 'Tutoriales, guías y consejos sobre tatuajes profesionales.',
