@@ -543,6 +543,7 @@ export default function TattooShopHome() {
   const [activeFilter, setActiveFilter] = useState('kits');
   const [navScrolled, setNavScrolled] = useState(false);
   const [search, setSearch] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [compareList, setCompareList] = useState<string[]>([]);
   const [showCompare, setShowCompare] = useState(false);
   const [newsletterEmail, setNewsletterEmail] = useState('');
@@ -713,6 +714,53 @@ export default function TattooShopHome() {
             onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLAnchorElement).style.borderBottomColor = 'transparent'; }}>
             Blog
           </Link>
+          {/* Search icon + expandable input */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0', position: 'relative' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center',
+              overflow: 'hidden',
+              width: searchOpen ? '200px' : '0',
+              transition: 'width 0.3s ease',
+            }}>
+              <input
+                type="text"
+                value={search}
+                autoFocus={searchOpen}
+                onChange={(e) => { setSearch(e.target.value); setActiveFilter('all'); }}
+                onKeyDown={(e) => { if (e.key === 'Escape') { setSearch(''); setSearchOpen(false); } }}
+                placeholder="Buscar productos..."
+                style={{
+                  width: '100%', background: 'var(--surface)', border: '1px solid var(--border)',
+                  borderRight: 'none', color: 'var(--text)', fontFamily: '"DM Mono", monospace',
+                  fontSize: '11px', padding: '8px 12px', outline: 'none', letterSpacing: '0.5px',
+                }}
+              />
+            </div>
+            <button
+              onClick={() => {
+                if (searchOpen && search) { setSearch(''); }
+                else { setSearchOpen(!searchOpen); }
+                if (!searchOpen) {
+                  setTimeout(() => document.querySelector<HTMLElement>('#productos')?.scrollIntoView({ behavior: 'smooth' }), 350);
+                }
+              }}
+              style={{
+                background: 'var(--surface)', border: '1px solid var(--border)',
+                color: search ? accent : 'var(--text-muted)',
+                width: '36px', height: '36px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.2s', flexShrink: 0,
+              }}
+              title="Buscar"
+            >
+              {search ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              )}
+            </button>
+          </div>
+
           <button
             onClick={() => setCartOpen(true)}
             style={{
@@ -899,30 +947,6 @@ export default function TattooShopHome() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-end' }}>
-            {/* Search */}
-            <div style={{ position: 'relative' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '14px', height: '14px', color: 'var(--text-muted)', pointerEvents: 'none' }}>
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setActiveFilter('all'); }}
-                placeholder="Buscar productos..."
-                style={{
-                  background: 'var(--surface)', border: '1px solid var(--border)',
-                  color: 'var(--text)', fontFamily: '"DM Mono", monospace', fontSize: '11px',
-                  padding: '9px 32px 9px 30px', outline: 'none', width: '220px',
-                  letterSpacing: '0.5px', transition: 'border-color 0.2s',
-                }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; }}
-              />
-              {search && (
-                <button onClick={() => setSearch('')} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '14px', padding: '0', lineHeight: 1 }}>×</button>
-              )}
-            </div>
             {/* Category filters */}
             <div style={{ display: 'flex', gap: '1px', flexWrap: 'wrap' }}>
             {[{ key: 'all', label: 'Todos' }, ...categories.map((c) => ({ key: c.key, label: c.label }))].map((f) => (

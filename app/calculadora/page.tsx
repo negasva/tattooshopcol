@@ -57,6 +57,24 @@ const STEPS = [
   },
 ];
 
+// Keyword scoring helpers
+const LEVEL_KEYWORDS: Record<string, string[]> = {
+  principiante: ['principiante', 'básico', 'starter', 'inicial', 'aprendiz', 'beginner'],
+  intermedio:   ['intermedio', 'semi', 'medio', 'practice'],
+  profesional:  ['profesional', 'pro', 'avanzado', 'premium', 'expert', 'studio'],
+};
+const STYLE_KEYWORDS: Record<string, string[]> = {
+  blackwork:    ['blackwork', 'tribal', 'liner', 'lineal', 'negro', 'black', 'outline'],
+  realismo:     ['realismo', 'realista', 'shader', 'sombreado', 'portrait', 'retrato', 'magnum'],
+  tradicional:  ['tradicional', 'old school', 'color', 'colores', 'clásico'],
+  acuarela:     ['acuarela', 'watercolor', 'geométrico', 'geometrico', 'degradado'],
+};
+
+function keywordScore(text: string, keywords: string[]): number {
+  const lower = text.toLowerCase();
+  return keywords.reduce((acc, kw) => acc + (lower.includes(kw) ? 1 : 0), 0);
+}
+
 // Scoring: higher weight = more recommended for this combination
 function scoreProduct(p: Product, answers: Record<string, string>): number {
   let score = 0;
@@ -64,6 +82,7 @@ function scoreProduct(p: Product, answers: Record<string, string>): number {
   const level = answers.level;
   const budget = answers.budget;
   const style = answers.style;
+  const searchText = `${p.name} ${p.specs ?? ''}`;
 
   // Inventory check
   if ((p.inventory ?? 0) <= 0) return -1;
@@ -75,16 +94,31 @@ function scoreProduct(p: Product, answers: Record<string, string>): number {
   if (budget === 'medio' && (sp < 50000 || sp > 600000)) return 0;
   if (budget === 'alto' && sp < 200000) score -= 5;
 
-  // Level preferences
+  // Level: category match
   if (level === 'principiante' && cat === 'Kits') score += 10;
   if (level === 'intermedio' && (cat === 'Máquinas' || cat === 'Kits')) score += 8;
   if (level === 'profesional' && cat === 'Máquinas') score += 10;
-  if (cat === 'Insumos') score += 5; // always useful
+  if (cat === 'Insumos') score += 4;
 
-  // Style preferences
+  // Level: keyword match in name/specs (up to +6)
+  score += Math.min(6, keywordScore(searchText, LEVEL_KEYWORDS[level] ?? []) * 3);
+
+  // Penalise mismatches: beginner product for professional user and vice-versa
+  if (level === 'profesional') score -= keywordScore(searchText, LEVEL_KEYWORDS.principiante) * 4;
+  if (level === 'principiante') score -= keywordScore(searchText, LEVEL_KEYWORDS.profesional) * 3;
+
+  // Style: keyword match in name/specs (up to +8)
+  score += Math.min(8, keywordScore(searchText, STYLE_KEYWORDS[style] ?? []) * 4);
+
+  // Style: category affinity
   if (style === 'blackwork' && cat === 'Insumos') score += 3;
   if (style === 'realismo' && cat === 'Máquinas') score += 5;
   if (style === 'tradicional' && cat === 'Kits') score += 5;
+  if (style === 'acuarela' && cat === 'Insumos') score += 4;
+
+  // Budget: prefer items closer to the top of the range for "alto"
+  if (budget === 'alto' && sp >= 600000) score += 3;
+  if (budget === 'medio' && sp >= 200000 && sp <= 400000) score += 2;
 
   // Tag bonus
   if (p.tag === 'BESTSELLER') score += 3;
