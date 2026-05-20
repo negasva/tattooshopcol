@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getSupabase, Product } from '../lib/supabase';
 import { computeOps, COP } from '../lib/analytics';
 import DashboardRentabilidad from './DashboardRentabilidad';
+import KitCostBuilder, { type KitComponent } from './KitCostBuilder';
 
 const accent = '#FFD400';
 
@@ -291,6 +292,8 @@ export default function AdminPageClient() {
   const [simUnidades, setSimUnidades] = useState(10);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [costMode, setCostMode] = useState<'manual' | 'components'>('manual');
+  const [kitComponents, setKitComponents] = useState<KitComponent[]>([]);
 
   const { toasts, show: showToast } = useToast();
   const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123';
@@ -298,6 +301,14 @@ export default function AdminPageClient() {
   useEffect(() => {
     if (authenticated) { fetch('/api/migrate').catch(() => {}); loadProducts(); }
   }, [authenticated]);
+
+  // Sync component total → formData.costo when in components mode
+  useEffect(() => {
+    if (costMode === 'components') {
+      const total = kitComponents.reduce((sum, c) => sum + c.cantidad * c.costo_unitario, 0);
+      setFormData((prev) => ({ ...prev, costo: total }));
+    }
+  }, [kitComponents, costMode]);
 
   const loadProducts = async () => {
     try {
@@ -350,17 +361,46 @@ export default function AdminPageClient() {
         margen_deseado: formData.margen_deseado > 0 ? formData.margen_deseado : null,
         updated_at: new Date().toISOString(),
       };
+
+      let savedProductId = editingId;
+
       if (editingId) {
         const { error } = await sb.from('products').update(data).eq('id', editingId);
         if (error) throw error;
         showToast('Producto actualizado');
         setEditingId(null);
       } else {
-        const { error } = await sb.from('products').insert([{ ...data, created_at: new Date().toISOString() }]);
+        const { data: inserted, error } = await sb.from('products')
+          .insert([{ ...data, created_at: new Date().toISOString() }])
+          .select('id')
+          .single();
         if (error) throw error;
+        savedProductId = inserted?.id ?? null;
         showToast('Producto agregado');
       }
+
+      // Save kit components if in components mode
+      if (costMode === 'components' && savedProductId) {
+        await sb.from('kit_components').delete().eq('kit_product_id', savedProductId);
+        if (kitComponents.length > 0) {
+          await sb.from('kit_components').insert(
+            kitComponents.map((c) => ({
+              kit_product_id: savedProductId,
+              source_product_id: c.source_product_id ?? null,
+              nombre: c.nombre,
+              cantidad: c.cantidad,
+              costo_unitario: c.costo_unitario,
+              tipo: c.tipo,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }))
+          );
+        }
+      }
+
       setFormData(emptyForm);
+      setCostMode('manual');
+      setKitComponents([]);
       setFormOpen(false);
       loadProducts();
     } catch { showToast('Error guardando producto', 'error'); }
@@ -377,7 +417,7 @@ export default function AdminPageClient() {
     finally { setDeletingId(null); }
   };
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = async (product: Product) => {
     setFormData({
       name: product.name, category: product.category, price: product.price,
       original_price: product.original_price || 0, discount_percentage: product.discount_percentage || 0,
@@ -387,6 +427,24 @@ export default function AdminPageClient() {
       tasa_devolucion: product.tasa_devolucion ?? 25,
       costo_devolucion: product.costo_devolucion ?? 36000,
     });
+    // Load kit components
+    try {
+      const { data } = await getSupabase()
+        .from('kit_components')
+        .select('*')
+        .eq('kit_product_id', product.id)
+        .order('created_at');
+      if (data && data.length > 0) {
+        setKitComponents(data);
+        setCostMode('components');
+      } else {
+        setKitComponents([]);
+        setCostMode('manual');
+      }
+    } catch {
+      setKitComponents([]);
+      setCostMode('manual');
+    }
     setEditingId(product.id);
     setFormOpen(true);
     setFinTab('basico');
@@ -497,7 +555,7 @@ export default function AdminPageClient() {
         {/* ── FORM TOGGLE ─────────────────────────────────────────────────── */}
         <div style={{ marginBottom: '40px' }}>
           <button
-            onClick={() => { setFormOpen(!formOpen); if (formOpen && editingId) { setEditingId(null); setFormData(emptyForm); } }}
+            onClick={() => { setFormOpen(!formOpen); if (formOpen && editingId) { setEditingId(null); setFormData(emptyForm); setCostMode('manual'); setKitComponents([]); } }}
             style={{ width: '100%', padding: '14px 20px', background: formOpen && !editingId ? 'var(--surface)' : accent, color: formOpen && !editingId ? 'var(--text)' : '#111', border: `1px solid ${accent}`, fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', cursor: 'pointer', letterSpacing: '1.5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
           >
             <span>{editingId ? '✏ EDITANDO PRODUCTO' : '+ AGREGAR PRODUCTO'}</span>
@@ -565,24 +623,62 @@ export default function AdminPageClient() {
                   {/* ── TAB 1: BÁSICO (Phase 1) ─────────────────────────── */}
                   {finTab === 'basico' && (
                     <>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                        <div>
-                          <label style={labelStyle}>COSTO (COP)</label>
-                          <input
-                            type="number" min="0" value={formData.costo}
-                            onChange={(e) => setFormData({ ...formData, costo: Number(e.target.value) })}
-                            style={{ ...inputStyle, borderColor: costoMayorPrecio ? '#e55' : 'var(--border)' }}
-                          />
-                          {costoMayorPrecio && (
-                            <div style={{ marginTop: '4px', color: '#e55', fontSize: '11px', fontFamily: '"DM Mono", monospace' }}>
-                              ✕ El costo no puede ser mayor o igual al precio
-                            </div>
-                          )}
+                      {/* ── Cost mode toggle ───────────────────────────────── */}
+                      <div style={{ marginBottom: '16px' }}>
+                        <label style={labelStyle}>COSTO (COP)</label>
+                        <div style={{ display: 'flex', gap: '4px', marginBottom: '14px' }}>
+                          <button
+                            type="button"
+                            onClick={() => setCostMode('manual')}
+                            style={{ padding: '7px 16px', border: 'none', cursor: 'pointer', fontFamily: '"DM Mono", monospace', fontSize: '11px', letterSpacing: '1px', background: costMode === 'manual' ? accent : 'var(--surface2)', color: costMode === 'manual' ? '#111' : 'var(--text-muted)', fontWeight: costMode === 'manual' ? 700 : 400 }}
+                          >
+                            MANUAL
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCostMode('components')}
+                            style={{ padding: '7px 16px', border: 'none', cursor: 'pointer', fontFamily: '"DM Mono", monospace', fontSize: '11px', letterSpacing: '1px', background: costMode === 'components' ? accent : 'var(--surface2)', color: costMode === 'components' ? '#111' : 'var(--text-muted)', fontWeight: costMode === 'components' ? 700 : 400 }}
+                          >
+                            POR COMPONENTES
+                          </button>
                         </div>
+
+                        {costMode === 'manual' ? (
+                          <>
+                            <input
+                              type="number" min="0" value={formData.costo}
+                              onChange={(e) => setFormData({ ...formData, costo: Number(e.target.value) })}
+                              style={{ ...inputStyle, borderColor: costoMayorPrecio ? '#e55' : 'var(--border)' }}
+                            />
+                            {costoMayorPrecio && (
+                              <div style={{ marginTop: '4px', color: '#e55', fontSize: '11px', fontFamily: '"DM Mono", monospace' }}>
+                                ✕ El costo no puede ser mayor o igual al precio
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <KitCostBuilder
+                            components={kitComponents}
+                            onChange={setKitComponents}
+                            products={products}
+                            inputStyle={inputStyle}
+                          />
+                        )}
+                      </div>
+
+                      {/* Margen deseado + calcs (always visible) */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                         <div>
                           <label style={labelStyle}>MARGEN % DESEADO</label>
                           <input type="number" min="0" max="100" value={formData.margen_deseado} onChange={(e) => setFormData({ ...formData, margen_deseado: Number(e.target.value) })} style={inputStyle} />
                         </div>
+                        {costoMayorPrecio && costMode === 'manual' && (
+                          <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '2px' }}>
+                            <div style={{ color: '#e55', fontSize: '11px', fontFamily: '"DM Mono", monospace' }}>
+                              ✕ Costo ≥ precio, corrige antes de guardar
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {showFinancialCalcs && (
@@ -709,7 +805,7 @@ export default function AdminPageClient() {
                     {editingId ? 'ACTUALIZAR' : 'AGREGAR'}
                   </button>
                   {editingId && (
-                    <button type="button" onClick={() => { setEditingId(null); setFormOpen(false); setFormData(emptyForm); }}
+                    <button type="button" onClick={() => { setEditingId(null); setFormOpen(false); setFormData(emptyForm); setCostMode('manual'); setKitComponents([]); }}
                       style={{ padding: '12px 20px', background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', fontFamily: '"DM Mono", monospace', fontSize: '13px', cursor: 'pointer' }}>
                       Cancelar
                     </button>
