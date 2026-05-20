@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getSupabase, Product } from '../lib/supabase';
 import { computeOps, COP } from '../lib/analytics';
 import DashboardRentabilidad from './DashboardRentabilidad';
-import KitCostBuilder, { type KitComponent } from './KitCostBuilder';
+import KitCostBuilder, { type KitComponent, type ComponentGroup } from './KitCostBuilder';
 
 const accent = '#FFD400';
 
@@ -294,12 +294,13 @@ export default function AdminPageClient() {
   const [showDashboard, setShowDashboard] = useState(false);
   const [costMode, setCostMode] = useState<'manual' | 'components'>('manual');
   const [kitComponents, setKitComponents] = useState<KitComponent[]>([]);
+  const [groups, setGroups] = useState<ComponentGroup[]>([]);
 
   const { toasts, show: showToast } = useToast();
   const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123';
 
   useEffect(() => {
-    if (authenticated) { fetch('/api/migrate').catch(() => {}); loadProducts(); }
+    if (authenticated) { fetch('/api/migrate').catch(() => {}); loadProducts(); loadGroups(); }
   }, [authenticated]);
 
   // Sync component total → formData.costo when in components mode
@@ -318,6 +319,60 @@ export default function AdminPageClient() {
       setProducts(data || []);
     } catch { showToast('Error cargando productos', 'error'); }
     finally { setLoading(false); }
+  };
+
+  const loadGroups = async () => {
+    try {
+      const { data } = await getSupabase().from('component_groups').select('*').order('created_at');
+      setGroups((data || []).map((g) => ({ ...g, components: g.components as KitComponent[] })));
+    } catch { /* non-critical */ }
+  };
+
+  const handleSaveGroup = async (name: string) => {
+    if (!kitComponents.length) return;
+    try {
+      const sb = getSupabase();
+      const clean = kitComponents.map(({ id: _id, ...rest }) => rest);
+      const { data, error } = await sb
+        .from('component_groups')
+        .insert([{ name, components: clean, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }])
+        .select()
+        .single();
+      if (error) throw error;
+      setGroups((prev) => [...prev, { ...data, components: data.components as KitComponent[] }]);
+      showToast(`Grupo "${name}" guardado`);
+    } catch { showToast('Error guardando grupo', 'error'); }
+  };
+
+  const handleApplyGroup = (group: ComponentGroup, mode: 'replace' | 'append') => {
+    const clean = (group.components as KitComponent[]).map(({ id: _id, ...rest }) => rest);
+    setKitComponents(mode === 'replace' ? clean : [...kitComponents, ...clean]);
+    setCostMode('components');
+    showToast(mode === 'replace' ? `Grupo "${group.name}" aplicado` : `Grupo "${group.name}" agregado`);
+  };
+
+  const handleDuplicateGroup = async (group: ComponentGroup) => {
+    try {
+      const sb = getSupabase();
+      const newName = `${group.name} (copia)`;
+      const { data, error } = await sb
+        .from('component_groups')
+        .insert([{ name: newName, components: group.components, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }])
+        .select()
+        .single();
+      if (error) throw error;
+      setGroups((prev) => [...prev, { ...data, components: data.components as KitComponent[] }]);
+      showToast(`Grupo duplicado como "${newName}"`);
+    } catch { showToast('Error duplicando grupo', 'error'); }
+  };
+
+  const handleDeleteGroup = async (id: string) => {
+    try {
+      const { error } = await getSupabase().from('component_groups').delete().eq('id', id);
+      if (error) throw error;
+      setGroups((prev) => prev.filter((g) => g.id !== id));
+      showToast('Grupo eliminado');
+    } catch { showToast('Error eliminando grupo', 'error'); }
   };
 
   const handleSaveField = async (id: string, field: string, value: string | number) => {
@@ -427,7 +482,7 @@ export default function AdminPageClient() {
       tasa_devolucion: product.tasa_devolucion ?? 25,
       costo_devolucion: product.costo_devolucion ?? 36000,
     });
-    // Load kit components
+    // Load kit components and auto-update costs from linked products
     try {
       const { data } = await getSupabase()
         .from('kit_components')
@@ -435,7 +490,16 @@ export default function AdminPageClient() {
         .eq('kit_product_id', product.id)
         .order('created_at');
       if (data && data.length > 0) {
-        setKitComponents(data);
+        const updated = data.map((c) => {
+          if (c.source_product_id) {
+            const linked = products.find((p) => p.id === c.source_product_id);
+            if (linked?.costo && linked.costo !== c.costo_unitario) {
+              return { ...c, costo_unitario: linked.costo };
+            }
+          }
+          return c;
+        });
+        setKitComponents(updated);
         setCostMode('components');
       } else {
         setKitComponents([]);
@@ -662,6 +726,11 @@ export default function AdminPageClient() {
                             onChange={setKitComponents}
                             products={products}
                             inputStyle={inputStyle}
+                            groups={groups}
+                            onSaveGroup={handleSaveGroup}
+                            onApplyGroup={handleApplyGroup}
+                            onDuplicateGroup={handleDuplicateGroup}
+                            onDeleteGroup={handleDeleteGroup}
                           />
                         )}
                       </div>
