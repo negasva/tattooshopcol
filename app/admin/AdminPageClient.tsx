@@ -88,6 +88,20 @@ function EditableCell({ value, field, type = 'text', options, onSave, accent }: 
   );
 }
 
+// ─── Margin badge ─────────────────────────────────────────────────────────────
+function MarginBadge({ price, costo }: { price: number; costo?: number }) {
+  if (!costo || costo <= 0 || price <= 0) {
+    return <span style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '11px' }}>—</span>;
+  }
+  const pct = ((price - costo) / price) * 100;
+  const color = pct >= 50 ? '#25d366' : pct >= 30 ? '#FFD400' : '#e55';
+  return (
+    <span style={{ color, fontWeight: 700, fontFamily: '"DM Mono", monospace', fontSize: '12px' }}>
+      {pct.toFixed(1)}%
+    </span>
+  );
+}
+
 // ─── Category Table ───────────────────────────────────────────────────────────
 const CATEGORIES = ['Kits', 'Máquinas', 'Insumos'];
 
@@ -112,7 +126,7 @@ function CategoryTable({ category, products, onSaveField, onEdit, onDelete, acce
         <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: '"DM Mono", monospace', fontSize: '12px' }}>
           <thead>
             <tr style={{ borderBottom: `2px solid ${accent}33`, background: 'var(--surface2)' }}>
-              {['Imagen', 'Nombre', 'Precio Original', 'Precio Final', 'Descuento %', 'Inventario', 'Etiqueta', 'Nivel', 'Tipo de uso', 'Complejidad', 'Acciones'].map((h) => (
+              {['Imagen', 'Nombre', 'Precio Original', 'Precio Final', 'Descuento %', 'Inventario', 'Etiqueta', 'Nivel', 'Tipo de uso', 'Complejidad', 'Costo', 'Margen %', 'Acciones'].map((h) => (
                 <th key={h} style={{ padding: '10px 12px', textAlign: h === 'Acciones' ? 'center' : 'left', color: accent, fontWeight: 700, letterSpacing: '1px', fontSize: '11px', whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
@@ -152,6 +166,12 @@ function CategoryTable({ category, products, onSaveField, onEdit, onDelete, acce
                 <td style={{ padding: '10px 12px' }}>
                   <EditableCell value={p.complejidad_uso ?? ''} field="complejidad_uso" type="number" onSave={(f, v) => onSaveField(p.id, f, v)} accent={accent} />
                 </td>
+                <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>
+                  <EditableCell value={p.costo ?? 0} field="costo" type="number" onSave={(f, v) => onSaveField(p.id, f, v)} accent={accent} />
+                </td>
+                <td style={{ padding: '10px 12px' }}>
+                  <MarginBadge price={p.price} costo={p.costo} />
+                </td>
                 <td style={{ padding: '10px 12px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                   <button onClick={() => onEdit(p)} style={{ marginRight: '6px', padding: '5px 10px', background: 'transparent', color: accent, border: `1px solid ${accent}33`, cursor: 'pointer', fontSize: '11px', fontFamily: '"DM Mono", monospace' }}>
                     Editar
@@ -169,6 +189,13 @@ function CategoryTable({ category, products, onSaveField, onEdit, onDelete, acce
   );
 }
 
+// ─── Empty form state ─────────────────────────────────────────────────────────
+const emptyForm = {
+  name: '', category: 'Kits', price: 0, original_price: 0,
+  discount_percentage: 0, image_url: '', specs: '', tag: '', inventory: 0,
+  costo: 0, margen_deseado: 0,
+};
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function AdminPageClient() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -179,10 +206,7 @@ export default function AdminPageClient() {
   const [formOpen, setFormOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    name: '', category: 'Kits', price: 0, original_price: 0,
-    discount_percentage: 0, image_url: '', specs: '', tag: '', inventory: 0,
-  });
+  const [formData, setFormData] = useState(emptyForm);
 
   const { toasts, show: showToast } = useToast();
   const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123';
@@ -219,12 +243,25 @@ export default function AdminPageClient() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validations
+    if (formData.costo > 0 && formData.price > 0 && formData.costo >= formData.price) {
+      showToast('El costo no puede ser mayor o igual al precio de venta', 'error');
+      return;
+    }
+    if (formData.margen_deseado < 0) {
+      showToast('El margen deseado no puede ser negativo', 'error');
+      return;
+    }
+
     try {
       const sb = getSupabase();
       const data = {
         ...formData,
         discount_percentage: formData.discount_percentage > 0 ? formData.discount_percentage : null,
         original_price: formData.original_price > 0 ? formData.original_price : null,
+        costo: formData.costo > 0 ? formData.costo : null,
+        margen_deseado: formData.margen_deseado > 0 ? formData.margen_deseado : null,
         updated_at: new Date().toISOString(),
       };
       if (editingId) {
@@ -237,7 +274,7 @@ export default function AdminPageClient() {
         if (error) throw error;
         showToast('Producto agregado');
       }
-      setFormData({ name: '', category: 'Kits', price: 0, original_price: 0, discount_percentage: 0, image_url: '', specs: '', tag: '', inventory: 0 });
+      setFormData(emptyForm);
       setFormOpen(false);
       loadProducts();
     } catch { showToast('Error guardando producto', 'error'); }
@@ -263,6 +300,7 @@ export default function AdminPageClient() {
       name: product.name, category: product.category, price: product.price,
       original_price: product.original_price || 0, discount_percentage: product.discount_percentage || 0,
       image_url: product.image_url || '', specs: product.specs, tag: product.tag, inventory: product.inventory,
+      costo: product.costo || 0, margen_deseado: product.margen_deseado || 0,
     });
     setEditingId(product.id);
     setFormOpen(true);
@@ -282,6 +320,14 @@ export default function AdminPageClient() {
     } catch { showToast('Error subiendo imagen', 'error'); }
     finally { setUploading(false); }
   };
+
+  // ── Margin calculations (real-time, from formData) ─────────────────────────
+  const margenPesos = formData.price > 0 && formData.costo > 0 ? formData.price - formData.costo : 0;
+  const margenPctReal = formData.price > 0 && formData.costo > 0 ? (margenPesos / formData.price) * 100 : 0;
+  const margenOk = formData.margen_deseado > 0 ? margenPctReal >= formData.margen_deseado : true;
+  const margenColor = margenPctReal >= 50 ? '#25d366' : margenPctReal >= 30 ? '#FFD400' : '#e55';
+  const showFinancialCalcs = formData.price > 0 && formData.costo > 0;
+  const costoMayorPrecio = formData.costo > 0 && formData.price > 0 && formData.costo >= formData.price;
 
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '10px', border: '1px solid var(--border)',
@@ -328,7 +374,7 @@ export default function AdminPageClient() {
         {/* FORM TOGGLE */}
         <div style={{ marginBottom: '40px' }}>
           <button
-            onClick={() => { setFormOpen(!formOpen); if (formOpen && editingId) { setEditingId(null); setFormData({ name: '', category: 'Kits', price: 0, original_price: 0, discount_percentage: 0, image_url: '', specs: '', tag: '', inventory: 0 }); } }}
+            onClick={() => { setFormOpen(!formOpen); if (formOpen && editingId) { setEditingId(null); setFormData(emptyForm); } }}
             style={{ width: '100%', padding: '14px 20px', background: formOpen && !editingId ? 'var(--surface)' : accent, color: formOpen && !editingId ? 'var(--text)' : '#111', border: `1px solid ${accent}`, fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', cursor: 'pointer', letterSpacing: '1.5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
           >
             <span>{editingId ? '✏ EDITANDO PRODUCTO' : '+ AGREGAR PRODUCTO'}</span>
@@ -379,12 +425,78 @@ export default function AdminPageClient() {
                   <label style={{ display: 'block', marginBottom: '6px', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1.5px' }}>ESPECIFICACIONES</label>
                   <textarea value={formData.specs} onChange={(e) => setFormData({ ...formData, specs: e.target.value })} rows={6} placeholder="Una línea por ítem..." style={{ ...inputStyle, resize: 'vertical', fontFamily: '"DM Mono", monospace', lineHeight: 1.6 }} />
                 </div>
+
+                {/* ── INFORMACIÓN FINANCIERA ─────────────────────────────── */}
+                <div style={{ gridColumn: '1 / -1', borderTop: `1px solid ${accent}33`, paddingTop: '20px', marginTop: '4px' }}>
+                  <div style={{ fontSize: '11px', color: accent, letterSpacing: '2px', marginBottom: '16px', fontFamily: '"DM Mono", monospace', fontWeight: 700 }}>
+                    ─── INFORMACIÓN FINANCIERA (solo admin)
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '6px', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1.5px' }}>COSTO (COP)</label>
+                      <input
+                        type="number" min="0" value={formData.costo}
+                        onChange={(e) => setFormData({ ...formData, costo: Number(e.target.value) })}
+                        style={{ ...inputStyle, borderColor: costoMayorPrecio ? '#e55' : 'var(--border)' }}
+                      />
+                      {costoMayorPrecio && (
+                        <div style={{ marginTop: '4px', color: '#e55', fontSize: '11px', fontFamily: '"DM Mono", monospace' }}>
+                          ✕ El costo no puede ser mayor o igual al precio
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '6px', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1.5px' }}>MARGEN % DESEADO</label>
+                      <input
+                        type="number" min="0" max="100" value={formData.margen_deseado}
+                        onChange={(e) => setFormData({ ...formData, margen_deseado: Number(e.target.value) })}
+                        style={inputStyle}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Real-time calculations */}
+                  {showFinancialCalcs && (
+                    <div style={{ marginTop: '16px', background: 'var(--bg)', border: `1px solid ${accent}22`, padding: '16px 20px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                        <div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1.5px', marginBottom: '6px', fontFamily: '"DM Mono", monospace' }}>MARGEN $</div>
+                          <div style={{ fontSize: '22px', fontFamily: '"Bebas Neue", sans-serif', color: margenPesos >= 0 ? 'var(--text)' : '#e55', letterSpacing: '1px' }}>
+                            ${margenPesos.toLocaleString('es-CO')}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1.5px', marginBottom: '6px', fontFamily: '"DM Mono", monospace' }}>MARGEN % REAL</div>
+                          <div style={{ fontSize: '22px', fontFamily: '"Bebas Neue", sans-serif', color: margenColor, letterSpacing: '1px' }}>
+                            {margenPctReal.toFixed(1)}%
+                          </div>
+                          <div style={{ fontSize: '10px', marginTop: '3px', fontFamily: '"DM Mono", monospace', color: margenColor }}>
+                            {margenPctReal >= 50 ? '● Alto' : margenPctReal >= 30 ? '● Medio' : '● Bajo'}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1.5px', marginBottom: '6px', fontFamily: '"DM Mono", monospace' }}>OBJETIVO</div>
+                          <div style={{ fontSize: '13px', fontFamily: '"DM Mono", monospace', color: margenOk ? '#25d366' : '#FFD400', marginTop: '4px' }}>
+                            {formData.margen_deseado > 0
+                              ? (margenOk ? '✓ Alcanzado' : `⚠ Falta ${(formData.margen_deseado - margenPctReal).toFixed(1)}%`)
+                              : '— Sin objetivo'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '12px' }}>
-                  <button type="submit" style={{ flex: 1, padding: '12px', background: accent, color: '#111', border: 'none', fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', cursor: 'pointer', letterSpacing: '1.5px' }}>
+                  <button
+                    type="submit"
+                    disabled={costoMayorPrecio}
+                    style={{ flex: 1, padding: '12px', background: costoMayorPrecio ? 'var(--surface2)' : accent, color: costoMayorPrecio ? 'var(--text-muted)' : '#111', border: 'none', fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', cursor: costoMayorPrecio ? 'not-allowed' : 'pointer', letterSpacing: '1.5px' }}
+                  >
                     {editingId ? 'ACTUALIZAR' : 'AGREGAR'}
                   </button>
                   {editingId && (
-                    <button type="button" onClick={() => { setEditingId(null); setFormOpen(false); setFormData({ name: '', category: 'Kits', price: 0, original_price: 0, discount_percentage: 0, image_url: '', specs: '', tag: '', inventory: 0 }); }}
+                    <button type="button" onClick={() => { setEditingId(null); setFormOpen(false); setFormData(emptyForm); }}
                       style={{ padding: '12px 20px', background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', fontFamily: '"DM Mono", monospace', fontSize: '13px', cursor: 'pointer' }}>
                       Cancelar
                     </button>

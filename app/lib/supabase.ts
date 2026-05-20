@@ -30,6 +30,8 @@ export interface Product {
   nivel_recomendado?: 'principiante' | 'intermedio' | 'profesional';
   tipo_uso?: 'liner' | 'shader' | 'ambos' | 'colorear';
   complejidad_uso?: number;
+  costo?: number;
+  margen_deseado?: number;
   created_at: string;
   updated_at: string;
 }
