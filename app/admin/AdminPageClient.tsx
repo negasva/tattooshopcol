@@ -295,6 +295,8 @@ export default function AdminPageClient() {
   const [costMode, setCostMode] = useState<'manual' | 'components'>('manual');
   const [kitComponents, setKitComponents] = useState<KitComponent[]>([]);
   const [groups, setGroups] = useState<ComponentGroup[]>([]);
+  const [chartCategory, setChartCategory] = useState('Todos');
+  const [chartSelection, setChartSelection] = useState<Set<string> | null>(null);
 
   const { toasts, show: showToast } = useToast();
   const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123';
@@ -600,10 +602,29 @@ export default function AdminPageClient() {
 
   // Products with cost data for global analysis
   const productsWithCost = products.filter((p) => p.costo && p.costo > 0);
-  const chartItems = productsWithCost.slice(0, 6).map((p) => {
+
+  const chartCategoryProducts = productsWithCost.filter(
+    (p) => chartCategory === 'Todos' || p.category === chartCategory
+  );
+  const chartDisplayProducts =
+    chartSelection === null
+      ? chartCategoryProducts
+      : chartCategoryProducts.filter((p) => chartSelection.has(p.id));
+  const chartItems = chartDisplayProducts.map((p) => {
     const o = computeOps(p.price, p.costo!, p.costo_envio || 40000, p.tasa_devolucion || 25, p.costo_devolucion || 36000);
     return { label: p.name, price: p.price, costo: p.costo!, gNeta: o.gNeta, colorGN: o.colorGN };
   });
+
+  const handleChartCategory = (cat: string) => {
+    setChartCategory(cat);
+    setChartSelection(null);
+  };
+  const toggleChartProduct = (id: string) => {
+    const base = chartSelection ?? new Set(chartCategoryProducts.map((p) => p.id));
+    const next = new Set(base);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setChartSelection(next.size > 0 ? next : null);
+  };
 
   // ── Main render ────────────────────────────────────────────────────────────
   return (
@@ -976,20 +997,83 @@ export default function AdminPageClient() {
                   </div>
 
                   {/* Bar chart */}
-                  {chartItems.length > 0 && (
+                  {productsWithCost.length > 0 && (
                     <div style={{ background: 'var(--bg)', border: `1px solid ${accent}22`, padding: '20px 24px' }}>
-                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '2px', marginBottom: '20px', fontFamily: '"DM Mono", monospace' }}>
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '2px', marginBottom: '16px', fontFamily: '"DM Mono", monospace' }}>
                         COMPARATIVO PRECIO / COSTO / GANANCIA NETA
                       </div>
-                      <BarChart items={chartItems} />
-                      <div style={{ display: 'flex', gap: '20px', marginTop: '16px', flexWrap: 'wrap' }}>
-                        {[{ color: accent, label: 'Precio' }, { color: '#e55', label: 'Costo' }, { color: '#25d366', label: 'Ganancia Neta' }].map(({ color, label }) => (
-                          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)' }}>
-                            <div style={{ width: '12px', height: '12px', background: color, flexShrink: 0 }} />
-                            {label}
-                          </div>
+
+                      {/* Category filter */}
+                      <div style={{ display: 'flex', gap: '4px', marginBottom: '14px', flexWrap: 'wrap' }}>
+                        {['Todos', 'Kits', 'Máquinas', 'Insumos'].map((cat) => (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => handleChartCategory(cat)}
+                            style={{
+                              padding: '5px 14px', border: 'none', cursor: 'pointer',
+                              fontFamily: '"DM Mono", monospace', fontSize: '11px', letterSpacing: '1px',
+                              background: chartCategory === cat ? accent : 'var(--surface2)',
+                              color: chartCategory === cat ? '#111' : 'var(--text-muted)',
+                              fontWeight: chartCategory === cat ? 700 : 400,
+                            }}
+                          >
+                            {cat.toUpperCase()}
+                          </button>
                         ))}
+                        <span style={{ marginLeft: '8px', fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', alignSelf: 'center' }}>
+                          {chartCategoryProducts.length} productos
+                        </span>
                       </div>
+
+                      {/* Product checkboxes */}
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px', padding: '10px', background: 'var(--surface2)', border: '1px solid var(--border)' }}>
+                        <button
+                          type="button"
+                          onClick={() => setChartSelection(null)}
+                          style={{ padding: '3px 10px', border: `1px solid ${chartSelection === null ? accent : 'var(--border)'}`, background: chartSelection === null ? `${accent}22` : 'transparent', color: chartSelection === null ? accent : 'var(--text-muted)', cursor: 'pointer', fontFamily: '"DM Mono", monospace', fontSize: '10px', letterSpacing: '0.5px' }}
+                        >
+                          TODOS
+                        </button>
+                        {chartCategoryProducts.map((p) => {
+                          const checked = chartSelection === null || chartSelection.has(p.id);
+                          return (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => toggleChartProduct(p.id)}
+                              style={{
+                                padding: '3px 10px', cursor: 'pointer',
+                                fontFamily: '"DM Mono", monospace', fontSize: '10px',
+                                border: `1px solid ${checked ? accent + '88' : 'var(--border)'}`,
+                                background: checked ? `${accent}18` : 'transparent',
+                                color: checked ? 'var(--text)' : 'var(--text-muted)',
+                                letterSpacing: '0.3px',
+                              }}
+                            >
+                              {checked ? '✓ ' : ''}{p.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {chartItems.length > 0 ? (
+                        <>
+                          <BarChart items={chartItems} />
+                          <div style={{ display: 'flex', gap: '20px', marginTop: '16px', flexWrap: 'wrap' }}>
+                            {[{ color: accent, label: 'Precio' }, { color: '#e55', label: 'Costo' }, { color: '#25d366', label: 'Ganancia Neta' }].map(({ color, label }) => (
+                              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)' }}>
+                                <div style={{ width: '12px', height: '12px', background: color, flexShrink: 0 }} />
+                                {label}
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '12px', border: '1px solid var(--border)' }}>
+                          Selecciona al menos un producto para ver el comparativo.
+                        </div>
+                      )}
                     </div>
                   )}
                 </>
