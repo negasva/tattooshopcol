@@ -2,37 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getSupabase, Product } from '../lib/supabase';
+import { computeOps, COP } from '../lib/analytics';
+import DashboardRentabilidad from './DashboardRentabilidad';
 
 const accent = '#FFD400';
-const COP = (n: number) => `$${Math.round(n).toLocaleString('es-CO')}`;
-
-// ─── Operational metrics helper ───────────────────────────────────────────────
-interface OpsMetrics {
-  gBruta: number; gBrutaPct: number;
-  gNeta: number; gNetaPct: number;
-  costoTotal: number; puntoEquilibrio: number;
-  impactoDev: number; impactoEnvio: number;
-  ratioGNvsGB: number; colorGN: string; label: string;
-}
-
-function computeOps(price: number, costo: number, cEnvio: number, tDevPct: number, cDev: number): OpsMetrics {
-  const tDev = tDevPct / 100;
-  const gBruta = price - costo;
-  const gNeta = gBruta * (1 - tDev) - cEnvio - cDev * tDev;
-  const costoTotal = costo + cEnvio;
-  const gBrutaPct = price > 0 ? (gBruta / price) * 100 : 0;
-  const gNetaPct = price > 0 ? (gNeta / price) * 100 : 0;
-  const ratioGNvsGB = gBruta > 0 ? (gNeta / gBruta) * 100 : 0;
-  const colorGN = ratioGNvsGB > 60 ? '#25d366' : ratioGNvsGB >= 30 ? '#FFD400' : '#e55';
-  const label = ratioGNvsGB > 60 ? 'BUENO' : ratioGNvsGB >= 30 ? 'MEDIO' : 'BAJO';
-  return {
-    gBruta, gBrutaPct, gNeta, gNetaPct,
-    costoTotal, puntoEquilibrio: costoTotal,
-    impactoDev: gBruta * tDev + cDev * tDev,
-    impactoEnvio: cEnvio,
-    ratioGNvsGB, colorGN, label,
-  };
-}
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 interface Toast { id: number; message: string; type: 'success' | 'error' }
@@ -317,6 +290,7 @@ export default function AdminPageClient() {
   const [finTab, setFinTab] = useState<'basico' | 'operativo'>('basico');
   const [simUnidades, setSimUnidades] = useState(10);
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
 
   const { toasts, show: showToast } = useToast();
   const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123';
@@ -857,6 +831,18 @@ export default function AdminPageClient() {
               )}
             </div>
           )}
+        </div>
+
+        {/* ── DASHBOARD RENTABILIDAD (Fase 3) ──────────────────────────────── */}
+        <div style={{ marginTop: '40px' }}>
+          <button
+            onClick={() => setShowDashboard(!showDashboard)}
+            style={{ width: '100%', padding: '14px 20px', background: showDashboard ? '#1a1200' : 'var(--surface)', color: showDashboard ? accent : 'var(--text)', border: `2px solid ${accent}`, fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', cursor: 'pointer', letterSpacing: '1.5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <span>📈 DASHBOARD DE RENTABILIDAD · CAC · ROI</span>
+            <span>{showDashboard ? '−' : '+'}</span>
+          </button>
+          {showDashboard && <DashboardRentabilidad products={products} />}
         </div>
       </div>
 
