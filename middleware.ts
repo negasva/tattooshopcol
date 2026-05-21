@@ -14,7 +14,10 @@ export function middleware(req: NextRequest) {
   const origin = req.headers.get('origin') ?? '';
 
   // ── A2: block admin API calls without valid session ──────────────────────
-  if (ADMIN_API_PATHS.some((p) => pathname.startsWith(p))) {
+  // login and logout are public (they manage the session, not require it)
+  const isAdminApi = ADMIN_API_PATHS.some((p) => pathname.startsWith(p));
+  const isPublicAdminRoute = pathname === '/api/admin/login' || pathname === '/api/admin/logout';
+  if (isAdminApi && !isPublicAdminRoute) {
     const token = req.cookies.get('admin_session')?.value;
     const expected = process.env.ADMIN_SESSION_TOKEN;
     if (!expected || token !== expected) {
