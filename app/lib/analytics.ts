@@ -94,31 +94,34 @@ export interface SimScenario {
   totalGanancia: number;
 }
 
+// effective margin: rentabilidadReal when CAC is known, else fall back to gNeta
+export function effectiveMargin(m: ProductMetrics): number {
+  return m.rentabilidadReal !== null ? m.rentabilidadReal : m.ops.gNeta;
+}
+
 export function buildSimScenarios(
   metrics: ProductMetrics[],
   targetGain: number
 ): SimScenario[] {
-  const rentables = metrics.filter(
-    (m) => m.rentabilidadReal !== null && m.rentabilidadReal > 0
-  );
+  const rentables = metrics.filter((m) => effectiveMargin(m) > 0);
   if (rentables.length === 0 || targetGain <= 0) return [];
 
   const scenarios: SimScenario[] = [];
 
-  // Scenario 1: Best ROI kit only
-  const best = [...rentables].sort((a, b) => (b.roi ?? 0) - (a.roi ?? 0))[0];
-  const n1 = Math.ceil(targetGain / best.rentabilidadReal!);
+  // Scenario 1: Best margin kit only
+  const best = [...rentables].sort((a, b) => effectiveMargin(b) - effectiveMargin(a))[0];
+  const n1 = Math.ceil(targetGain / effectiveMargin(best));
   scenarios.push({
     label: 'Kit estrella',
     description: `Solo vendiendo ${best.product.name}`,
-    lines: [{ productName: best.product.name, unidades: n1, ganancia: n1 * best.rentabilidadReal! }],
+    lines: [{ productName: best.product.name, unidades: n1, ganancia: n1 * effectiveMargin(best) }],
     totalUnidades: n1,
-    totalGanancia: n1 * best.rentabilidadReal!,
+    totalGanancia: n1 * effectiveMargin(best),
   });
 
   // Scenario 2: Equal mix across all profitable products
   if (rentables.length > 1) {
-    const sumRent = rentables.reduce((s, m) => s + m.rentabilidadReal!, 0);
+    const sumRent = rentables.reduce((s, m) => s + effectiveMargin(m), 0);
     const nEach = Math.ceil(targetGain / sumRent);
     scenarios.push({
       label: 'Mix equitativo',
@@ -126,28 +129,26 @@ export function buildSimScenarios(
       lines: rentables.map((m) => ({
         productName: m.product.name,
         unidades: nEach,
-        ganancia: nEach * m.rentabilidadReal!,
+        ganancia: nEach * effectiveMargin(m),
       })),
       totalUnidades: nEach * rentables.length,
       totalGanancia: nEach * sumRent,
     });
   }
 
-  // Scenario 3: Weighted by ROI
+  // Scenario 3: Weighted by margin
   if (rentables.length > 1) {
-    const totalROI = rentables.reduce((s, m) => s + (m.roi ?? 0), 0);
-    const weightedAvgRent = rentables.reduce(
-      (s, m) => s + ((m.roi ?? 0) / totalROI) * m.rentabilidadReal!,
-      0
-    );
-    const totalN = weightedAvgRent > 0 ? Math.ceil(targetGain / weightedAvgRent) : 0;
+    const totalM = rentables.reduce((s, m) => s + effectiveMargin(m), 0);
+    const weightedAvg = totalM / rentables.length;
+    const totalN = weightedAvg > 0 ? Math.ceil(targetGain / weightedAvg) : 0;
     const lines = rentables.map((m) => {
-      const n = Math.ceil(((m.roi ?? 0) / totalROI) * totalN);
-      return { productName: m.product.name, unidades: n, ganancia: n * m.rentabilidadReal! };
+      const w = effectiveMargin(m) / totalM;
+      const n = Math.max(1, Math.round(w * totalN));
+      return { productName: m.product.name, unidades: n, ganancia: n * effectiveMargin(m) };
     });
     scenarios.push({
-      label: 'Mix por ROI',
-      description: 'Ponderado según rentabilidad de cada kit',
+      label: 'Mix por margen',
+      description: 'Ponderado según ganancia neta de cada kit',
       lines,
       totalUnidades: lines.reduce((s, l) => s + l.unidades, 0),
       totalGanancia: lines.reduce((s, l) => s + l.ganancia, 0),
