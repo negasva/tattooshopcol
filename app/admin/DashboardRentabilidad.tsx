@@ -103,6 +103,7 @@ export default function DashboardRentabilidad({ products }: { products: Product[
   const [salesData, setSalesData] = useState<MonthlySale[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [tablesReady, setTablesReady] = useState<boolean | null>(null);
 
   const [showMetaForm, setShowMetaForm] = useState(false);
   const [showSalesForm, setShowSalesForm] = useState(false);
@@ -126,6 +127,11 @@ export default function DashboardRentabilidad({ products }: { products: Product[
         sb.from('monthly_performance').select('*').eq('mes', selectedMes).maybeSingle(),
         sb.from('monthly_sales').select('*').eq('mes', selectedMes),
       ]);
+      if (perfRes.error?.code === '42P01' || salesRes.error?.code === '42P01') {
+        setTablesReady(false);
+        return;
+      }
+      setTablesReady(true);
       setPerformance(perfRes.data ?? null);
       setSalesData(salesRes.data ?? []);
       if (perfRes.data) {
@@ -137,6 +143,7 @@ export default function DashboardRentabilidad({ products }: { products: Product[
       });
       setSalesForm(salesMap);
     } catch {
+      setTablesReady(false);
       showToast('Error cargando datos del mes', 'error');
     } finally {
       setLoading(false);
@@ -260,6 +267,22 @@ export default function DashboardRentabilidad({ products }: { products: Product[
           </span>
         )}
       </div>
+
+      {/* ── Migration banner ───────────────────────────────────────────────── */}
+      {tablesReady === false && (
+        <div style={{ marginBottom: '20px', padding: '14px 18px', background: '#2e1a00', border: '1px solid #FFD40066', fontFamily: '"DM Mono", monospace', fontSize: '12px', color: '#FFD400' }}>
+          ⚠ Las tablas del dashboard no existen en Supabase.
+          <br />Ejecuta <strong>SUPABASE_MONTHLY_DATA.sql</strong> en el SQL Editor de Supabase para habilitarlas.
+          <br /><span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Supabase Dashboard → SQL Editor → Nueva query → pega y ejecuta el archivo.</span>
+        </div>
+      )}
+
+      {tablesReady === true && !loading && !performance && (
+        <div style={{ marginBottom: '20px', padding: '12px 18px', background: 'var(--surface2)', border: '1px solid var(--border)', fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)' }}>
+          ℹ Sin datos para {MONTHS.find((m) => m.key === selectedMes)?.label ?? selectedMes}.
+          Abre «REGISTRAR META ADS» y «REGISTRAR VENTAS DEL MES», completa los datos y guarda.
+        </div>
+      )}
 
       {/* ── KPI cards ──────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
