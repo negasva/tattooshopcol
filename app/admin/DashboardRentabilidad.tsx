@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getSupabase, Product } from '../lib/supabase';
 import {
   buildProductMetrics, buildSimScenarios, effectiveMargin,
@@ -49,6 +49,35 @@ function SectionToggle({ label, open, onToggle, badge }: { label: string; open: 
   );
 }
 
+// ─── Delayed tooltip (shows after 1 s hover) ──────────────────────────────────
+function Tip({ children, text }: { children: React.ReactNode; text: string }) {
+  const [show, setShow] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hide = () => { if (timer.current) clearTimeout(timer.current); setShow(false); };
+  return (
+    <span
+      style={{ position: 'relative', cursor: 'help' }}
+      onMouseEnter={() => { timer.current = setTimeout(() => setShow(true), 1000); }}
+      onMouseLeave={hide}
+    >
+      {children}
+      {show && (
+        <div style={{
+          position: 'absolute', bottom: '130%', left: '50%', transform: 'translateX(-50%)',
+          background: '#111', border: `1px solid ${accent}55`, color: 'var(--text)',
+          padding: '8px 12px', fontSize: '11px', fontFamily: '"DM Mono", monospace',
+          lineHeight: 1.6, zIndex: 9999, minWidth: '200px', maxWidth: '300px',
+          pointerEvents: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.7)',
+          whiteSpace: 'normal',
+        }}>
+          <div style={{ color: accent, fontSize: '9px', letterSpacing: '1.5px', marginBottom: '4px', fontWeight: 700 }}>FÓRMULA</div>
+          {text}
+        </div>
+      )}
+    </span>
+  );
+}
+
 function AlertBadge({ alerta }: { alerta: ProductMetrics['alerta'] }) {
   const map: Record<string, [string, string]> = {
     estrella: ['⭐ ESTRELLA', '#25d366'],
@@ -61,14 +90,15 @@ function AlertBadge({ alerta }: { alerta: ProductMetrics['alerta'] }) {
   return <span style={{ color, fontWeight: 700, fontSize: '11px', fontFamily: '"DM Mono", monospace', border: `1px solid ${color}44`, padding: '2px 7px', whiteSpace: 'nowrap' }}>{txt}</span>;
 }
 
-function SortTh({ label, field, current, dir, onClick }: { label: string; field: string; current: string; dir: 'asc' | 'desc'; onClick: (f: string) => void }) {
+function SortTh({ label, field, current, dir, onClick, tip }: { label: string; field: string; current: string; dir: 'asc' | 'desc'; onClick: (f: string) => void; tip?: string }) {
   const active = current === field;
+  const content = <>{label}{active ? (dir === 'desc' ? ' ↓' : ' ↑') : ''}</>;
   return (
     <th
       onClick={() => onClick(field)}
       style={{ padding: '10px 12px', textAlign: 'left', color: active ? accent : 'var(--text-muted)', fontWeight: 700, letterSpacing: '1px', fontSize: '11px', whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none' }}
     >
-      {label}{active ? (dir === 'desc' ? ' ↓' : ' ↑') : ''}
+      {tip ? <Tip text={tip}>{content}</Tip> : content}
     </th>
   );
 }
@@ -232,21 +262,33 @@ export default function DashboardRentabilidad({ products }: { products: Product[
   // CAC = Meta spend / kit units sold (insumos pay their own shipping, no ad attribution)
   const cac = performance && totalVentasKits > 0 ? performance.gasto_meta / totalVentasKits : null;
 
+  const metaAds = performance?.gasto_meta ?? null;
+
   const kitMetrics: ProductMetrics[] = kitsWithCost.map((p) => {
     const unidades = salesData.find((s) => s.product_id === p.id)?.unidades_vendidas ?? 0;
-    return buildProductMetrics(p, unidades, cac);
+    return buildProductMetrics(p, unidades, cac, metaAds);
   });
   const otherMetrics: ProductMetrics[] = othersWithCost.map((p) => {
     const unidades = salesData.find((s) => s.product_id === p.id)?.unidades_vendidas ?? 0;
-    return buildProductMetrics(p, unidades, null); // no CAC for non-kits
+    return buildProductMetrics(p, unidades, null, null);
   });
+  const getMetricVal = (m: ProductMetrics, field: string): number => {
+    switch (field) {
+      case 'price': return m.product.price;
+      case 'gNeta': return m.ops.gNeta;
+      case 'cac': return m.cac ?? -Infinity;
+      case 'rentabilidadReal': return m.rentabilidadReal ?? -Infinity;
+      case 'roi': return m.roi ?? -Infinity;
+      case 'puntoEquilibrio': return m.puntoEquilibrio ?? Infinity;
+      case 'unidades': return m.unidades;
+      case 'gananciaAcumulada': return m.gananciaAcumulada ?? -Infinity;
+      default: return -Infinity;
+    }
+  };
+
   const sortedMetrics = [...kitMetrics].sort((a, b) => {
     const dir = sortDir === 'desc' ? -1 : 1;
-    const field = sortField as keyof ProductMetrics;
-    const av = a[field] ?? -Infinity;
-    const bv = b[field] ?? -Infinity;
-    if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
-    return 0;
+    return (getMetricVal(a, sortField) - getMetricVal(b, sortField)) * dir;
   });
 
   const handleSort = (field: string) => {
@@ -261,6 +303,11 @@ export default function DashboardRentabilidad({ products }: { products: Product[
 
   const kitEstrella = [...kitMetrics].sort((a, b) => (b.roi ?? -Infinity) - (a.roi ?? -Infinity))[0];
   const maxROI = Math.max(...kitMetrics.map((m) => m.roi ?? 0), 1);
+
+  // Monthly break-even: total accumulated gNeta from all kits vs Meta Ads spend
+  const totalGnetaAcum = kitMetrics.reduce((s, m) => s + (m.gananciaAcumulada ?? 0), 0);
+  const breakEvenGap = metaAds !== null ? metaAds - totalGnetaAcum : null;
+  const breakEvenPct = metaAds && metaAds > 0 ? Math.min((totalGnetaAcum / metaAds) * 100, 100) : null;
 
   // Alerts only for kits (CAC-based alerts don't apply to insumos/máquinas)
   const alertas = kitMetrics.filter((m) => m.alerta === 'perdida' || m.alerta === 'riesgo' || m.alerta === 'estrella');
@@ -342,15 +389,33 @@ export default function DashboardRentabilidad({ products }: { products: Product[
           color={totalVentasKits > 0 ? accent : totalVentas > 0 ? '#FFD400' : undefined}
         />
         <KpiCard
-          label="GANANCIA NETA KITS"
-          value={totalGananciaKits !== 0 ? COP(totalGananciaKits) : cac === null && totalGananciaOtros !== 0 ? `${COP(totalGananciaOtros)} (otros)` : '— Sin datos'}
-          sub={totalGananciaKits > 0 ? '✓ Kits (con CAC)' : totalGananciaKits < 0 ? '✕ Pérdida neta' : cac === null ? 'Sin ventas de kits este mes' : 'Requiere ventas + CAC'}
-          color={totalGananciaKits > 0 ? '#25d366' : totalGananciaKits < 0 ? '#e55' : undefined}
+          label="GANANCIA BRUTA KITS"
+          value={totalGnetaAcum > 0 ? COP(totalGnetaAcum) : '— Sin ventas'}
+          sub={totalGnetaAcum > 0 ? `G. Neta total antes de Meta Ads` : 'Registra ventas de kits'}
+          color={totalGnetaAcum > 0 ? '#25d366' : undefined}
+        />
+        <KpiCard
+          label="COBERTURA META ADS"
+          value={
+            breakEvenPct !== null
+              ? `${breakEvenPct.toFixed(0)}%`
+              : performance
+              ? '0%'
+              : '— Sin datos'
+          }
+          sub={
+            breakEvenGap !== null
+              ? breakEvenGap <= 0
+                ? `✓ Meta Ads cubierto (sobran ${COP(-breakEvenGap)})`
+                : `Faltan ${COP(breakEvenGap)} en gNeta para cubrir Meta Ads`
+              : 'Registra Meta Ads y ventas'
+          }
+          color={breakEvenGap !== null ? (breakEvenGap <= 0 ? '#25d366' : breakEvenGap < (metaAds ?? 0) * 0.5 ? '#FFD400' : '#e55') : undefined}
         />
         <KpiCard
           label="KIT ESTRELLA"
-          value={kitEstrella?.roi !== null && kitEstrella?.roi !== undefined ? kitEstrella.product.name.split(' ').slice(0, 2).join(' ') : '— Sin CAC'}
-          sub={kitEstrella?.roi !== null && kitEstrella?.roi !== undefined ? `ROI ${kitEstrella.roi.toFixed(0)}%` : 'Registra ventas de kits'}
+          value={kitEstrella?.roi !== null && kitEstrella?.roi !== undefined ? kitEstrella.product.name.split(' ').slice(0, 2).join(' ') : '— Sin datos'}
+          sub={kitEstrella?.roi !== null && kitEstrella?.roi !== undefined ? `ROI ${kitEstrella.roi.toFixed(0)}%` : 'Agrega costos a los kits'}
           color={kitEstrella?.alerta === 'estrella' ? '#25d366' : undefined}
         />
         <KpiCard
@@ -360,8 +425,38 @@ export default function DashboardRentabilidad({ products }: { products: Product[
           dim
         />
       </div>
+
+      {/* Monthly break-even progress bar */}
+      {metaAds !== null && metaAds > 0 && (
+        <div style={{ marginBottom: '20px', padding: '12px 16px', background: 'var(--surface2)', border: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1.5px' }}>
+              PUNTO DE EQUILIBRIO MENSUAL — ganancia neta acumulada vs Meta Ads
+            </span>
+            <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: breakEvenGap !== null && breakEvenGap <= 0 ? '#25d366' : '#FFD400', fontWeight: 700 }}>
+              {COP(totalGnetaAcum)} / {COP(metaAds)}
+            </span>
+          </div>
+          <div style={{ background: 'var(--bg)', height: '10px', width: '100%', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%',
+              width: `${breakEvenPct ?? 0}%`,
+              background: breakEvenGap !== null && breakEvenGap <= 0 ? '#25d366' : '#FFD400',
+              transition: 'width 0.6s ease',
+            }} />
+          </div>
+          <div style={{ marginTop: '6px', fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)' }}>
+            {breakEvenGap !== null && breakEvenGap > 0
+              ? `Necesitas ${COP(breakEvenGap)} más en ganancia neta para cubrir los anuncios de Meta`
+              : breakEvenGap !== null && breakEvenGap <= 0
+              ? `✓ Meta Ads cubierto este mes`
+              : 'Registra ventas para ver progreso'}
+          </div>
+        </div>
+      )}
+
       <div style={{ marginBottom: '20px', fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
-        El CAC se calcula solo sobre ventas de <strong style={{ color: accent }}>Kits</strong>. Insumos y Máquinas muestran margen sin impacto publicitario.
+        CAC = Meta Ads ÷ kits vendidos (referencia por unidad). <strong style={{ color: accent }}>G. Neta acumulada</strong> es el margen real que cubre el gasto publicitario.
       </div>
 
       {/* ── Alerts (kits only) ──────────────────────────────────────────────── */}
@@ -513,43 +608,63 @@ export default function DashboardRentabilidad({ products }: { products: Product[
               <thead>
                 <tr style={{ borderBottom: `2px solid ${accent}33`, background: 'var(--surface2)' }}>
                   <th style={{ padding: '10px 12px', textAlign: 'left', color: accent, fontWeight: 700, letterSpacing: '1px', fontSize: '11px', whiteSpace: 'nowrap' }}>Kit</th>
-                  <SortTh label="Precio" field="ops.gNeta" current={sortField} dir={sortDir} onClick={handleSort} />
-                  <SortTh label="G. Neta/u" field="ops.gNeta" current={sortField} dir={sortDir} onClick={handleSort} />
-                  <SortTh label="CAC" field="cac" current={sortField} dir={sortDir} onClick={handleSort} />
-                  <SortTh label="Rent. real/u" field="rentabilidadReal" current={sortField} dir={sortDir} onClick={handleSort} />
-                  <SortTh label="ROI %" field="roi" current={sortField} dir={sortDir} onClick={handleSort} />
-                  <SortTh label="P. Equilibrio" field="puntoEquilibrio" current={sortField} dir={sortDir} onClick={handleSort} />
-                  <SortTh label="Unidades" field="unidades" current={sortField} dir={sortDir} onClick={handleSort} />
-                  <SortTh label="Ganancia acum." field="gananciaAcumulada" current={sortField} dir={sortDir} onClick={handleSort} />
-                  <th style={{ padding: '10px 12px', textAlign: 'left', color: accent, fontWeight: 700, letterSpacing: '1px', fontSize: '11px', whiteSpace: 'nowrap' }}>Estado</th>
+                  <SortTh label="Precio" field="price" current={sortField} dir={sortDir} onClick={handleSort} tip="Precio de venta del producto" />
+                  <SortTh label="G. Neta/u" field="gNeta" current={sortField} dir={sortDir} onClick={handleSort} tip={`Ganancia por unidad después de costos, envío y devoluciones.\nFórmula: Precio − Costo − Envío − Impacto devoluciones`} />
+                  <SortTh label="CAC" field="cac" current={sortField} dir={sortDir} onClick={handleSort} tip={`Costo de Adquisición de Cliente (referencia).\nFórmula: Gasto Meta Ads ÷ Total kits vendidos.\nEs un gasto mensual FIJO, no por unidad.`} />
+                  <SortTh label="Rent. ref/u" field="rentabilidadReal" current={sortField} dir={sortDir} onClick={handleSort} tip={`Ganancia hipotética si el CAC se cobrara por unidad vendida (solo referencia).\nFórmula: G. Neta/u − CAC\nEl CAC real es mensual fijo, no por kit.`} />
+                  <SortTh label="ROI %" field="roi" current={sortField} dir={sortDir} onClick={handleSort} tip={`Retorno sobre la inversión del producto.\nFórmula: (G. Neta/u ÷ Costo total) × 100\n>100% = excelente, 50-100% = bueno, <50% = bajo`} />
+                  <SortTh label="P. Equilibrio" field="puntoEquilibrio" current={sortField} dir={sortDir} onClick={handleSort} tip={`Unidades de ESTE kit necesarias para que la ganancia neta acumulada cubra TODO el gasto de Meta Ads del mes.\nFórmula: ceil(Gasto Meta Ads ÷ G. Neta/u)`} />
+                  <SortTh label="Unidades" field="unidades" current={sortField} dir={sortDir} onClick={handleSort} tip="Unidades vendidas registradas este mes" />
+                  <SortTh label="G. Acumulada" field="gananciaAcumulada" current={sortField} dir={sortDir} onClick={handleSort} tip={`Ganancia neta total generada por este kit en el mes (antes de descontar Meta Ads).\nFórmula: G. Neta/u × Unidades vendidas`} />
+                  <th style={{ padding: '10px 12px', textAlign: 'left', color: accent, fontWeight: 700, letterSpacing: '1px', fontSize: '11px', whiteSpace: 'nowrap' }}>
+                    <Tip text={`Estado del kit según su margen:\n⭐ ESTRELLA: ROI > 100% — excelente margen\n✓ OK: ROI 50-100% — buen margen\n⚠ RIESGO: ROI < 50% — margen bajo\n✕ PÉRDIDA: G. Neta negativa — precio menor al costo`}>Estado</Tip>
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {sortedMetrics.map((m, i) => (
                   <tr key={m.product.id} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
                     <td style={{ padding: '10px 12px', color: 'var(--text)', fontWeight: 600 }}>{m.product.name}</td>
-                    <td style={{ padding: '10px 12px', color: accent, fontWeight: 700 }}>{COP(m.product.price)}</td>
-                    <td style={{ padding: '10px 12px', color: m.ops.colorGN }}>{COP(m.ops.gNeta)}</td>
-                    <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{cac !== null ? COP(cac) : '—'}</td>
-                    <td style={{ padding: '10px 12px', color: m.rentabilidadReal !== null ? (m.rentabilidadReal >= 0 ? '#25d366' : '#e55') : 'var(--text-muted)', fontWeight: 700 }}>
-                      {m.rentabilidadReal !== null ? COP(m.rentabilidadReal) : '—'}
+                    <td style={{ padding: '10px 12px', color: accent, fontWeight: 700 }}>
+                      <Tip text={`Precio de venta: ${COP(m.product.price)}`}>{COP(m.product.price)}</Tip>
+                    </td>
+                    <td style={{ padding: '10px 12px', color: m.ops.colorGN }}>
+                      <Tip text={`G. Neta = Precio (${COP(m.product.price)}) − Costo (${COP(m.product.costo ?? 0)}) − Envío (${COP(m.product.costo_envio ?? 40000)}) − Impacto dev. (${COP(m.ops.impactoDev)})\n= ${COP(m.ops.gNeta)}`}>
+                        {COP(m.ops.gNeta)}
+                      </Tip>
+                    </td>
+                    <td style={{ padding: '10px 12px', color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '11px' }}>
+                      {cac !== null
+                        ? <Tip text={`CAC = ${COP(performance?.gasto_meta ?? 0)} Meta Ads ÷ ${totalVentasKits} kits vendidos = ${COP(cac)}\nEs un gasto MENSUAL FIJO, no por unidad.`}>{COP(cac)}</Tip>
+                        : '—'}
+                    </td>
+                    <td style={{ padding: '10px 12px', color: m.rentabilidadReal !== null ? (m.rentabilidadReal >= 0 ? '#25d366' : '#e55') : 'var(--text-muted)' }}>
+                      {m.rentabilidadReal !== null
+                        ? <Tip text={`Rent. ref = G. Neta (${COP(m.ops.gNeta)}) − CAC (${COP(cac ?? 0)}) = ${COP(m.rentabilidadReal)}\nSolo referencia: el CAC es mensual fijo, no por kit.`}>{COP(m.rentabilidadReal)}</Tip>
+                        : '—'}
                     </td>
                     <td style={{ padding: '10px 12px' }}>
                       {m.roi !== null ? (
-                        <span style={{ color: m.roi > 100 ? '#25d366' : m.roi > 50 ? '#FFD400' : '#e55', fontWeight: 700 }}>
-                          {m.roi.toFixed(0)}%
-                          <MiniBar value={m.roi} max={Math.max(maxROI, 100)} color={m.roi > 100 ? '#25d366' : m.roi > 50 ? '#FFD400' : '#e55'} />
-                        </span>
+                        <Tip text={`ROI = (G. Neta ${COP(m.ops.gNeta)} ÷ Costo total ${COP(m.ops.costoTotal)}) × 100 = ${m.roi.toFixed(1)}%`}>
+                          <span style={{ color: m.roi > 100 ? '#25d366' : m.roi > 50 ? '#FFD400' : '#e55', fontWeight: 700 }}>
+                            {m.roi.toFixed(0)}%
+                            <MiniBar value={m.roi} max={Math.max(maxROI, 100)} color={m.roi > 100 ? '#25d366' : m.roi > 50 ? '#FFD400' : '#e55'} />
+                          </span>
+                        </Tip>
                       ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                     </td>
-                    <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>
-                      {m.puntoEquilibrio !== null ? `${m.puntoEquilibrio} uds` : '—'}
+                    <td style={{ padding: '10px 12px', color: m.puntoEquilibrio !== null ? 'var(--text)' : 'var(--text-muted)' }}>
+                      {m.puntoEquilibrio !== null
+                        ? <Tip text={`P. Equilibrio = ceil(Meta Ads ${COP(metaAds ?? 0)} ÷ G. Neta/u ${COP(m.ops.gNeta)}) = ${m.puntoEquilibrio} uds\nVendiendo ${m.puntoEquilibrio} de este kit cubrirías TODO el gasto en Meta Ads.`}>{m.puntoEquilibrio} uds</Tip>
+                        : '—'}
                     </td>
                     <td style={{ padding: '10px 12px', color: m.unidades > 0 ? 'var(--text)' : 'var(--text-muted)' }}>
                       {m.unidades > 0 ? `${m.unidades} uds` : '—'}
                     </td>
-                    <td style={{ padding: '10px 12px', color: m.gananciaAcumulada !== null ? (m.gananciaAcumulada >= 0 ? '#25d366' : '#e55') : 'var(--text-muted)', fontWeight: 700 }}>
-                      {m.gananciaAcumulada !== null ? COP(m.gananciaAcumulada) : '—'}
+                    <td style={{ padding: '10px 12px', color: m.gananciaAcumulada !== null ? '#25d366' : 'var(--text-muted)', fontWeight: 700 }}>
+                      {m.gananciaAcumulada !== null
+                        ? <Tip text={`G. Acumulada = G. Neta/u (${COP(m.ops.gNeta)}) × ${m.unidades} uds = ${COP(m.gananciaAcumulada)}\nAntes de descontar Meta Ads del mes.`}>{COP(m.gananciaAcumulada)}</Tip>
+                        : '—'}
                     </td>
                     <td style={{ padding: '10px 12px' }}>
                       <AlertBadge alerta={m.alerta} />
@@ -562,7 +677,7 @@ export default function DashboardRentabilidad({ products }: { products: Product[
         </div>
       )}
 
-      {/* ── ROI ranking (kits only) ───────────────────────────────────────── */}
+      {/* ── ROI ranking (kits only) — always shown when kits have cost ────── */}
       {kitMetrics.some((m) => m.roi !== null) && (
         <div style={{ marginBottom: '28px', background: 'var(--bg)', border: `1px solid ${accent}22`, padding: '20px 24px' }}>
           <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '2px', marginBottom: '16px', fontFamily: '"DM Mono", monospace' }}>RANKING ROI — KITS (con CAC Meta Ads)</div>
@@ -635,11 +750,8 @@ export default function DashboardRentabilidad({ products }: { products: Product[
                         if (!m) return null;
                         const margin = effectiveMargin(m);
                         const unidadesParaMeta = margin > 0 ? Math.ceil(simTarget / margin) : null;
-                        const peq = cac !== null && m.ops.gNeta > 0
-                          ? Math.ceil(cac / m.ops.gNeta)
-                          : m.ops.gNeta > 0
-                          ? Math.ceil((p.costo ?? 0) / m.ops.gNeta)
-                          : null;
+                        // puntoEquilibrio: already computed in m using metaAds / gNeta
+                        const peq = m.puntoEquilibrio;
                         return (
                           <tr key={p.id} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
                             <td style={{ padding: '9px 12px', color: 'var(--text)', fontWeight: 600 }}>{p.name}</td>

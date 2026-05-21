@@ -54,7 +54,8 @@ export interface ProductMetrics {
 export function buildProductMetrics(
   product: Product,
   unidades: number,
-  cac: number | null
+  cac: number | null,
+  metaAds: number | null = null
 ): ProductMetrics {
   const ops = computeOps(
     product.price,
@@ -64,22 +65,35 @@ export function buildProductMetrics(
     product.costo_devolucion ?? 36000
   );
 
+  // rentabilidadReal: informational only — shows what margin would be if Meta Ads were split per unit
   const rentabilidadReal = cac !== null ? ops.gNeta - cac : null;
-  const roi =
-    rentabilidadReal !== null && ops.costoTotal > 0
-      ? (rentabilidadReal / ops.costoTotal) * 100
-      : null;
-  const gananciaAcumulada =
-    unidades > 0 && rentabilidadReal !== null ? rentabilidadReal * unidades : null;
-  const puntoEquilibrio =
-    cac !== null && ops.gNeta > 0 ? Math.ceil(cac / ops.gNeta) : null;
 
+  // ROI: pure margin — how good is this kit's margin independent of ad spend
+  // Formula: (Ganancia Neta / Costo Total) × 100
+  const roi = ops.costoTotal > 0 ? (ops.gNeta / ops.costoTotal) * 100 : null;
+
+  // gananciaAcumulada: gross margin earned this month (Meta Ads is a fixed monthly cost, not per-unit)
+  // Formula: G. Neta/u × Unidades vendidas
+  const gananciaAcumulada = unidades > 0 ? ops.gNeta * unidades : null;
+
+  // puntoEquilibrio: units of THIS kit needed to cover the ENTIRE Meta Ads budget (if only selling this kit)
+  // Formula: ceil(Gasto Meta Ads / G. Neta/u)
+  // Consistent: selling puntoEquilibrio units gives gNeta × pe ≥ metaAds ✓
+  const puntoEquilibrio =
+    metaAds !== null && metaAds > 0 && ops.gNeta > 0
+      ? Math.ceil(metaAds / ops.gNeta)
+      : null;
+
+  // alerta: based on pure margin quality — no Meta Ads data required
   let alerta: ProductMetrics['alerta'] = 'sin-cac';
-  if (cac !== null) {
-    if (roi !== null && roi > 100) alerta = 'estrella';
-    else if (rentabilidadReal !== null && rentabilidadReal < 0) alerta = 'perdida';
-    else if (rentabilidadReal !== null && rentabilidadReal < ops.gNeta * 0.3) alerta = 'riesgo';
-    else alerta = 'ok';
+  if (ops.gNeta < 0) {
+    alerta = 'perdida';
+  } else if (roi !== null && roi > 100) {
+    alerta = 'estrella';
+  } else if (roi !== null && roi >= 50) {
+    alerta = 'ok';
+  } else if (roi !== null) {
+    alerta = 'riesgo';
   }
 
   return { product, ops, unidades, cac, rentabilidadReal, roi, gananciaAcumulada, puntoEquilibrio, alerta };
@@ -94,9 +108,9 @@ export interface SimScenario {
   totalGanancia: number;
 }
 
-// effective margin: rentabilidadReal when CAC is known, else fall back to gNeta
+// effective margin: always gNeta (Meta Ads is a fixed monthly cost, not per-unit)
 export function effectiveMargin(m: ProductMetrics): number {
-  return m.rentabilidadReal !== null ? m.rentabilidadReal : m.ops.gNeta;
+  return m.ops.gNeta;
 }
 
 export function buildSimScenarios(
