@@ -390,8 +390,13 @@ export default function AdminPageClient() {
   };
 
   const handleApplyGroup = (group: ComponentGroup, mode: 'replace' | 'append') => {
-    const clean = (group.components as KitComponent[]).map(({ id: _id, ...rest }) => rest);
-    setKitComponents(mode === 'replace' ? clean : [...kitComponents, ...clean]);
+    // Auto-sync costs from current product list before applying
+    const synced = (group.components as KitComponent[]).map(({ id: _id, ...c }) => {
+      if (!c.source_product_id) return c;
+      const linked = products.find((p) => p.id === c.source_product_id);
+      return linked?.costo && linked.costo > 0 ? { ...c, costo_unitario: linked.costo } : c;
+    });
+    setKitComponents(mode === 'replace' ? synced : [...kitComponents, ...synced]);
     setCostMode('components');
     showToast(mode === 'replace' ? `Grupo "${group.name}" aplicado` : `Grupo "${group.name}" agregado`);
   };
