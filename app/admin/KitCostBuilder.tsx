@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { Product } from '../lib/supabase';
 import { COP } from '../lib/analytics';
 
@@ -57,6 +57,27 @@ export default function KitCostBuilder({
   const [savingGroupName, setSavingGroupName] = useState('');
   const [showSaveInput, setShowSaveInput] = useState(false);
   const suggRef = useRef<HTMLDivElement>(null);
+  const componentsRef = useRef(components);
+  const onChangeRef = useRef(onChange);
+  useEffect(() => { componentsRef.current = components; }, [components]);
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+
+  // Auto-sync component costs from linked products silently
+  const syncCosts = useCallback(() => {
+    const current = componentsRef.current;
+    const synced = current.map((c) => {
+      if (!c.source_product_id) return c;
+      const linked = products.find((p) => p.id === c.source_product_id);
+      if (linked?.costo !== undefined && linked.costo > 0 && linked.costo !== c.costo_unitario) {
+        return { ...c, costo_unitario: linked.costo };
+      }
+      return c;
+    });
+    if (synced.some((c, i) => c !== current[i])) onChangeRef.current(synced);
+  }, [products]);
+
+  // Run on mount and whenever products list changes
+  useEffect(() => { syncCosts(); }, [syncCosts]);
 
   const total = useMemo(
     () => components.reduce((sum, c) => sum + c.cantidad * c.costo_unitario, 0),
@@ -347,13 +368,7 @@ export default function KitCostBuilder({
                 </tr>
               </thead>
               <tbody>
-                {components.map((c, idx) => {
-                  const linkedProduct = c.source_product_id
-                    ? products.find((p) => p.id === c.source_product_id)
-                    : null;
-                  const costOutOfSync = linkedProduct?.costo && linkedProduct.costo !== c.costo_unitario;
-
-                  return (
+                {components.map((c, idx) => (
                     <tr key={idx} style={{ borderBottom: '1px solid var(--border)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
                       <td style={{ padding: '6px 10px', minWidth: '100px' }}>
                         <select
@@ -368,22 +383,7 @@ export default function KitCostBuilder({
                         <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           {c.nombre}
                           {c.source_product_id && (
-                            <span title="Vinculado a producto existente" style={{ color: accent, fontSize: '10px' }}>⬡</span>
-                          )}
-                          {costOutOfSync && (
-                            <button
-                              type="button"
-                              title={`Precio del producto cambió a ${COP(linkedProduct!.costo!)}. Clic para actualizar.`}
-                              onClick={() => handleUpdate(idx, 'costo_unitario', linkedProduct!.costo!)}
-                              style={{
-                                background: '#e5530022', border: '1px solid #e55',
-                                color: '#e55', fontSize: '9px', cursor: 'pointer',
-                                padding: '1px 5px', fontFamily: '"DM Mono", monospace',
-                                letterSpacing: '0.5px',
-                              }}
-                            >
-                              ↑ precio cambió → {COP(linkedProduct!.costo!)}
-                            </button>
+                            <span title="Vinculado a producto — costo se actualiza automáticamente" style={{ color: accent, fontSize: '10px' }}>⬡</span>
                           )}
                         </span>
                       </td>
@@ -398,7 +398,7 @@ export default function KitCostBuilder({
                         <input
                           type="number" min="0" value={c.costo_unitario}
                           onChange={(e) => handleUpdate(idx, 'costo_unitario', Number(e.target.value))}
-                          style={{ ...cellInput, width: '110px', borderColor: costOutOfSync ? '#e55' : 'var(--border)' }}
+                          style={{ ...cellInput, width: '110px' }}
                         />
                       </td>
                       <td style={{ padding: '6px 10px', color: accent, fontWeight: 700, whiteSpace: 'nowrap' }}>
@@ -414,8 +414,7 @@ export default function KitCostBuilder({
                         </button>
                       </td>
                     </tr>
-                  );
-                })}
+                ))}
               </tbody>
               <tfoot>
                 <tr style={{ borderTop: `2px solid ${accent}33`, background: 'var(--surface2)' }}>

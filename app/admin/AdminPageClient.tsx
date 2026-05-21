@@ -104,34 +104,47 @@ function MarginBadge({ price, costo }: { price: number; costo?: number }) {
 
 // ─── CSS bar chart ────────────────────────────────────────────────────────────
 function BarChart({ items }: { items: { label: string; price: number; costo: number; gNeta: number; colorGN: string }[] }) {
+  const [activeSeries, setActiveSeries] = useState<string | null>(null);
   const maxVal = Math.max(...items.map((i) => i.price));
-  const barStyle = (pct: number, color: string): React.CSSProperties => ({
-    height: '14px', width: `${Math.max((pct / maxVal) * 100, 0)}%`,
-    background: color, transition: 'width 0.4s ease', minWidth: pct > 0 ? '2px' : '0',
-  });
+
+  const SERIES = [
+    { key: 'price',  label: 'Precio  ', color: accent },
+    { key: 'costo',  label: 'Costo   ', color: '#e55' },
+    { key: 'gNeta',  label: 'G. Neta ', color: '#25d366' },
+  ] as const;
+
+  const handleSeriesClick = (key: string) => {
+    setActiveSeries((prev) => (prev === key ? null : key));
+  };
+
+  const opacity = (key: string) =>
+    activeSeries === null || activeSeries === key ? 1 : 0.2;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {items.map((item) => (
-        <div key={item.label}>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px', fontFamily: '"DM Mono", monospace', letterSpacing: '0.5px' }}>
-            {item.label}
-          </div>
-          {[
-            { label: 'Precio  ', val: item.price, color: accent },
-            { label: 'Costo   ', val: item.costo, color: '#e55' },
-            { label: 'G. Neta ', val: Math.max(item.gNeta, 0), color: item.colorGN },
-          ].map(({ label: l, val, color }) => (
-            <div key={l} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
-              <div style={{ width: '56px', fontSize: '10px', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', flexShrink: 0 }}>{l}</div>
-              <div style={{ flex: 1, background: 'var(--surface2)', height: '14px', overflow: 'hidden' }}>
-                <div style={barStyle(val, color)} />
-              </div>
-              <div style={{ width: '88px', fontSize: '10px', textAlign: 'right', fontFamily: '"DM Mono", monospace', color, flexShrink: 0 }}>{COP(val)}</div>
+      {items.map((item) => {
+        const vals: Record<string, number> = { price: item.price, costo: item.costo, gNeta: Math.max(item.gNeta, 0) };
+        return (
+          <div key={item.label}>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px', fontFamily: '"DM Mono", monospace', letterSpacing: '0.5px' }}>
+              {item.label}
             </div>
-          ))}
-        </div>
-      ))}
+            {SERIES.map(({ key, label, color }) => (
+              <div
+                key={key}
+                onClick={() => handleSeriesClick(key)}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px', cursor: 'pointer', opacity: opacity(key), transition: 'opacity 0.2s' }}
+              >
+                <div style={{ width: '56px', fontSize: '10px', color, fontFamily: '"DM Mono", monospace', flexShrink: 0, fontWeight: activeSeries === key ? 700 : 400 }}>{label}</div>
+                <div style={{ flex: 1, background: 'var(--surface2)', height: '14px', overflow: 'hidden' }}>
+                  <div style={{ height: '14px', width: `${Math.max((vals[key] / maxVal) * 100, 0)}%`, background: color, transition: 'width 0.4s ease', minWidth: vals[key] > 0 ? '2px' : '0' }} />
+                </div>
+                <div style={{ width: '88px', fontSize: '10px', textAlign: 'right', fontFamily: '"DM Mono", monospace', color, flexShrink: 0 }}>{COP(vals[key])}</div>
+              </div>
+            ))}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -390,8 +403,13 @@ export default function AdminPageClient() {
   };
 
   const handleApplyGroup = (group: ComponentGroup, mode: 'replace' | 'append') => {
-    const clean = (group.components as KitComponent[]).map(({ id: _id, ...rest }) => rest);
-    setKitComponents(mode === 'replace' ? clean : [...kitComponents, ...clean]);
+    // Auto-sync costs from current product list before applying
+    const synced = (group.components as KitComponent[]).map(({ id: _id, ...c }) => {
+      if (!c.source_product_id) return c;
+      const linked = products.find((p) => p.id === c.source_product_id);
+      return linked?.costo && linked.costo > 0 ? { ...c, costo_unitario: linked.costo } : c;
+    });
+    setKitComponents(mode === 'replace' ? synced : [...kitComponents, ...synced]);
     setCostMode('components');
     showToast(mode === 'replace' ? `Grupo "${group.name}" aplicado` : `Grupo "${group.name}" agregado`);
   };
