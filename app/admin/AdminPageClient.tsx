@@ -335,7 +335,6 @@ export default function AdminPageClient() {
   const [chartSelection, setChartSelection] = useState<Set<string> | null>(null);
 
   const { toasts, show: showToast } = useToast();
-  const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123';
 
   // A1: check existing server session on mount
   useEffect(() => {
