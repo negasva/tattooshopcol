@@ -218,13 +218,29 @@ export default function DashboardRentabilidad({ products }: { products: Product[
 
   // ── Computed metrics ───────────────────────────────────────────────────────
   const productsWithCost = products.filter((p) => p.costo && p.costo > 0);
-  const totalVentas = salesData.reduce((sum, s) => sum + s.unidades_vendidas, 0);
-  const cac = performance && totalVentas > 0 ? performance.gasto_meta / totalVentas : null;
 
-  const allMetrics: ProductMetrics[] = productsWithCost.map((p) => {
+  // CAC only applies to Kits — Meta Ads spend is for selling kits, not insumos/máquinas
+  const kitsWithCost = productsWithCost.filter((p) => p.category === 'Kits');
+  const othersWithCost = productsWithCost.filter((p) => p.category !== 'Kits');
+
+  const kitSaleIds = new Set(kitsWithCost.map((p) => p.id));
+  const totalVentasKits = salesData
+    .filter((s) => kitSaleIds.has(s.product_id))
+    .reduce((sum, s) => sum + s.unidades_vendidas, 0);
+  const totalVentas = salesData.reduce((sum, s) => sum + s.unidades_vendidas, 0);
+
+  // CAC = Meta spend / kit units sold (insumos pay their own shipping, no ad attribution)
+  const cac = performance && totalVentasKits > 0 ? performance.gasto_meta / totalVentasKits : null;
+
+  const kitMetrics: ProductMetrics[] = kitsWithCost.map((p) => {
     const unidades = salesData.find((s) => s.product_id === p.id)?.unidades_vendidas ?? 0;
     return buildProductMetrics(p, unidades, cac);
   });
+  const otherMetrics: ProductMetrics[] = othersWithCost.map((p) => {
+    const unidades = salesData.find((s) => s.product_id === p.id)?.unidades_vendidas ?? 0;
+    return buildProductMetrics(p, unidades, null); // no CAC for non-kits
+  });
+  const allMetrics: ProductMetrics[] = [...kitMetrics, ...otherMetrics];
 
   const sortedMetrics = [...allMetrics].sort((a, b) => {
     const dir = sortDir === 'desc' ? -1 : 1;
@@ -240,12 +256,16 @@ export default function DashboardRentabilidad({ products }: { products: Product[
     else { setSortField(field); setSortDir('desc'); }
   };
 
-  const totalGanancia = allMetrics.reduce((s, m) => s + (m.gananciaAcumulada ?? 0), 0);
-  const kitEstrella = [...allMetrics].sort((a, b) => (b.roi ?? -Infinity) - (a.roi ?? -Infinity))[0];
-  const maxROI = Math.max(...allMetrics.map((m) => m.roi ?? 0));
+  // KPI totals: ganancia from kits only (CAC-adjusted), others counted separately
+  const totalGananciaKits = kitMetrics.reduce((s, m) => s + (m.gananciaAcumulada ?? 0), 0);
+  const totalGananciaOtros = otherMetrics.reduce((s, m) => s + (m.gananciaAcumulada ?? 0), 0);
+  const totalGanancia = totalGananciaKits + totalGananciaOtros;
 
-  // Alerts
-  const alertas = allMetrics.filter((m) => m.alerta === 'perdida' || m.alerta === 'riesgo' || m.alerta === 'estrella');
+  const kitEstrella = [...kitMetrics].sort((a, b) => (b.roi ?? -Infinity) - (a.roi ?? -Infinity))[0];
+  const maxROI = Math.max(...kitMetrics.map((m) => m.roi ?? 0), 1);
+
+  // Alerts only for kits (CAC-based alerts don't apply to insumos/máquinas)
+  const alertas = kitMetrics.filter((m) => m.alerta === 'perdida' || m.alerta === 'riesgo' || m.alerta === 'estrella');
 
   // Simulator scenarios
   const scenarios = buildSimScenarios(allMetrics, simTarget);
@@ -298,24 +318,24 @@ export default function DashboardRentabilidad({ products }: { products: Product[
       )}
 
       {/* ── KPI cards ──────────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '8px' }}>
         <KpiCard
-          label="CAC ACTUAL"
+          label="CAC ACTUAL (KITS)"
           value={cac !== null ? COP(cac) : '— Sin datos'}
-          sub={cac !== null ? `${totalVentas} ventas · ${COP(performance?.gasto_meta ?? 0)} en Meta` : 'Registra Meta Ads y ventas'}
+          sub={cac !== null ? `${totalVentasKits} kits vendidos · ${COP(performance?.gasto_meta ?? 0)} en Meta` : 'Registra Meta Ads y ventas de kits'}
           color={cac !== null ? (cac < 80000 ? '#25d366' : cac < 120000 ? '#FFD400' : '#e55') : undefined}
         />
         <KpiCard
-          label="VENTAS DEL MES"
-          value={totalVentas > 0 ? `${totalVentas} uds` : '— Sin datos'}
-          sub={totalVentas > 0 ? selectedMonthLabel : 'Registra ventas abajo'}
-          color={totalVentas > 0 ? accent : undefined}
+          label="KITS VENDIDOS"
+          value={totalVentasKits > 0 ? `${totalVentasKits} uds` : '— Sin datos'}
+          sub={totalVentasKits > 0 ? `${selectedMonthLabel}${totalVentas !== totalVentasKits ? ` · +${totalVentas - totalVentasKits} insumos/máq.` : ''}` : 'Registra ventas de kits'}
+          color={totalVentasKits > 0 ? accent : undefined}
         />
         <KpiCard
-          label="GANANCIA NETA TOTAL"
-          value={totalGanancia !== 0 ? COP(totalGanancia) : '— Sin datos'}
-          sub={totalGanancia > 0 ? '✓ Acumulada este mes' : totalGanancia < 0 ? '✕ Pérdida neta' : 'Requiere ventas + CAC'}
-          color={totalGanancia > 0 ? '#25d366' : totalGanancia < 0 ? '#e55' : undefined}
+          label="GANANCIA NETA KITS"
+          value={totalGananciaKits !== 0 ? COP(totalGananciaKits) : '— Sin datos'}
+          sub={totalGananciaKits > 0 ? '✓ Kits (con CAC)' : totalGananciaKits < 0 ? '✕ Pérdida neta' : 'Requiere ventas + CAC'}
+          color={totalGananciaKits > 0 ? '#25d366' : totalGananciaKits < 0 ? '#e55' : undefined}
         />
         <KpiCard
           label="KIT ESTRELLA"
@@ -326,27 +346,30 @@ export default function DashboardRentabilidad({ products }: { products: Product[
         <KpiCard
           label="LEADS META"
           value={performance?.leads ? String(performance.leads) : '— Sin datos'}
-          sub={performance ? `Conv. ${totalVentas > 0 ? ((totalVentas / performance.leads) * 100).toFixed(1) : 0}%` : 'Registra Meta Ads'}
+          sub={performance && totalVentasKits > 0 ? `Conv. kits ${((totalVentasKits / performance.leads) * 100).toFixed(1)}%` : 'Registra Meta Ads'}
           dim
         />
       </div>
+      <div style={{ marginBottom: '20px', fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
+        El CAC se calcula solo sobre ventas de <strong style={{ color: accent }}>Kits</strong>. Insumos y Máquinas muestran margen sin impacto publicitario.
+      </div>
 
-      {/* ── Alerts ─────────────────────────────────────────────────────────── */}
+      {/* ── Alerts (kits only) ──────────────────────────────────────────────── */}
       {alertas.length > 0 && (
         <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {allMetrics.filter((m) => m.alerta === 'estrella').map((m) => (
+          {kitMetrics.filter((m) => m.alerta === 'estrella').map((m) => (
             <div key={m.product.id} style={{ padding: '10px 14px', background: '#0d2b1a', border: '1px solid #25d36644', fontFamily: '"DM Mono", monospace', fontSize: '12px', color: '#25d366' }}>
               ⭐ <strong>{m.product.name}</strong> — Kit estrella. ROI {m.roi?.toFixed(0)}%. Prioriza presupuesto de Meta en este kit.
             </div>
           ))}
-          {allMetrics.filter((m) => m.alerta === 'perdida').map((m) => (
+          {kitMetrics.filter((m) => m.alerta === 'perdida').map((m) => (
             <div key={m.product.id} style={{ padding: '10px 14px', background: '#2e1a1a', border: '1px solid #e5533344', fontFamily: '"DM Mono", monospace', fontSize: '12px', color: '#e55' }}>
-              🔴 <strong>{m.product.name}</strong> — CAC ({COP(cac!)}) supera la ganancia neta ({COP(m.ops.gNeta)}). Este kit no es rentable con el gasto actual.
+              🔴 <strong>{m.product.name}</strong> — CAC ({COP(cac!)}) supera la ganancia neta del kit ({COP(m.ops.gNeta)}). Sube el precio o baja el costo para mejorar rentabilidad.
             </div>
           ))}
-          {allMetrics.filter((m) => m.alerta === 'riesgo').map((m) => (
+          {kitMetrics.filter((m) => m.alerta === 'riesgo').map((m) => (
             <div key={m.product.id} style={{ padding: '10px 14px', background: '#2e220a', border: '1px solid #FFD40044', fontFamily: '"DM Mono", monospace', fontSize: '12px', color: '#FFD400' }}>
-              🟡 <strong>{m.product.name}</strong> — Margen post-CAC bajo ({COP(m.rentabilidadReal ?? 0)}). Considera subir precio o reducir costos operativos.
+              🟡 <strong>{m.product.name}</strong> — Margen post-CAC bajo ({COP(m.rentabilidadReal ?? 0)}). Considera subir precio o reducir costos operativos del kit.
             </div>
           ))}
         </div>
@@ -505,12 +528,12 @@ export default function DashboardRentabilidad({ products }: { products: Product[
         </div>
       )}
 
-      {/* ── ROI ranking ───────────────────────────────────────────────────── */}
-      {allMetrics.some((m) => m.roi !== null) && (
+      {/* ── ROI ranking (kits only) ───────────────────────────────────────── */}
+      {kitMetrics.some((m) => m.roi !== null) && (
         <div style={{ marginBottom: '28px', background: 'var(--bg)', border: `1px solid ${accent}22`, padding: '20px 24px' }}>
-          <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '2px', marginBottom: '16px', fontFamily: '"DM Mono", monospace' }}>RANKING ROI POR KIT</div>
+          <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '2px', marginBottom: '16px', fontFamily: '"DM Mono", monospace' }}>RANKING ROI — KITS (con CAC Meta Ads)</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {[...allMetrics]
+            {[...kitMetrics]
               .filter((m) => m.roi !== null)
               .sort((a, b) => (b.roi ?? 0) - (a.roi ?? 0))
               .map((m, idx) => (
