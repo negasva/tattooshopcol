@@ -23,6 +23,7 @@ interface MonthlySale {
   mes: string;
   product_id: string;
   unidades_vendidas: number;
+  unidades_devueltas?: number;
 }
 
 // ─── Small components ─────────────────────────────────────────────────────────
@@ -195,6 +196,7 @@ export default function DashboardRentabilidad({ products }: { products: Product[
 
   const [perfForm, setPerfForm] = useState({ gasto_meta: 1125000, leads: 969 });
   const [salesForm, setSalesForm] = useState<Record<string, number>>({});
+  const [devueltasForm, setDevueltasForm] = useState<Record<string, number>>({});
 
   const [simTarget, setSimTarget] = useState(5000000);
   const [sortField, setSortField] = useState('roi');
@@ -225,10 +227,13 @@ export default function DashboardRentabilidad({ products }: { products: Product[
         setPerfForm({ gasto_meta: perfRes.data.gasto_meta, leads: perfRes.data.leads });
       }
       const salesMap: Record<string, number> = {};
+      const devueltasMap: Record<string, number> = {};
       (salesRes.data ?? []).forEach((s: MonthlySale) => {
         salesMap[s.product_id] = s.unidades_vendidas;
+        devueltasMap[s.product_id] = s.unidades_devueltas ?? 0;
       });
       setSalesForm(salesMap);
+      setDevueltasForm(devueltasMap);
       // Fetch previous month for comparison
       const prev = prevMonthKey(selectedMes);
       const [prevPerfRes, prevSalesRes] = await Promise.all([
@@ -283,7 +288,7 @@ export default function DashboardRentabilidad({ products }: { products: Product[
       const entries = Object.entries(salesForm).filter(([, v]) => v > 0);
       for (const [product_id, unidades_vendidas] of entries) {
         const existing = salesData.find((s) => s.product_id === product_id);
-        const payload = { mes: selectedMes, product_id, unidades_vendidas, updated_at: new Date().toISOString() };
+        const payload = { mes: selectedMes, product_id, unidades_vendidas, unidades_devueltas: devueltasForm[product_id] ?? 0, updated_at: new Date().toISOString() };
         if (existing?.id) {
           const { error } = await sb.from('monthly_sales').update(payload).eq('id', existing.id);
           if (error) throw error;
@@ -330,7 +335,10 @@ export default function DashboardRentabilidad({ products }: { products: Product[
   const metaAds = performance?.gasto_meta ?? null;
 
   const kitMetrics: ProductMetrics[] = kitsWithCost.map((p) => {
-    const unidades = salesData.find((s) => s.product_id === p.id)?.unidades_vendidas ?? 0;
+    const sale = salesData.find((s) => s.product_id === p.id);
+    const vendidas = sale?.unidades_vendidas ?? 0;
+    const devueltas = sale?.unidades_devueltas ?? 0;
+    const unidades = Math.max(0, vendidas - devueltas);
     return buildProductMetrics(p, unidades, cac, metaAds, performance?.leads ?? null);
   });
   const otherMetrics: ProductMetrics[] = othersWithCost.map((p) => {
@@ -496,6 +504,19 @@ export default function DashboardRentabilidad({ products }: { products: Product[
           sub={<>{totalVentasKits > 0 ? selectedMonthLabel : 'Registra ventas de kits'}<Delta pct={deltaUnits} /></>}
           color={totalVentasKits > 0 ? accent : undefined}
         />
+        {(() => {
+          const totalDevueltas = salesData
+            .filter(s => kitSaleIds.has(s.product_id))
+            .reduce((sum, s) => sum + (s.unidades_devueltas ?? 0), 0);
+          return totalDevueltas > 0 ? (
+            <KpiCard
+              label="DEVOLUCIONES"
+              value={`${totalDevueltas} uds`}
+              sub={`${((totalDevueltas / (totalVentasKits + totalDevueltas)) * 100).toFixed(1)}% tasa dev.`}
+              color="#e55"
+            />
+          ) : null;
+        })()}
         <KpiCard
           label="REVENUE TOTAL"
           value={totalRevenue > 0 ? COP(totalRevenue) : '— Sin ventas'}
@@ -716,6 +737,20 @@ export default function DashboardRentabilidad({ products }: { products: Product[
                               style={{ ...inputStyle, borderColor: isKit && (salesForm[p.id] ?? 0) > 0 ? accent : 'var(--border)' }}
                               placeholder="0"
                             />
+                            {isKit && (
+                              <div style={{ marginTop: '4px' }}>
+                                <label style={{ display: 'block', marginBottom: '3px', fontSize: '9px', color: '#e55', letterSpacing: '1px', fontFamily: '"DM Mono", monospace' }}>
+                                  DEVOLUCIONES
+                                </label>
+                                <input
+                                  type="number" min="0"
+                                  value={devueltasForm[p.id] ?? 0}
+                                  onChange={(e) => setDevueltasForm({ ...devueltasForm, [p.id]: Number(e.target.value) })}
+                                  style={{ ...inputStyle, borderColor: (devueltasForm[p.id] ?? 0) > 0 ? '#e55' : 'var(--border)' }}
+                                  placeholder="0"
+                                />
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -748,7 +783,7 @@ export default function DashboardRentabilidad({ products }: { products: Product[
                 <tr style={{ borderBottom: `2px solid ${accent}33`, background: 'var(--surface2)' }}>
                   <th style={{ padding: '10px 12px', textAlign: 'left', color: accent, fontWeight: 700, letterSpacing: '1px', fontSize: '11px', whiteSpace: 'nowrap' }}>Kit</th>
                   <SortTh label="Precio" field="price" current={sortField} dir={sortDir} onClick={handleSort} tip="Precio de venta actual del producto" />
-                  <SortTh label="G. Neta/u" field="gNeta" current={sortField} dir={sortDir} onClick={handleSort} tip="Ganancia por unidad = Precio − Costo − Envío − Impacto devoluciones" />
+                  <SortTh label="G. Neta/u" field="gNeta" current={sortField} dir={sortDir} onClick={handleSort} tip="Ganancia por unidad = Precio − Costo − Envío" />
                   <SortTh label="CAC" field="cac" current={sortField} dir={sortDir} onClick={handleSort} tip="Costo de Adquisición = Meta Ads ÷ Kits vendidos.\nEs mensual fijo, no por unidad." />
                   <SortTh label="ROI %" field="roi" current={sortField} dir={sortDir} onClick={handleSort} tip="ROI = (G. Neta ÷ Costo total) × 100\n>100% excelente · 50-100% bueno · <50% bajo" />
                   <SortTh label="P. Equilibrio" field="puntoEquilibrio" current={sortField} dir={sortDir} onClick={handleSort} tip="Unidades de ESTE kit para cubrir TODO el gasto de Meta Ads.\nFórmula: ceil(Meta Ads ÷ G. Neta/u)" />
@@ -778,8 +813,6 @@ export default function DashboardRentabilidad({ products }: { products: Product[
                         { val: COP(m.product.costo ?? 0), lbl: 'Costo' },
                         '−',
                         { val: COP(m.product.costo_envio ?? 40000), lbl: 'Envío' },
-                        '−',
-                        { val: COP(m.ops.impactoDev), lbl: 'Dev.' },
                         '=',
                         { val: COP(m.ops.gNeta), lbl: 'G. Neta/u' },
                       ]} />}>{COP(m.ops.gNeta)}</Tip>

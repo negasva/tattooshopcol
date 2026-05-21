@@ -7,7 +7,6 @@ export interface OpsMetrics {
   gNeta: number;
   gNetaPct: number;
   costoTotal: number;
-  impactoDev: number;
   impactoEnvio: number;
   ratioGNvsGB: number;
   colorGN: string;
@@ -17,13 +16,10 @@ export interface OpsMetrics {
 export function computeOps(
   price: number,
   costo: number,
-  cEnvio: number,
-  tDevPct: number,
-  cDev: number
+  cEnvio: number
 ): OpsMetrics {
-  const tDev = tDevPct / 100;
   const gBruta = price - costo;
-  const gNeta = gBruta * (1 - tDev) - cEnvio - cDev * tDev;
+  const gNeta = gBruta - cEnvio;
   const costoTotal = costo + cEnvio;
   const gBrutaPct = price > 0 ? (gBruta / price) * 100 : 0;
   const gNetaPct = price > 0 ? (gNeta / price) * 100 : 0;
@@ -32,7 +28,6 @@ export function computeOps(
   const label = ratioGNvsGB > 60 ? 'BUENO' : ratioGNvsGB >= 30 ? 'MEDIO' : 'BAJO';
   return {
     gBruta, gBrutaPct, gNeta, gNetaPct, costoTotal,
-    impactoDev: gBruta * tDev + cDev * tDev,
     impactoEnvio: cEnvio,
     ratioGNvsGB, colorGN, label,
   };
@@ -68,8 +63,6 @@ export function buildProductMetrics(
     product.price,
     product.costo!,
     product.costo_envio ?? 40000,
-    product.tasa_devolucion ?? 25,
-    product.costo_devolucion ?? 36000
   );
 
   // rentabilidadReal: informational only — shows what margin would be if Meta Ads were split per unit

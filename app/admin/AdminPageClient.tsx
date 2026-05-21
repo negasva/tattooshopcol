@@ -192,7 +192,7 @@ function CategoryTable({ category, products, onSaveField, onEdit, onDelete, onEx
           <tbody>
             {paginated.map((p, i) => {
               const ops = (p.costo && p.costo > 0)
-                ? computeOps(p.price, p.costo, p.costo_envio || 40000, p.tasa_devolucion || 25, p.costo_devolucion || 36000)
+                ? computeOps(p.price, p.costo, p.costo_envio || 40000)
                 : null;
 
               return (
@@ -277,7 +277,7 @@ const emptyForm = {
   name: '', category: 'Kits', price: 0, original_price: 0,
   discount_percentage: 0, image_url: '', specs: '', tag: '', inventory: 0,
   costo: 0, margen_deseado: 0,
-  costo_envio: 40000, tasa_devolucion: 25, costo_devolucion: 36000,
+  costo_envio: 40000,
 };
 
 // ─── Stat box ─────────────────────────────────────────────────────────────────
@@ -480,9 +480,6 @@ export default function AdminPageClient() {
     if (formData.margen_deseado < 0) {
       showToast('El margen deseado no puede ser negativo', 'error'); return;
     }
-    if (formData.tasa_devolucion < 0 || formData.tasa_devolucion > 100) {
-      showToast('La tasa de devolución debe estar entre 0 y 100', 'error'); return;
-    }
     if (formData.costo_envio < 0) {
       showToast('El costo de envío debe ser positivo', 'error'); return;
     }
@@ -560,8 +557,6 @@ export default function AdminPageClient() {
       image_url: product.image_url || '', specs: product.specs, tag: product.tag, inventory: product.inventory,
       costo: product.costo || 0, margen_deseado: product.margen_deseado || 0,
       costo_envio: product.costo_envio ?? 40000,
-      tasa_devolucion: product.tasa_devolucion ?? 25,
-      costo_devolucion: product.costo_devolucion ?? 36000,
     });
     // Load kit components and auto-update costs from linked products
     try {
@@ -613,12 +608,12 @@ export default function AdminPageClient() {
   const downloadCSV = () => {
     const withCost = products.filter((p) => p.costo && p.costo > 0);
     if (withCost.length === 0) { showToast('No hay productos con costo definido', 'error'); return; }
-    const headers = ['Nombre', 'Categoría', 'Precio', 'Costo', 'Envío', 'Tasa Dev%', 'Costo Dev', 'G.Bruta', 'G.Bruta%', 'G.Neta', 'G.Neta%', 'Estado'];
+    const headers = ['Nombre', 'Categoría', 'Precio', 'Costo', 'Envío', 'G.Bruta', 'G.Bruta%', 'G.Neta', 'G.Neta%', 'Estado'];
     const rows = withCost.map((p) => {
-      const ops = computeOps(p.price, p.costo!, p.costo_envio || 40000, p.tasa_devolucion || 25, p.costo_devolucion || 36000);
+      const ops = computeOps(p.price, p.costo!, p.costo_envio || 40000);
       return [
         `"${p.name}"`, p.category, p.price, p.costo,
-        p.costo_envio || 40000, p.tasa_devolucion || 25, p.costo_devolucion || 36000,
+        p.costo_envio || 40000,
         Math.round(ops.gBruta), ops.gBrutaPct.toFixed(1),
         Math.round(ops.gNeta), ops.gNetaPct.toFixed(1), ops.label,
       ];
@@ -644,7 +639,7 @@ export default function AdminPageClient() {
 
   // ── Fase 2 — operational calcs ──────────────────────────────────────────────
   const ops = showFinancialCalcs
-    ? computeOps(formData.price, formData.costo, formData.costo_envio, formData.tasa_devolucion, formData.costo_devolucion)
+    ? computeOps(formData.price, formData.costo, formData.costo_envio)
     : null;
   const gnBajaVsGB = ops ? ops.gNeta < ops.gBruta * 0.5 : false;
 
@@ -711,7 +706,7 @@ export default function AdminPageClient() {
       ? chartCategoryProducts
       : chartCategoryProducts.filter((p) => chartSelection.has(p.id));
   const chartItems = chartDisplayProducts.map((p) => {
-    const o = computeOps(p.price, p.costo!, p.costo_envio || 40000, p.tasa_devolucion || 25, p.costo_devolucion || 36000);
+    const o = computeOps(p.price, p.costo!, p.costo_envio || 40000);
     return { label: p.name, price: p.price, costo: p.costo!, gNeta: o.gNeta, colorGN: o.colorGN };
   });
 
@@ -899,18 +894,11 @@ export default function AdminPageClient() {
                   {/* ── TAB 2: OPERATIVO (Phase 2) ──────────────────────── */}
                   {finTab === 'operativo' && (
                     <>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                        <div>
-                          <label style={labelStyle}>COSTO ENVÍO (COP)</label>
-                          <input type="number" min="0" value={formData.costo_envio} onChange={(e) => setFormData({ ...formData, costo_envio: Number(e.target.value) })} style={inputStyle} />
-                        </div>
-                        <div>
-                          <label style={labelStyle}>TASA DEVOLUCIÓN %</label>
-                          <input type="number" min="0" max="100" value={formData.tasa_devolucion} onChange={(e) => setFormData({ ...formData, tasa_devolucion: Number(e.target.value) })} style={inputStyle} />
-                        </div>
-                        <div>
-                          <label style={labelStyle}>COSTO DEVOLUCIÓN (COP)</label>
-                          <input type="number" min="0" value={formData.costo_devolucion} onChange={(e) => setFormData({ ...formData, costo_devolucion: Number(e.target.value) })} style={inputStyle} />
+                      <div>
+                        <label style={labelStyle}>COSTO ENVÍO (COP)</label>
+                        <input type="number" min="0" value={formData.costo_envio} onChange={(e) => setFormData({ ...formData, costo_envio: Number(e.target.value) })} style={inputStyle} />
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px', fontFamily: '"DM Mono", monospace' }}>
+                          Costo que pagas por enviar este producto al cliente
                         </div>
                       </div>
 
@@ -928,7 +916,6 @@ export default function AdminPageClient() {
                             <StatBox label="G. NETA ESPERADA" value={COP(ops.gNeta)} sub={`${ops.gNetaPct.toFixed(1)}% del precio`} color={ops.colorGN} />
                             <StatBox label="ESTADO" value={ops.label} color={ops.colorGN} />
                             <StatBox label="COSTO TOTAL OP." value={COP(ops.costoTotal)} sub="Costo + Envío" />
-                            <StatBox label="IMPACTO DEVOLUC." value={COP(ops.impactoDev)} sub={`A tasa ${formData.tasa_devolucion}%`} color="#e55" />
                             <StatBox label="IMPACTO ENVÍOS" value={COP(ops.impactoEnvio)} color="#e55" />
                           </div>
 
@@ -975,12 +962,6 @@ export default function AdminPageClient() {
                                   <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace' }}>INGRESOS BRUTOS</div>
                                   <div style={{ fontSize: '22px', fontFamily: '"Bebas Neue", sans-serif', color: accent, letterSpacing: '1px' }}>
                                     {COP(formData.price * simUnidades)}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace' }}>DEVOLUCIONES EST.</div>
-                                  <div style={{ fontSize: '22px', fontFamily: '"Bebas Neue", sans-serif', color: '#e55', letterSpacing: '1px' }}>
-                                    ~{Math.round(simUnidades * formData.tasa_devolucion / 100)} unid.
                                   </div>
                                 </div>
                               </div>
@@ -1080,21 +1061,20 @@ export default function AdminPageClient() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: '"DM Mono", monospace', fontSize: '12px' }}>
                       <thead>
                         <tr style={{ borderBottom: `2px solid ${accent}33`, background: 'var(--surface2)' }}>
-                          {['Nombre', 'Precio', 'Costo', 'Envío', 'Dev%', 'G. Bruta', 'G. Bruta%', 'G. Neta', 'G. Neta%', 'Estado'].map((h) => (
+                          {['Nombre', 'Precio', 'Costo', 'Envío', 'G. Bruta', 'G. Bruta%', 'G. Neta', 'G. Neta%', 'Estado'].map((h) => (
                             <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: accent, fontWeight: 700, letterSpacing: '1px', fontSize: '11px', whiteSpace: 'nowrap' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {productsWithCost.map((p, i) => {
-                          const o = computeOps(p.price, p.costo!, p.costo_envio || 40000, p.tasa_devolucion || 25, p.costo_devolucion || 36000);
+                          const o = computeOps(p.price, p.costo!, p.costo_envio || 40000);
                           return (
                             <tr key={p.id} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
                               <td style={{ padding: '10px 12px', color: 'var(--text)', maxWidth: '200px' }}>{p.name}</td>
                               <td style={{ padding: '10px 12px', color: accent, fontWeight: 700 }}>{COP(p.price)}</td>
                               <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{COP(p.costo!)}</td>
                               <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{COP(p.costo_envio || 40000)}</td>
-                              <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{p.tasa_devolucion ?? 25}%</td>
                               <td style={{ padding: '10px 12px' }}>{COP(o.gBruta)}</td>
                               <td style={{ padding: '10px 12px', color: o.gBrutaPct >= 50 ? '#25d366' : o.gBrutaPct >= 30 ? '#FFD400' : '#e55' }}>{o.gBrutaPct.toFixed(1)}%</td>
                               <td style={{ padding: '10px 12px', color: o.colorGN, fontWeight: 700 }}>{COP(o.gNeta)}</td>
