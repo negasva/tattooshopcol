@@ -23,6 +23,7 @@ interface MonthlySale {
   mes: string;
   product_id: string;
   unidades_vendidas: number;
+  unidades_devueltas?: number;
 }
 
 // ─── Small components ─────────────────────────────────────────────────────────
@@ -62,7 +63,7 @@ function SectionToggle({ label, open, onToggle, badge }: { label: string; open: 
 }
 
 // ─── Delayed tooltip — position: fixed so it renders above everything ─────────
-function Tip({ children, text }: { children: React.ReactNode; text: string }) {
+function Tip({ children, text }: { children: React.ReactNode; text: React.ReactNode }) {
   const [coords, setCoords] = useState<{ x: number; y: number } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const spanRef = useRef<HTMLSpanElement>(null);
@@ -71,7 +72,7 @@ function Tip({ children, text }: { children: React.ReactNode; text: string }) {
     if (!spanRef.current) return;
     const r = spanRef.current.getBoundingClientRect();
     timer.current = setTimeout(
-      () => setCoords({ x: Math.min(r.left + r.width / 2, window.innerWidth - 160), y: r.top }),
+      () => setCoords({ x: Math.min(r.left + r.width / 2, window.innerWidth - 200), y: r.top }),
       1000
     );
   };
@@ -98,10 +99,10 @@ function Tip({ children, text }: { children: React.ReactNode; text: string }) {
             lineHeight: 1.7,
             zIndex: 999999,
             minWidth: '220px',
-            maxWidth: '320px',
+            maxWidth: '480px',
             pointerEvents: 'none',
             boxShadow: '0 8px 24px rgba(0,0,0,0.8)',
-            whiteSpace: 'pre-line',
+            ...(typeof text === 'string' ? { whiteSpace: 'pre-line' } : {}),
           }}
         >
           <div style={{ color: accent, fontSize: '9px', letterSpacing: '2px', marginBottom: '5px', fontWeight: 700 }}>FÓRMULA</div>
@@ -109,6 +110,26 @@ function Tip({ children, text }: { children: React.ReactNode; text: string }) {
         </div>
       )}
     </>
+  );
+}
+
+// ─── Annotated formula row: each number has its label below ──────────────────
+type FPart = { val: string; lbl: string } | string;
+
+function Fmla({ parts }: { parts: FPart[] }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flexWrap: 'wrap' }}>
+      {parts.map((p, i) =>
+        typeof p === 'string' ? (
+          <span key={i} style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: 1, paddingTop: '3px', alignSelf: 'flex-start' }}>{p}</span>
+        ) : (
+          <div key={i} style={{ textAlign: 'center' }}>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', fontWeight: 700, color: '#f0f0f0', lineHeight: 1.3 }}>{p.val}</div>
+            {p.lbl && <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '8px', color: accent, letterSpacing: '0.5px', marginTop: '3px', whiteSpace: 'nowrap' }}>{p.lbl}</div>}
+          </div>
+        )
+      )}
+    </div>
   );
 }
 
@@ -175,6 +196,7 @@ export default function DashboardRentabilidad({ products }: { products: Product[
 
   const [perfForm, setPerfForm] = useState({ gasto_meta: 1125000, leads: 969 });
   const [salesForm, setSalesForm] = useState<Record<string, number>>({});
+  const [devueltasForm, setDevueltasForm] = useState<Record<string, number>>({});
 
   const [simTarget, setSimTarget] = useState(5000000);
   const [sortField, setSortField] = useState('roi');
@@ -205,10 +227,13 @@ export default function DashboardRentabilidad({ products }: { products: Product[
         setPerfForm({ gasto_meta: perfRes.data.gasto_meta, leads: perfRes.data.leads });
       }
       const salesMap: Record<string, number> = {};
+      const devueltasMap: Record<string, number> = {};
       (salesRes.data ?? []).forEach((s: MonthlySale) => {
         salesMap[s.product_id] = s.unidades_vendidas;
+        devueltasMap[s.product_id] = s.unidades_devueltas ?? 0;
       });
       setSalesForm(salesMap);
+      setDevueltasForm(devueltasMap);
       // Fetch previous month for comparison
       const prev = prevMonthKey(selectedMes);
       const [prevPerfRes, prevSalesRes] = await Promise.all([
@@ -263,7 +288,7 @@ export default function DashboardRentabilidad({ products }: { products: Product[
       const entries = Object.entries(salesForm).filter(([, v]) => v > 0);
       for (const [product_id, unidades_vendidas] of entries) {
         const existing = salesData.find((s) => s.product_id === product_id);
-        const payload = { mes: selectedMes, product_id, unidades_vendidas, updated_at: new Date().toISOString() };
+        const payload = { mes: selectedMes, product_id, unidades_vendidas, unidades_devueltas: devueltasForm[product_id] ?? 0, updated_at: new Date().toISOString() };
         if (existing?.id) {
           const { error } = await sb.from('monthly_sales').update(payload).eq('id', existing.id);
           if (error) throw error;
@@ -310,7 +335,10 @@ export default function DashboardRentabilidad({ products }: { products: Product[
   const metaAds = performance?.gasto_meta ?? null;
 
   const kitMetrics: ProductMetrics[] = kitsWithCost.map((p) => {
-    const unidades = salesData.find((s) => s.product_id === p.id)?.unidades_vendidas ?? 0;
+    const sale = salesData.find((s) => s.product_id === p.id);
+    const vendidas = sale?.unidades_vendidas ?? 0;
+    const devueltas = sale?.unidades_devueltas ?? 0;
+    const unidades = Math.max(0, vendidas - devueltas);
     return buildProductMetrics(p, unidades, cac, metaAds, performance?.leads ?? null);
   });
   const otherMetrics: ProductMetrics[] = othersWithCost.map((p) => {
@@ -476,6 +504,19 @@ export default function DashboardRentabilidad({ products }: { products: Product[
           sub={<>{totalVentasKits > 0 ? selectedMonthLabel : 'Registra ventas de kits'}<Delta pct={deltaUnits} /></>}
           color={totalVentasKits > 0 ? accent : undefined}
         />
+        {(() => {
+          const totalDevueltas = salesData
+            .filter(s => kitSaleIds.has(s.product_id))
+            .reduce((sum, s) => sum + (s.unidades_devueltas ?? 0), 0);
+          return totalDevueltas > 0 ? (
+            <KpiCard
+              label="DEVOLUCIONES"
+              value={`${totalDevueltas} uds`}
+              sub={`${((totalDevueltas / (totalVentasKits + totalDevueltas)) * 100).toFixed(1)}% tasa dev.`}
+              color="#e55"
+            />
+          ) : null;
+        })()}
         <KpiCard
           label="REVENUE TOTAL"
           value={totalRevenue > 0 ? COP(totalRevenue) : '— Sin ventas'}
@@ -696,6 +737,20 @@ export default function DashboardRentabilidad({ products }: { products: Product[
                               style={{ ...inputStyle, borderColor: isKit && (salesForm[p.id] ?? 0) > 0 ? accent : 'var(--border)' }}
                               placeholder="0"
                             />
+                            {isKit && (
+                              <div style={{ marginTop: '4px' }}>
+                                <label style={{ display: 'block', marginBottom: '3px', fontSize: '9px', color: '#e55', letterSpacing: '1px', fontFamily: '"DM Mono", monospace' }}>
+                                  DEVOLUCIONES
+                                </label>
+                                <input
+                                  type="number" min="0"
+                                  value={devueltasForm[p.id] ?? 0}
+                                  onChange={(e) => setDevueltasForm({ ...devueltasForm, [p.id]: Number(e.target.value) })}
+                                  style={{ ...inputStyle, borderColor: (devueltasForm[p.id] ?? 0) > 0 ? '#e55' : 'var(--border)' }}
+                                  placeholder="0"
+                                />
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -728,7 +783,7 @@ export default function DashboardRentabilidad({ products }: { products: Product[
                 <tr style={{ borderBottom: `2px solid ${accent}33`, background: 'var(--surface2)' }}>
                   <th style={{ padding: '10px 12px', textAlign: 'left', color: accent, fontWeight: 700, letterSpacing: '1px', fontSize: '11px', whiteSpace: 'nowrap' }}>Kit</th>
                   <SortTh label="Precio" field="price" current={sortField} dir={sortDir} onClick={handleSort} tip="Precio de venta actual del producto" />
-                  <SortTh label="G. Neta/u" field="gNeta" current={sortField} dir={sortDir} onClick={handleSort} tip="Ganancia por unidad = Precio − Costo − Envío − Impacto devoluciones" />
+                  <SortTh label="G. Neta/u" field="gNeta" current={sortField} dir={sortDir} onClick={handleSort} tip="Ganancia por unidad = Precio − Costo − Envío" />
                   <SortTh label="CAC" field="cac" current={sortField} dir={sortDir} onClick={handleSort} tip="Costo de Adquisición = Meta Ads ÷ Kits vendidos.\nEs mensual fijo, no por unidad." />
                   <SortTh label="ROI %" field="roi" current={sortField} dir={sortDir} onClick={handleSort} tip="ROI = (G. Neta ÷ Costo total) × 100\n>100% excelente · 50-100% bueno · <50% bajo" />
                   <SortTh label="P. Equilibrio" field="puntoEquilibrio" current={sortField} dir={sortDir} onClick={handleSort} tip="Unidades de ESTE kit para cubrir TODO el gasto de Meta Ads.\nFórmula: ceil(Meta Ads ÷ G. Neta/u)" />
@@ -752,14 +807,36 @@ export default function DashboardRentabilidad({ products }: { products: Product[
                       <Tip text={`Precio: ${COP(m.product.price)}\nP. Mínimo Viable: ${m.precioMinimoViable !== null ? COP(m.precioMinimoViable) : 'sin CAC'}`}>{COP(m.product.price)}</Tip>
                     </td>
                     <td style={{ padding: '10px 12px', color: m.ops.colorGN }}>
-                      <Tip text={`G. Neta = ${COP(m.product.price)} − ${COP(m.product.costo ?? 0)} − ${COP(m.product.costo_envio ?? 40000)} − ${COP(m.ops.impactoDev)} = ${COP(m.ops.gNeta)}`}>{COP(m.ops.gNeta)}</Tip>
+                      <Tip text={<Fmla parts={[
+                        { val: COP(m.product.price), lbl: 'Precio' },
+                        '−',
+                        { val: COP(m.product.costo ?? 0), lbl: 'Costo' },
+                        '−',
+                        { val: COP(m.product.costo_envio ?? 40000), lbl: 'Envío' },
+                        '=',
+                        { val: COP(m.ops.gNeta), lbl: 'G. Neta/u' },
+                      ]} />}>{COP(m.ops.gNeta)}</Tip>
                     </td>
                     <td style={{ padding: '10px 12px', color: 'var(--text-muted)', fontSize: '11px' }}>
-                      {cac !== null ? <Tip text={`CAC = ${COP(performance?.gasto_meta ?? 0)} ÷ ${totalVentasKits} kits = ${COP(cac)}`}>{COP(cac)}</Tip> : '—'}
+                      {cac !== null ? <Tip text={<Fmla parts={[
+                        { val: COP(performance?.gasto_meta ?? 0), lbl: 'Meta Ads' },
+                        '÷',
+                        { val: `${totalVentasKits}`, lbl: 'Kits vend.' },
+                        '=',
+                        { val: COP(cac), lbl: 'CAC' },
+                      ]} />}>{COP(cac)}</Tip> : '—'}
                     </td>
                     <td style={{ padding: '10px 12px' }}>
                       {m.roi !== null ? (
-                        <Tip text={`ROI = G. Neta (${COP(m.ops.gNeta)}) ÷ Costo total (${COP(m.ops.costoTotal)}) × 100 = ${m.roi.toFixed(1)}%`}>
+                        <Tip text={<Fmla parts={[
+                          { val: COP(m.ops.gNeta), lbl: 'G. Neta/u' },
+                          '÷',
+                          { val: COP(m.ops.costoTotal), lbl: 'Costo total' },
+                          '×',
+                          { val: '100', lbl: '' },
+                          '=',
+                          { val: `${m.roi.toFixed(1)}%`, lbl: 'ROI' },
+                        ]} />}>
                           <span style={{ color: m.roi > 100 ? '#25d366' : m.roi > 50 ? '#FFD400' : '#e55', fontWeight: 700 }}>
                             {m.roi.toFixed(0)}%
                             <MiniBar value={m.roi} max={Math.max(maxROI, 100)} color={m.roi > 100 ? '#25d366' : m.roi > 50 ? '#FFD400' : '#e55'} />
@@ -768,10 +845,24 @@ export default function DashboardRentabilidad({ products }: { products: Product[
                       ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                     </td>
                     <td style={{ padding: '10px 12px', color: m.puntoEquilibrio !== null ? 'var(--text)' : 'var(--text-muted)' }}>
-                      {m.puntoEquilibrio !== null ? <Tip text={`ceil(${COP(metaAds ?? 0)} ÷ ${COP(m.ops.gNeta)}) = ${m.puntoEquilibrio} uds`}>{m.puntoEquilibrio} uds</Tip> : '—'}
+                      {m.puntoEquilibrio !== null ? <Tip text={<Fmla parts={[
+                        { val: COP(metaAds ?? 0), lbl: 'Meta Ads' },
+                        '÷',
+                        { val: COP(m.ops.gNeta), lbl: 'G. Neta/u' },
+                        '=',
+                        { val: `${m.puntoEquilibrio} uds`, lbl: 'P. Equil.' },
+                      ]} />}>{m.puntoEquilibrio} uds</Tip> : '—'}
                     </td>
                     <td style={{ padding: '10px 12px', color: m.precioMinimoViable !== null ? (m.precioMinimoViable < m.product.price ? '#25d366' : '#e55') : 'var(--text-muted)' }}>
-                      {m.precioMinimoViable !== null ? <Tip text={`P. Mín. Viable = ${COP(m.product.price)} − ${COP(m.ops.gNeta)} + ${COP(cac ?? 0)} = ${COP(m.precioMinimoViable)}`}>{COP(m.precioMinimoViable)}</Tip> : '—'}
+                      {m.precioMinimoViable !== null ? <Tip text={<Fmla parts={[
+                        { val: COP(m.product.price), lbl: 'Precio' },
+                        '−',
+                        { val: COP(m.ops.gNeta), lbl: 'G. Neta/u' },
+                        '+',
+                        { val: COP(cac ?? 0), lbl: 'CAC' },
+                        '=',
+                        { val: COP(m.precioMinimoViable), lbl: 'P. Mín.' },
+                      ]} />}>{COP(m.precioMinimoViable)}</Tip> : '—'}
                     </td>
                     <td style={{ padding: '10px 12px', fontWeight: 700, color: m.margenSeguridad !== null ? (m.margenSeguridad > 20 ? '#25d366' : m.margenSeguridad > 0 ? '#FFD400' : '#e55') : 'var(--text-muted)' }}>
                       {m.margenSeguridad !== null ? <Tip text={`Margen de seguridad = ${m.margenSeguridad.toFixed(1)}%\n${cac !== null ? `Precio puede bajar hasta ${COP(m.precioMinimoViable ?? 0)} antes de perder dinero` : 'Sin CAC: % del precio que es ganancia neta'}`}>{m.margenSeguridad.toFixed(1)}%</Tip> : '—'}
@@ -780,16 +871,44 @@ export default function DashboardRentabilidad({ products }: { products: Product[
                       {m.unidades > 0 ? `${m.unidades} uds` : '—'}
                     </td>
                     <td style={{ padding: '10px 12px', color: m.convRate !== null ? accent : 'var(--text-muted)' }}>
-                      {m.convRate !== null ? <Tip text={`Conv. = ${m.unidades} uds ÷ ${performance?.leads ?? 0} leads × 100 = ${m.convRate.toFixed(1)}%`}>{m.convRate.toFixed(1)}%</Tip> : '—'}
+                      {m.convRate !== null ? <Tip text={<Fmla parts={[
+                        { val: `${m.unidades}`, lbl: 'Unidades' },
+                        '÷',
+                        { val: `${performance?.leads ?? 0}`, lbl: 'Leads' },
+                        '×',
+                        { val: '100', lbl: '' },
+                        '=',
+                        { val: `${m.convRate.toFixed(1)}%`, lbl: 'Conv. %' },
+                      ]} />}>{m.convRate.toFixed(1)}%</Tip> : '—'}
                     </td>
                     <td style={{ padding: '10px 12px', color: m.gananciaAcumulada !== null ? '#25d366' : 'var(--text-muted)', fontWeight: 700 }}>
-                      {m.gananciaAcumulada !== null ? <Tip text={`${COP(m.ops.gNeta)} × ${m.unidades} uds = ${COP(m.gananciaAcumulada)}\nAntes de descontar Meta Ads.`}>{COP(m.gananciaAcumulada)}</Tip> : '—'}
+                      {m.gananciaAcumulada !== null ? <Tip text={<Fmla parts={[
+                        { val: COP(m.ops.gNeta), lbl: 'G. Neta/u' },
+                        '×',
+                        { val: `${m.unidades}`, lbl: 'Unidades' },
+                        '=',
+                        { val: COP(m.gananciaAcumulada), lbl: 'G. Acumulada' },
+                      ]} />}>{COP(m.gananciaAcumulada)}</Tip> : '—'}
                     </td>
                     <td style={{ padding: '10px 12px', fontWeight: 700, color: m.gananciaReal !== null ? (m.gananciaReal >= 0 ? '#25d366' : '#e55') : 'var(--text-muted)' }}>
-                      {m.gananciaReal !== null ? <Tip text={`(${COP(m.ops.gNeta)} − ${COP(m.cac ?? 0)}) × ${m.unidades} = ${COP(m.gananciaReal)}`}>{COP(m.gananciaReal)}</Tip> : '—'}
+                      {m.gananciaReal !== null ? <Tip text={<Fmla parts={[
+                        { val: COP(m.ops.gNeta), lbl: 'G. Neta/u' },
+                        '−',
+                        { val: COP(m.cac ?? 0), lbl: 'CAC' },
+                        '×',
+                        { val: `${m.unidades}`, lbl: 'Uds' },
+                        '=',
+                        { val: COP(m.gananciaReal), lbl: 'G. Real' },
+                      ]} />}>{COP(m.gananciaReal)}</Tip> : '—'}
                     </td>
                     <td style={{ padding: '10px 12px', color: m.mesesStock !== null ? (m.mesesStock > 6 ? '#e55' : m.mesesStock > 2 ? '#FFD400' : '#25d366') : 'var(--text-muted)' }}>
-                      {m.mesesStock !== null ? <Tip text={`Stock = ${m.product.inventory ?? 0} uds ÷ ${m.unidades} uds/mes = ${m.mesesStock} meses\n${m.mesesStock > 6 ? '⚠ Exceso de stock — capital inmovilizado' : m.mesesStock > 2 ? 'Stock aceptable' : '✓ Stock eficiente'}`}>{m.mesesStock}m</Tip> : '—'}
+                      {m.mesesStock !== null ? <Tip text={<Fmla parts={[
+                        { val: `${m.product.inventory ?? 0}`, lbl: 'Inventario' },
+                        '÷',
+                        { val: `${m.unidades}`, lbl: 'Uds/mes' },
+                        '=',
+                        { val: `${m.mesesStock}m`, lbl: 'Meses stock' },
+                      ]} />}>{m.mesesStock}m</Tip> : '—'}
                     </td>
                     <td style={{ padding: '10px 12px' }}>
                       <AlertBadge alerta={m.alerta} />
