@@ -321,32 +321,44 @@ export default function DashboardRentabilidad({ products }: { products: Product[
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '8px' }}>
         <KpiCard
           label="CAC ACTUAL (KITS)"
-          value={cac !== null ? COP(cac) : '— Sin datos'}
-          sub={cac !== null ? `${totalVentasKits} kits vendidos · ${COP(performance?.gasto_meta ?? 0)} en Meta` : 'Registra Meta Ads y ventas de kits'}
-          color={cac !== null ? (cac < 80000 ? '#25d366' : cac < 120000 ? '#FFD400' : '#e55') : undefined}
+          value={cac !== null ? COP(cac) : performance ? '— Sin ventas kits' : '— Sin datos'}
+          sub={
+            cac !== null
+              ? `${totalVentasKits} kits · ${COP(performance?.gasto_meta ?? 0)} en Meta`
+              : performance
+              ? `${COP(performance.gasto_meta)} en Meta · registra ventas de Kits`
+              : 'Registra Meta Ads y ventas de kits'
+          }
+          color={cac !== null ? (cac < 80000 ? '#25d366' : cac < 120000 ? '#FFD400' : '#e55') : performance ? '#FFD400' : undefined}
         />
         <KpiCard
           label="KITS VENDIDOS"
-          value={totalVentasKits > 0 ? `${totalVentasKits} uds` : '— Sin datos'}
-          sub={totalVentasKits > 0 ? `${selectedMonthLabel}${totalVentas !== totalVentasKits ? ` · +${totalVentas - totalVentasKits} insumos/máq.` : ''}` : 'Registra ventas de kits'}
-          color={totalVentasKits > 0 ? accent : undefined}
+          value={totalVentasKits > 0 ? `${totalVentasKits} uds` : totalVentas > 0 ? `0 kits` : '— Sin datos'}
+          sub={
+            totalVentasKits > 0
+              ? `${selectedMonthLabel}${totalVentas !== totalVentasKits ? ` · +${totalVentas - totalVentasKits} otros` : ''}`
+              : totalVentas > 0
+              ? `${totalVentas} unidad${totalVentas !== 1 ? 'es' : ''} en otras categorías`
+              : 'Registra ventas de kits'
+          }
+          color={totalVentasKits > 0 ? accent : totalVentas > 0 ? '#FFD400' : undefined}
         />
         <KpiCard
           label="GANANCIA NETA KITS"
-          value={totalGananciaKits !== 0 ? COP(totalGananciaKits) : '— Sin datos'}
-          sub={totalGananciaKits > 0 ? '✓ Kits (con CAC)' : totalGananciaKits < 0 ? '✕ Pérdida neta' : 'Requiere ventas + CAC'}
+          value={totalGananciaKits !== 0 ? COP(totalGananciaKits) : cac === null && totalGananciaOtros !== 0 ? `${COP(totalGananciaOtros)} (otros)` : '— Sin datos'}
+          sub={totalGananciaKits > 0 ? '✓ Kits (con CAC)' : totalGananciaKits < 0 ? '✕ Pérdida neta' : cac === null ? 'Sin ventas de kits este mes' : 'Requiere ventas + CAC'}
           color={totalGananciaKits > 0 ? '#25d366' : totalGananciaKits < 0 ? '#e55' : undefined}
         />
         <KpiCard
           label="KIT ESTRELLA"
           value={kitEstrella?.roi !== null && kitEstrella?.roi !== undefined ? kitEstrella.product.name.split(' ').slice(0, 2).join(' ') : '— Sin CAC'}
-          sub={kitEstrella?.roi !== null && kitEstrella?.roi !== undefined ? `ROI ${kitEstrella.roi.toFixed(0)}%` : 'Registra datos para ver ranking'}
+          sub={kitEstrella?.roi !== null && kitEstrella?.roi !== undefined ? `ROI ${kitEstrella.roi.toFixed(0)}%` : 'Registra ventas de kits'}
           color={kitEstrella?.alerta === 'estrella' ? '#25d366' : undefined}
         />
         <KpiCard
           label="LEADS META"
           value={performance?.leads ? String(performance.leads) : '— Sin datos'}
-          sub={performance && totalVentasKits > 0 ? `Conv. kits ${((totalVentasKits / performance.leads) * 100).toFixed(1)}%` : 'Registra Meta Ads'}
+          sub={performance && totalVentasKits > 0 ? `Conv. kits ${((totalVentasKits / performance.leads) * 100).toFixed(1)}%` : performance ? `Costo/lead: ${COP(performance.gasto_meta / performance.leads)}` : 'Registra Meta Ads'}
           dim
         />
       </div>
@@ -438,22 +450,46 @@ export default function DashboardRentabilidad({ products }: { products: Product[
               </div>
             ) : (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px', marginBottom: '16px' }}>
-                  {productsWithCost.map((p) => (
-                    <div key={p.id}>
-                      <label style={{ display: 'block', marginBottom: '6px', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1px', fontFamily: '"DM Mono", monospace' }}>
-                        {p.name.toUpperCase()}
-                      </label>
-                      <input
-                        type="number" min="0"
-                        value={salesForm[p.id] ?? 0}
-                        onChange={(e) => setSalesForm({ ...salesForm, [p.id]: Number(e.target.value) })}
-                        style={{ ...inputStyle }}
-                        placeholder="0"
-                      />
+                {(['Kits', 'Máquinas', 'Insumos'] as const).map((cat) => {
+                  const catProducts = productsWithCost.filter((p) => p.category === cat);
+                  if (catProducts.length === 0) return null;
+                  const isKit = cat === 'Kits';
+                  return (
+                    <div key={cat} style={{ marginBottom: '20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', letterSpacing: '2px', color: isKit ? accent : 'var(--text-muted)', fontWeight: 700 }}>
+                          {cat.toUpperCase()}
+                        </div>
+                        {isKit && (
+                          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, border: `1px solid ${accent}44`, padding: '1px 6px' }}>
+                            AFECTA CAC
+                          </div>
+                        )}
+                        {!isKit && (
+                          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: 'var(--text-muted)', border: '1px solid var(--border)', padding: '1px 6px' }}>
+                            sin impacto CAC
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
+                        {catProducts.map((p) => (
+                          <div key={p.id}>
+                            <label style={{ display: 'block', marginBottom: '5px', fontSize: '11px', color: isKit ? 'var(--text)' : 'var(--text-muted)', letterSpacing: '1px', fontFamily: '"DM Mono", monospace' }}>
+                              {p.name.toUpperCase()}
+                            </label>
+                            <input
+                              type="number" min="0"
+                              value={salesForm[p.id] ?? 0}
+                              onChange={(e) => setSalesForm({ ...salesForm, [p.id]: Number(e.target.value) })}
+                              style={{ ...inputStyle, borderColor: isKit && (salesForm[p.id] ?? 0) > 0 ? accent : 'var(--border)' }}
+                              placeholder="0"
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
                 <button
                   onClick={saveSalesData}
                   disabled={saving}
