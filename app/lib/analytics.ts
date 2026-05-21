@@ -46,7 +46,8 @@ export interface ProductMetrics {
   cac: number | null;
   rentabilidadReal: number | null;
   roi: number | null;
-  gananciaAcumulada: number | null;
+  gananciaAcumulada: number | null;  // gNeta × units (before Meta Ads)
+  gananciaReal: number | null;       // (gNeta − CAC) × units = true profit after proportional Meta Ads
   puntoEquilibrio: number | null;
   alerta: 'estrella' | 'ok' | 'riesgo' | 'perdida' | 'sin-cac';
 }
@@ -72,9 +73,13 @@ export function buildProductMetrics(
   // Formula: (Ganancia Neta / Costo Total) × 100
   const roi = ops.costoTotal > 0 ? (ops.gNeta / ops.costoTotal) * 100 : null;
 
-  // gananciaAcumulada: gross margin earned this month (Meta Ads is a fixed monthly cost, not per-unit)
+  // gananciaAcumulada: gross margin earned this month (before Meta Ads deduction)
   // Formula: G. Neta/u × Unidades vendidas
   const gananciaAcumulada = unidades > 0 ? ops.gNeta * unidades : null;
+
+  // gananciaReal: true profit after proportional Meta Ads share
+  // Formula: (G. Neta/u − CAC) × Unidades = what you actually earned net of ad spend
+  const gananciaReal = unidades > 0 && rentabilidadReal !== null ? rentabilidadReal * unidades : null;
 
   // puntoEquilibrio: units of THIS kit needed to cover the ENTIRE Meta Ads budget (if only selling this kit)
   // Formula: ceil(Gasto Meta Ads / G. Neta/u)
@@ -96,7 +101,7 @@ export function buildProductMetrics(
     alerta = 'riesgo';
   }
 
-  return { product, ops, unidades, cac, rentabilidadReal, roi, gananciaAcumulada, puntoEquilibrio, alerta };
+  return { product, ops, unidades, cac, rentabilidadReal, roi, gananciaAcumulada, gananciaReal, puntoEquilibrio, alerta };
 }
 
 // ─── Simulator ────────────────────────────────────────────────────────────────

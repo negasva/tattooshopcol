@@ -49,32 +49,54 @@ function SectionToggle({ label, open, onToggle, badge }: { label: string; open: 
   );
 }
 
-// ─── Delayed tooltip (shows after 1 s hover) ──────────────────────────────────
+// ─── Delayed tooltip — position: fixed so it renders above everything ─────────
 function Tip({ children, text }: { children: React.ReactNode; text: string }) {
-  const [show, setShow] = useState(false);
+  const [coords, setCoords] = useState<{ x: number; y: number } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hide = () => { if (timer.current) clearTimeout(timer.current); setShow(false); };
+  const spanRef = useRef<HTMLSpanElement>(null);
+
+  const show = () => {
+    if (!spanRef.current) return;
+    const r = spanRef.current.getBoundingClientRect();
+    timer.current = setTimeout(
+      () => setCoords({ x: Math.min(r.left + r.width / 2, window.innerWidth - 160), y: r.top }),
+      1000
+    );
+  };
+  const hide = () => { if (timer.current) clearTimeout(timer.current); setCoords(null); };
+
   return (
-    <span
-      style={{ position: 'relative', cursor: 'help' }}
-      onMouseEnter={() => { timer.current = setTimeout(() => setShow(true), 1000); }}
-      onMouseLeave={hide}
-    >
-      {children}
-      {show && (
-        <div style={{
-          position: 'absolute', bottom: '130%', left: '50%', transform: 'translateX(-50%)',
-          background: '#111', border: `1px solid ${accent}55`, color: 'var(--text)',
-          padding: '8px 12px', fontSize: '11px', fontFamily: '"DM Mono", monospace',
-          lineHeight: 1.6, zIndex: 9999, minWidth: '200px', maxWidth: '300px',
-          pointerEvents: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.7)',
-          whiteSpace: 'normal',
-        }}>
-          <div style={{ color: accent, fontSize: '9px', letterSpacing: '1.5px', marginBottom: '4px', fontWeight: 700 }}>FÓRMULA</div>
+    <>
+      <span ref={spanRef} style={{ cursor: 'help' }} onMouseEnter={show} onMouseLeave={hide}>
+        {children}
+      </span>
+      {coords && (
+        <div
+          style={{
+            position: 'fixed',
+            left: coords.x,
+            top: coords.y - 8,
+            transform: 'translateX(-50%) translateY(-100%)',
+            background: '#111827',
+            border: `1px solid ${accent}66`,
+            color: 'var(--text)',
+            padding: '10px 14px',
+            fontSize: '11px',
+            fontFamily: '"DM Mono", monospace',
+            lineHeight: 1.7,
+            zIndex: 999999,
+            minWidth: '220px',
+            maxWidth: '320px',
+            pointerEvents: 'none',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.8)',
+            whiteSpace: 'pre-line',
+          }}
+        >
+          <div style={{ color: accent, fontSize: '9px', letterSpacing: '2px', marginBottom: '5px', fontWeight: 700 }}>FÓRMULA</div>
           {text}
         </div>
       )}
-    </span>
+    </>
   );
 }
 
@@ -282,6 +304,7 @@ export default function DashboardRentabilidad({ products }: { products: Product[
       case 'puntoEquilibrio': return m.puntoEquilibrio ?? Infinity;
       case 'unidades': return m.unidades;
       case 'gananciaAcumulada': return m.gananciaAcumulada ?? -Infinity;
+      case 'gananciaReal': return m.gananciaReal ?? -Infinity;
       default: return -Infinity;
     }
   };
@@ -306,6 +329,10 @@ export default function DashboardRentabilidad({ products }: { products: Product[
 
   // Monthly break-even: total accumulated gNeta from all kits vs Meta Ads spend
   const totalGnetaAcum = kitMetrics.reduce((s, m) => s + (m.gananciaAcumulada ?? 0), 0);
+  // Total real profit after Meta Ads: sum(gananciaReal) = totalGnetaAcum - MetaAds (when all units counted)
+  const totalGananciaReal = kitMetrics.some((m) => m.gananciaReal !== null)
+    ? kitMetrics.reduce((s, m) => s + (m.gananciaReal ?? 0), 0)
+    : null;
   const breakEvenGap = metaAds !== null ? metaAds - totalGnetaAcum : null;
   const breakEvenPct = metaAds && metaAds > 0 ? Math.min((totalGnetaAcum / metaAds) * 100, 100) : null;
 
@@ -411,6 +438,18 @@ export default function DashboardRentabilidad({ products }: { products: Product[
               : 'Registra Meta Ads y ventas'
           }
           color={breakEvenGap !== null ? (breakEvenGap <= 0 ? '#25d366' : breakEvenGap < (metaAds ?? 0) * 0.5 ? '#FFD400' : '#e55') : undefined}
+        />
+        <KpiCard
+          label="GANANCIA REAL"
+          value={totalGananciaReal !== null ? COP(totalGananciaReal) : '— Sin datos'}
+          sub={
+            totalGananciaReal !== null
+              ? totalGananciaReal >= 0
+                ? `✓ Después de Meta Ads (${COP(metaAds ?? 0)})`
+                : `✕ Meta Ads aún no cubierto (${COP(metaAds ?? 0)})`
+              : 'Registra Meta Ads y ventas'
+          }
+          color={totalGananciaReal !== null ? (totalGananciaReal >= 0 ? '#25d366' : '#e55') : undefined}
         />
         <KpiCard
           label="KIT ESTRELLA"
@@ -615,7 +654,8 @@ export default function DashboardRentabilidad({ products }: { products: Product[
                   <SortTh label="ROI %" field="roi" current={sortField} dir={sortDir} onClick={handleSort} tip={`Retorno sobre la inversión del producto.\nFórmula: (G. Neta/u ÷ Costo total) × 100\n>100% = excelente, 50-100% = bueno, <50% = bajo`} />
                   <SortTh label="P. Equilibrio" field="puntoEquilibrio" current={sortField} dir={sortDir} onClick={handleSort} tip={`Unidades de ESTE kit necesarias para que la ganancia neta acumulada cubra TODO el gasto de Meta Ads del mes.\nFórmula: ceil(Gasto Meta Ads ÷ G. Neta/u)`} />
                   <SortTh label="Unidades" field="unidades" current={sortField} dir={sortDir} onClick={handleSort} tip="Unidades vendidas registradas este mes" />
-                  <SortTh label="G. Acumulada" field="gananciaAcumulada" current={sortField} dir={sortDir} onClick={handleSort} tip={`Ganancia neta total generada por este kit en el mes (antes de descontar Meta Ads).\nFórmula: G. Neta/u × Unidades vendidas`} />
+                  <SortTh label="G. Acumulada" field="gananciaAcumulada" current={sortField} dir={sortDir} onClick={handleSort} tip={`Ganancia bruta acumulada (antes de Meta Ads).\nFórmula: G. Neta/u × Unidades vendidas`} />
+                  <SortTh label="G. Real" field="gananciaReal" current={sortField} dir={sortDir} onClick={handleSort} tip={`Ganancia REAL después de descontar la proporción de Meta Ads que corresponde a este kit.\nFórmula: (G. Neta/u − CAC) × Unidades\nSi es negativa, Meta Ads costó más de lo que este kit aportó.`} />
                   <th style={{ padding: '10px 12px', textAlign: 'left', color: accent, fontWeight: 700, letterSpacing: '1px', fontSize: '11px', whiteSpace: 'nowrap' }}>
                     <Tip text={`Estado del kit según su margen:\n⭐ ESTRELLA: ROI > 100% — excelente margen\n✓ OK: ROI 50-100% — buen margen\n⚠ RIESGO: ROI < 50% — margen bajo\n✕ PÉRDIDA: G. Neta negativa — precio menor al costo`}>Estado</Tip>
                   </th>
@@ -665,6 +705,11 @@ export default function DashboardRentabilidad({ products }: { products: Product[
                       {m.gananciaAcumulada !== null
                         ? <Tip text={`G. Acumulada = G. Neta/u (${COP(m.ops.gNeta)}) × ${m.unidades} uds = ${COP(m.gananciaAcumulada)}\nAntes de descontar Meta Ads del mes.`}>{COP(m.gananciaAcumulada)}</Tip>
                         : '—'}
+                    </td>
+                    <td style={{ padding: '10px 12px', fontWeight: 700, color: m.gananciaReal !== null ? (m.gananciaReal >= 0 ? '#25d366' : '#e55') : 'var(--text-muted)' }}>
+                      {m.gananciaReal !== null
+                        ? <Tip text={`G. Real = (G. Neta/u ${COP(m.ops.gNeta)} − CAC ${COP(m.cac ?? 0)}) × ${m.unidades} uds = ${COP(m.gananciaReal)}\nLo que realmente ganaste con este kit este mes después de Meta Ads.`}>{COP(m.gananciaReal)}</Tip>
+                        : <Tip text="Disponible cuando hay datos de Meta Ads y ventas registradas">—</Tip>}
                     </td>
                     <td style={{ padding: '10px 12px' }}>
                       <AlertBadge alerta={m.alerta} />
