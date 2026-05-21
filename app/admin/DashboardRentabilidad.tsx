@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getSupabase, Product } from '../lib/supabase';
 import {
   buildProductMetrics, buildSimScenarios, effectiveMargin,
-  currentMonthKey, monthOptions, COP,
+  currentMonthKey, monthOptions, prevMonthKey, COP,
   type ProductMetrics,
 } from '../lib/analytics';
 
@@ -26,13 +26,25 @@ interface MonthlySale {
 }
 
 // ─── Small components ─────────────────────────────────────────────────────────
-function KpiCard({ label, value, sub, color, dim }: { label: string; value: string; sub?: string; color?: string; dim?: boolean }) {
+function KpiCard({ label, value, sub, color, dim }: { label: string; value: string; sub?: React.ReactNode; color?: string; dim?: boolean }) {
   return (
     <div style={{ background: dim ? 'var(--surface)' : 'var(--bg)', border: `1px solid ${color ? color + '44' : 'var(--border)'}`, padding: '16px 20px', flex: '1 1 160px', minWidth: '140px' }}>
       <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1.5px', marginBottom: '8px', fontFamily: '"DM Mono", monospace' }}>{label}</div>
       <div style={{ fontSize: '24px', fontFamily: '"Bebas Neue", sans-serif', color: color || 'var(--text)', letterSpacing: '1px', lineHeight: 1 }}>{value}</div>
       {sub && <div style={{ fontSize: '10px', marginTop: '5px', fontFamily: '"DM Mono", monospace', color: color || 'var(--text-muted)' }}>{sub}</div>}
     </div>
+  );
+}
+
+function Delta({ pct, invertColors = false }: { pct: number | null; invertColors?: boolean }) {
+  if (pct === null) return null;
+  const good = invertColors ? pct <= 0 : pct >= 0;
+  const color = good ? '#25d366' : '#e55';
+  const arrow = pct > 0 ? '↑' : '↓';
+  return (
+    <span style={{ display: 'block', fontSize: '10px', color, fontFamily: '"DM Mono", monospace', marginTop: '3px' }}>
+      {arrow}{Math.abs(pct).toFixed(0)}% vs mes ant.
+    </span>
   );
 }
 
@@ -49,32 +61,54 @@ function SectionToggle({ label, open, onToggle, badge }: { label: string; open: 
   );
 }
 
-// ─── Delayed tooltip (shows after 1 s hover) ──────────────────────────────────
+// ─── Delayed tooltip — position: fixed so it renders above everything ─────────
 function Tip({ children, text }: { children: React.ReactNode; text: string }) {
-  const [show, setShow] = useState(false);
+  const [coords, setCoords] = useState<{ x: number; y: number } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hide = () => { if (timer.current) clearTimeout(timer.current); setShow(false); };
+  const spanRef = useRef<HTMLSpanElement>(null);
+
+  const show = () => {
+    if (!spanRef.current) return;
+    const r = spanRef.current.getBoundingClientRect();
+    timer.current = setTimeout(
+      () => setCoords({ x: Math.min(r.left + r.width / 2, window.innerWidth - 160), y: r.top }),
+      1000
+    );
+  };
+  const hide = () => { if (timer.current) clearTimeout(timer.current); setCoords(null); };
+
   return (
-    <span
-      style={{ position: 'relative', cursor: 'help' }}
-      onMouseEnter={() => { timer.current = setTimeout(() => setShow(true), 1000); }}
-      onMouseLeave={hide}
-    >
-      {children}
-      {show && (
-        <div style={{
-          position: 'absolute', bottom: '130%', left: '50%', transform: 'translateX(-50%)',
-          background: '#111', border: `1px solid ${accent}55`, color: 'var(--text)',
-          padding: '8px 12px', fontSize: '11px', fontFamily: '"DM Mono", monospace',
-          lineHeight: 1.6, zIndex: 9999, minWidth: '200px', maxWidth: '300px',
-          pointerEvents: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.7)',
-          whiteSpace: 'normal',
-        }}>
-          <div style={{ color: accent, fontSize: '9px', letterSpacing: '1.5px', marginBottom: '4px', fontWeight: 700 }}>FÓRMULA</div>
+    <>
+      <span ref={spanRef} style={{ cursor: 'help' }} onMouseEnter={show} onMouseLeave={hide}>
+        {children}
+      </span>
+      {coords && (
+        <div
+          style={{
+            position: 'fixed',
+            left: coords.x,
+            top: coords.y - 8,
+            transform: 'translateX(-50%) translateY(-100%)',
+            background: '#111827',
+            border: `1px solid ${accent}66`,
+            color: 'var(--text)',
+            padding: '10px 14px',
+            fontSize: '11px',
+            fontFamily: '"DM Mono", monospace',
+            lineHeight: 1.7,
+            zIndex: 999999,
+            minWidth: '220px',
+            maxWidth: '320px',
+            pointerEvents: 'none',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.8)',
+            whiteSpace: 'pre-line',
+          }}
+        >
+          <div style={{ color: accent, fontSize: '9px', letterSpacing: '2px', marginBottom: '5px', fontWeight: 700 }}>FÓRMULA</div>
           {text}
         </div>
       )}
-    </span>
+    </>
   );
 }
 
@@ -146,6 +180,9 @@ export default function DashboardRentabilidad({ products }: { products: Product[
   const [sortField, setSortField] = useState('roi');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
+  const [prevPerf, setPrevPerf] = useState<MonthlyPerf | null>(null);
+  const [prevSalesData, setPrevSalesData] = useState<MonthlySale[]>([]);
+
   const { toasts, show: showToast } = useToast();
 
   // ── Load monthly data ──────────────────────────────────────────────────────
@@ -172,6 +209,14 @@ export default function DashboardRentabilidad({ products }: { products: Product[
         salesMap[s.product_id] = s.unidades_vendidas;
       });
       setSalesForm(salesMap);
+      // Fetch previous month for comparison
+      const prev = prevMonthKey(selectedMes);
+      const [prevPerfRes, prevSalesRes] = await Promise.all([
+        sb.from('monthly_performance').select('*').eq('mes', prev).maybeSingle(),
+        sb.from('monthly_sales').select('*').eq('mes', prev),
+      ]);
+      setPrevPerf(prevPerfRes.data ?? null);
+      setPrevSalesData(prevSalesRes.data ?? []);
     } catch {
       setTablesReady(false);
       showToast('Error cargando datos del mes', 'error');
@@ -266,7 +311,7 @@ export default function DashboardRentabilidad({ products }: { products: Product[
 
   const kitMetrics: ProductMetrics[] = kitsWithCost.map((p) => {
     const unidades = salesData.find((s) => s.product_id === p.id)?.unidades_vendidas ?? 0;
-    return buildProductMetrics(p, unidades, cac, metaAds);
+    return buildProductMetrics(p, unidades, cac, metaAds, performance?.leads ?? null);
   });
   const otherMetrics: ProductMetrics[] = othersWithCost.map((p) => {
     const unidades = salesData.find((s) => s.product_id === p.id)?.unidades_vendidas ?? 0;
@@ -282,6 +327,12 @@ export default function DashboardRentabilidad({ products }: { products: Product[
       case 'puntoEquilibrio': return m.puntoEquilibrio ?? Infinity;
       case 'unidades': return m.unidades;
       case 'gananciaAcumulada': return m.gananciaAcumulada ?? -Infinity;
+      case 'gananciaReal': return m.gananciaReal ?? -Infinity;
+      case 'revenue': return m.revenue ?? -Infinity;
+      case 'precioMinimoViable': return m.precioMinimoViable ?? -Infinity;
+      case 'margenSeguridad': return m.margenSeguridad ?? -Infinity;
+      case 'convRate': return m.convRate ?? -Infinity;
+      case 'mesesStock': return m.mesesStock ?? Infinity;
       default: return -Infinity;
     }
   };
@@ -306,8 +357,57 @@ export default function DashboardRentabilidad({ products }: { products: Product[
 
   // Monthly break-even: total accumulated gNeta from all kits vs Meta Ads spend
   const totalGnetaAcum = kitMetrics.reduce((s, m) => s + (m.gananciaAcumulada ?? 0), 0);
+  // Total real profit after Meta Ads: sum(gananciaReal) = totalGnetaAcum - MetaAds (when all units counted)
+  const totalGananciaReal = kitMetrics.some((m) => m.gananciaReal !== null)
+    ? kitMetrics.reduce((s, m) => s + (m.gananciaReal ?? 0), 0)
+    : null;
   const breakEvenGap = metaAds !== null ? metaAds - totalGnetaAcum : null;
   const breakEvenPct = metaAds && metaAds > 0 ? Math.min((totalGnetaAcum / metaAds) * 100, 100) : null;
+
+  // Revenue total (price × units sold)
+  const totalRevenue = kitMetrics.reduce((s, m) => s + (m.revenue ?? 0), 0);
+
+  // ROAS = Revenue / Meta Ads spend (industry standard: how much revenue per peso of ads)
+  const roas = totalRevenue > 0 && metaAds && metaAds > 0 ? totalRevenue / metaAds : null;
+  // ROAS real = gNeta acumulada / Meta Ads (margin return per peso of ads)
+  const roasReal = totalGnetaAcum > 0 && metaAds && metaAds > 0 ? totalGnetaAcum / metaAds : null;
+
+  // Días para cubrir Meta Ads (only makes sense for current month)
+  const isCurrentMonth = selectedMes === currentMonthKey();
+  const dayOfMonth = isCurrentMonth ? new Date().getDate() : null;
+  const daysInMonth = isCurrentMonth ? new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() : null;
+  const dailyGnetaRate = dayOfMonth && dayOfMonth > 0 && totalGnetaAcum > 0 ? totalGnetaAcum / dayOfMonth : null;
+  const projectedDayBreakEven = dailyGnetaRate && metaAds ? Math.ceil(metaAds / dailyGnetaRate) : null;
+
+  // Previous month metrics
+  const prevKitSaleIds = kitSaleIds; // same kit set
+  const prevTotalKitsVendidos = prevSalesData
+    .filter((s) => prevKitSaleIds.has(s.product_id))
+    .reduce((sum, s) => sum + s.unidades_vendidas, 0);
+  const prevCac = prevPerf && prevTotalKitsVendidos > 0
+    ? prevPerf.gasto_meta / prevTotalKitsVendidos
+    : null;
+  const prevKitMetrics = kitsWithCost.map((p) => {
+    const unidades = prevSalesData.find((s) => s.product_id === p.id)?.unidades_vendidas ?? 0;
+    return buildProductMetrics(p, unidades, prevCac, prevPerf?.gasto_meta ?? null, prevPerf?.leads ?? null);
+  });
+  const prevTotalGnetaAcum = prevKitMetrics.reduce((s, m) => s + (m.gananciaAcumulada ?? 0), 0);
+  const prevTotalRevenue = prevKitMetrics.reduce((s, m) => s + (m.revenue ?? 0), 0);
+  const prevGananciaRealTotal = prevKitMetrics.some((m) => m.gananciaReal !== null)
+    ? prevKitMetrics.reduce((s, m) => s + (m.gananciaReal ?? 0), 0)
+    : null;
+
+  // Delta % vs previous month
+  const deltaCac = cac !== null && prevCac !== null && prevCac !== 0
+    ? ((cac - prevCac) / Math.abs(prevCac)) * 100 : null;
+  const deltaUnits = totalVentasKits > 0 && prevTotalKitsVendidos > 0
+    ? ((totalVentasKits - prevTotalKitsVendidos) / prevTotalKitsVendidos) * 100 : null;
+  const deltaGneta = totalGnetaAcum > 0 && prevTotalGnetaAcum > 0
+    ? ((totalGnetaAcum - prevTotalGnetaAcum) / prevTotalGnetaAcum) * 100 : null;
+  const deltaRevenue = totalRevenue > 0 && prevTotalRevenue > 0
+    ? ((totalRevenue - prevTotalRevenue) / prevTotalRevenue) * 100 : null;
+  const deltaGananciaReal = totalGananciaReal !== null && prevGananciaRealTotal !== null && prevGananciaRealTotal !== 0
+    ? ((totalGananciaReal - prevGananciaRealTotal) / Math.abs(prevGananciaRealTotal)) * 100 : null;
 
   // Alerts only for kits (CAC-based alerts don't apply to insumos/máquinas)
   const alertas = kitMetrics.filter((m) => m.alerta === 'perdida' || m.alerta === 'riesgo' || m.alerta === 'estrella');
@@ -367,61 +467,80 @@ export default function DashboardRentabilidad({ products }: { products: Product[
         <KpiCard
           label="CAC ACTUAL (KITS)"
           value={cac !== null ? COP(cac) : performance ? '— Sin ventas kits' : '— Sin datos'}
-          sub={
-            cac !== null
-              ? `${totalVentasKits} kits · ${COP(performance?.gasto_meta ?? 0)} en Meta`
-              : performance
-              ? `${COP(performance.gasto_meta)} en Meta · registra ventas de Kits`
-              : 'Registra Meta Ads y ventas de kits'
-          }
-          color={cac !== null ? (cac < 80000 ? '#25d366' : cac < 120000 ? '#FFD400' : '#e55') : performance ? '#FFD400' : undefined}
+          sub={<>{cac !== null ? `${totalVentasKits} kits · ${COP(performance?.gasto_meta ?? 0)} en Meta` : performance ? 'Registra ventas de Kits' : 'Registra Meta Ads y ventas'}<Delta pct={deltaCac} invertColors /></>}
+          color={cac !== null ? (cac < 80000 ? '#25d366' : cac < 120000 ? '#FFD400' : '#e55') : undefined}
         />
         <KpiCard
           label="KITS VENDIDOS"
-          value={totalVentasKits > 0 ? `${totalVentasKits} uds` : totalVentas > 0 ? `0 kits` : '— Sin datos'}
-          sub={
-            totalVentasKits > 0
-              ? `${selectedMonthLabel}${totalVentas !== totalVentasKits ? ` · +${totalVentas - totalVentasKits} otros` : ''}`
-              : totalVentas > 0
-              ? `${totalVentas} unidad${totalVentas !== 1 ? 'es' : ''} en otras categorías`
-              : 'Registra ventas de kits'
-          }
-          color={totalVentasKits > 0 ? accent : totalVentas > 0 ? '#FFD400' : undefined}
+          value={totalVentasKits > 0 ? `${totalVentasKits} uds` : '— Sin datos'}
+          sub={<>{totalVentasKits > 0 ? selectedMonthLabel : 'Registra ventas de kits'}<Delta pct={deltaUnits} /></>}
+          color={totalVentasKits > 0 ? accent : undefined}
+        />
+        <KpiCard
+          label="REVENUE TOTAL"
+          value={totalRevenue > 0 ? COP(totalRevenue) : '— Sin ventas'}
+          sub={<>Ingresos brutos kits<Delta pct={deltaRevenue} /></>}
+          color={totalRevenue > 0 ? accent : undefined}
         />
         <KpiCard
           label="GANANCIA BRUTA KITS"
           value={totalGnetaAcum > 0 ? COP(totalGnetaAcum) : '— Sin ventas'}
-          sub={totalGnetaAcum > 0 ? `G. Neta total antes de Meta Ads` : 'Registra ventas de kits'}
+          sub={<>Antes de Meta Ads<Delta pct={deltaGneta} /></>}
           color={totalGnetaAcum > 0 ? '#25d366' : undefined}
         />
         <KpiCard
+          label="GANANCIA REAL"
+          value={totalGananciaReal !== null ? COP(totalGananciaReal) : '— Sin datos'}
+          sub={<>{totalGananciaReal !== null ? (totalGananciaReal >= 0 ? `✓ Después de Meta Ads` : `✕ Meta Ads no cubierto`) : 'Registra Meta Ads y ventas'}<Delta pct={deltaGananciaReal} /></>}
+          color={totalGananciaReal !== null ? (totalGananciaReal >= 0 ? '#25d366' : '#e55') : undefined}
+        />
+        <KpiCard
+          label="ROAS"
+          value={roas !== null ? `${roas.toFixed(1)}x` : '— Sin datos'}
+          sub={roasReal !== null ? `Margen real: ${roasReal.toFixed(1)}x` : 'Revenue ÷ Meta Ads'}
+          color={roas !== null ? (roas >= 3 ? '#25d366' : roas >= 2 ? '#FFD400' : '#e55') : undefined}
+        />
+        <KpiCard
           label="COBERTURA META ADS"
-          value={
-            breakEvenPct !== null
-              ? `${breakEvenPct.toFixed(0)}%`
-              : performance
-              ? '0%'
-              : '— Sin datos'
-          }
-          sub={
-            breakEvenGap !== null
-              ? breakEvenGap <= 0
-                ? `✓ Meta Ads cubierto (sobran ${COP(-breakEvenGap)})`
-                : `Faltan ${COP(breakEvenGap)} en gNeta para cubrir Meta Ads`
-              : 'Registra Meta Ads y ventas'
-          }
+          value={breakEvenPct !== null ? `${breakEvenPct.toFixed(0)}%` : performance ? '0%' : '— Sin datos'}
+          sub={breakEvenGap !== null ? (breakEvenGap <= 0 ? `✓ Cubierto (sobran ${COP(-breakEvenGap)})` : `Faltan ${COP(breakEvenGap)}`) : 'Registra Meta Ads y ventas'}
           color={breakEvenGap !== null ? (breakEvenGap <= 0 ? '#25d366' : breakEvenGap < (metaAds ?? 0) * 0.5 ? '#FFD400' : '#e55') : undefined}
         />
         <KpiCard
+          label="DÍAS P/ EQUILIBRIO"
+          value={
+            breakEvenGap !== null && breakEvenGap <= 0
+              ? '✓ Cubierto'
+              : projectedDayBreakEven !== null
+              ? projectedDayBreakEven <= (daysInMonth ?? 31)
+                ? `Día ${projectedDayBreakEven}`
+                : 'No este mes'
+              : '— Sin datos'
+          }
+          sub={
+            isCurrentMonth && dailyGnetaRate
+              ? `Ritmo: ${COP(dailyGnetaRate)}/día · ${dayOfMonth}/${daysInMonth} días`
+              : isCurrentMonth ? 'Registra ventas para proyectar' : 'Solo disponible en mes actual'
+          }
+          color={
+            projectedDayBreakEven !== null && projectedDayBreakEven <= (daysInMonth ?? 31) && (breakEvenGap ?? 1) > 0
+              ? '#FFD400'
+              : breakEvenGap !== null && breakEvenGap <= 0
+              ? '#25d366'
+              : undefined
+          }
+          dim
+        />
+        <KpiCard
           label="KIT ESTRELLA"
-          value={kitEstrella?.roi !== null && kitEstrella?.roi !== undefined ? kitEstrella.product.name.split(' ').slice(0, 2).join(' ') : '— Sin datos'}
-          sub={kitEstrella?.roi !== null && kitEstrella?.roi !== undefined ? `ROI ${kitEstrella.roi.toFixed(0)}%` : 'Agrega costos a los kits'}
+          value={kitEstrella?.roi != null ? kitEstrella.product.name.split(' ').slice(0, 2).join(' ') : '— Sin datos'}
+          sub={kitEstrella?.roi != null ? `ROI ${kitEstrella.roi.toFixed(0)}%` : 'Agrega costos a los kits'}
           color={kitEstrella?.alerta === 'estrella' ? '#25d366' : undefined}
         />
         <KpiCard
           label="LEADS META"
           value={performance?.leads ? String(performance.leads) : '— Sin datos'}
-          sub={performance && totalVentasKits > 0 ? `Conv. kits ${((totalVentasKits / performance.leads) * 100).toFixed(1)}%` : performance ? `Costo/lead: ${COP(performance.gasto_meta / performance.leads)}` : 'Registra Meta Ads'}
+          sub={performance && totalVentasKits > 0 ? `Conv. ${((totalVentasKits / performance.leads) * 100).toFixed(1)}% · Costo/lead: ${COP(performance.gasto_meta / performance.leads)}` : performance ? `Costo/lead: ${COP(performance.gasto_meta / performance.leads)}` : 'Registra Meta Ads'}
           dim
         />
       </div>
@@ -608,16 +727,20 @@ export default function DashboardRentabilidad({ products }: { products: Product[
               <thead>
                 <tr style={{ borderBottom: `2px solid ${accent}33`, background: 'var(--surface2)' }}>
                   <th style={{ padding: '10px 12px', textAlign: 'left', color: accent, fontWeight: 700, letterSpacing: '1px', fontSize: '11px', whiteSpace: 'nowrap' }}>Kit</th>
-                  <SortTh label="Precio" field="price" current={sortField} dir={sortDir} onClick={handleSort} tip="Precio de venta del producto" />
-                  <SortTh label="G. Neta/u" field="gNeta" current={sortField} dir={sortDir} onClick={handleSort} tip={`Ganancia por unidad después de costos, envío y devoluciones.\nFórmula: Precio − Costo − Envío − Impacto devoluciones`} />
-                  <SortTh label="CAC" field="cac" current={sortField} dir={sortDir} onClick={handleSort} tip={`Costo de Adquisición de Cliente (referencia).\nFórmula: Gasto Meta Ads ÷ Total kits vendidos.\nEs un gasto mensual FIJO, no por unidad.`} />
-                  <SortTh label="Rent. ref/u" field="rentabilidadReal" current={sortField} dir={sortDir} onClick={handleSort} tip={`Ganancia hipotética si el CAC se cobrara por unidad vendida (solo referencia).\nFórmula: G. Neta/u − CAC\nEl CAC real es mensual fijo, no por kit.`} />
-                  <SortTh label="ROI %" field="roi" current={sortField} dir={sortDir} onClick={handleSort} tip={`Retorno sobre la inversión del producto.\nFórmula: (G. Neta/u ÷ Costo total) × 100\n>100% = excelente, 50-100% = bueno, <50% = bajo`} />
-                  <SortTh label="P. Equilibrio" field="puntoEquilibrio" current={sortField} dir={sortDir} onClick={handleSort} tip={`Unidades de ESTE kit necesarias para que la ganancia neta acumulada cubra TODO el gasto de Meta Ads del mes.\nFórmula: ceil(Gasto Meta Ads ÷ G. Neta/u)`} />
+                  <SortTh label="Precio" field="price" current={sortField} dir={sortDir} onClick={handleSort} tip="Precio de venta actual del producto" />
+                  <SortTh label="G. Neta/u" field="gNeta" current={sortField} dir={sortDir} onClick={handleSort} tip="Ganancia por unidad = Precio − Costo − Envío − Impacto devoluciones" />
+                  <SortTh label="CAC" field="cac" current={sortField} dir={sortDir} onClick={handleSort} tip="Costo de Adquisición = Meta Ads ÷ Kits vendidos.\nEs mensual fijo, no por unidad." />
+                  <SortTh label="ROI %" field="roi" current={sortField} dir={sortDir} onClick={handleSort} tip="ROI = (G. Neta ÷ Costo total) × 100\n>100% excelente · 50-100% bueno · <50% bajo" />
+                  <SortTh label="P. Equilibrio" field="puntoEquilibrio" current={sortField} dir={sortDir} onClick={handleSort} tip="Unidades de ESTE kit para cubrir TODO el gasto de Meta Ads.\nFórmula: ceil(Meta Ads ÷ G. Neta/u)" />
+                  <SortTh label="P. Mín. Viable" field="precioMinimoViable" current={sortField} dir={sortDir} onClick={handleSort} tip="Precio mínimo para cubrir costos + CAC (ganancia real = 0).\nFórmula: Precio actual − G. Neta/u + CAC" />
+                  <SortTh label="Margen Seg." field="margenSeguridad" current={sortField} dir={sortDir} onClick={handleSort} tip="% de margen de seguridad sobre el precio.\nCon CAC: (Precio − P.Mín.Viable) ÷ Precio × 100\nSin CAC: G. Neta ÷ Precio × 100" />
                   <SortTh label="Unidades" field="unidades" current={sortField} dir={sortDir} onClick={handleSort} tip="Unidades vendidas registradas este mes" />
-                  <SortTh label="G. Acumulada" field="gananciaAcumulada" current={sortField} dir={sortDir} onClick={handleSort} tip={`Ganancia neta total generada por este kit en el mes (antes de descontar Meta Ads).\nFórmula: G. Neta/u × Unidades vendidas`} />
+                  <SortTh label="Conv. %" field="convRate" current={sortField} dir={sortDir} onClick={handleSort} tip="% de leads de Meta Ads que compraron este kit.\nFórmula: Unidades ÷ Leads totales × 100" />
+                  <SortTh label="G. Acumulada" field="gananciaAcumulada" current={sortField} dir={sortDir} onClick={handleSort} tip="Ganancia bruta del mes (antes de Meta Ads).\nFórmula: G. Neta/u × Unidades" />
+                  <SortTh label="G. Real" field="gananciaReal" current={sortField} dir={sortDir} onClick={handleSort} tip="Ganancia real después de Meta Ads proporcional.\nFórmula: (G. Neta/u − CAC) × Unidades" />
+                  <SortTh label="Stock" field="mesesStock" current={sortField} dir={sortDir} onClick={handleSort} tip="Meses de inventario al ritmo actual de ventas.\nFórmula: Inventario ÷ Unidades vendidas" />
                   <th style={{ padding: '10px 12px', textAlign: 'left', color: accent, fontWeight: 700, letterSpacing: '1px', fontSize: '11px', whiteSpace: 'nowrap' }}>
-                    <Tip text={`Estado del kit según su margen:\n⭐ ESTRELLA: ROI > 100% — excelente margen\n✓ OK: ROI 50-100% — buen margen\n⚠ RIESGO: ROI < 50% — margen bajo\n✕ PÉRDIDA: G. Neta negativa — precio menor al costo`}>Estado</Tip>
+                    <Tip text={`⭐ ESTRELLA: ROI > 100%\n✓ OK: ROI 50-100%\n⚠ RIESGO: ROI < 50%\n✕ PÉRDIDA: G. Neta negativa`}>Estado</Tip>
                   </th>
                 </tr>
               </thead>
@@ -626,26 +749,17 @@ export default function DashboardRentabilidad({ products }: { products: Product[
                   <tr key={m.product.id} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
                     <td style={{ padding: '10px 12px', color: 'var(--text)', fontWeight: 600 }}>{m.product.name}</td>
                     <td style={{ padding: '10px 12px', color: accent, fontWeight: 700 }}>
-                      <Tip text={`Precio de venta: ${COP(m.product.price)}`}>{COP(m.product.price)}</Tip>
+                      <Tip text={`Precio: ${COP(m.product.price)}\nP. Mínimo Viable: ${m.precioMinimoViable !== null ? COP(m.precioMinimoViable) : 'sin CAC'}`}>{COP(m.product.price)}</Tip>
                     </td>
                     <td style={{ padding: '10px 12px', color: m.ops.colorGN }}>
-                      <Tip text={`G. Neta = Precio (${COP(m.product.price)}) − Costo (${COP(m.product.costo ?? 0)}) − Envío (${COP(m.product.costo_envio ?? 40000)}) − Impacto dev. (${COP(m.ops.impactoDev)})\n= ${COP(m.ops.gNeta)}`}>
-                        {COP(m.ops.gNeta)}
-                      </Tip>
+                      <Tip text={`G. Neta = ${COP(m.product.price)} − ${COP(m.product.costo ?? 0)} − ${COP(m.product.costo_envio ?? 40000)} − ${COP(m.ops.impactoDev)} = ${COP(m.ops.gNeta)}`}>{COP(m.ops.gNeta)}</Tip>
                     </td>
-                    <td style={{ padding: '10px 12px', color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '11px' }}>
-                      {cac !== null
-                        ? <Tip text={`CAC = ${COP(performance?.gasto_meta ?? 0)} Meta Ads ÷ ${totalVentasKits} kits vendidos = ${COP(cac)}\nEs un gasto MENSUAL FIJO, no por unidad.`}>{COP(cac)}</Tip>
-                        : '—'}
-                    </td>
-                    <td style={{ padding: '10px 12px', color: m.rentabilidadReal !== null ? (m.rentabilidadReal >= 0 ? '#25d366' : '#e55') : 'var(--text-muted)' }}>
-                      {m.rentabilidadReal !== null
-                        ? <Tip text={`Rent. ref = G. Neta (${COP(m.ops.gNeta)}) − CAC (${COP(cac ?? 0)}) = ${COP(m.rentabilidadReal)}\nSolo referencia: el CAC es mensual fijo, no por kit.`}>{COP(m.rentabilidadReal)}</Tip>
-                        : '—'}
+                    <td style={{ padding: '10px 12px', color: 'var(--text-muted)', fontSize: '11px' }}>
+                      {cac !== null ? <Tip text={`CAC = ${COP(performance?.gasto_meta ?? 0)} ÷ ${totalVentasKits} kits = ${COP(cac)}`}>{COP(cac)}</Tip> : '—'}
                     </td>
                     <td style={{ padding: '10px 12px' }}>
                       {m.roi !== null ? (
-                        <Tip text={`ROI = (G. Neta ${COP(m.ops.gNeta)} ÷ Costo total ${COP(m.ops.costoTotal)}) × 100 = ${m.roi.toFixed(1)}%`}>
+                        <Tip text={`ROI = G. Neta (${COP(m.ops.gNeta)}) ÷ Costo total (${COP(m.ops.costoTotal)}) × 100 = ${m.roi.toFixed(1)}%`}>
                           <span style={{ color: m.roi > 100 ? '#25d366' : m.roi > 50 ? '#FFD400' : '#e55', fontWeight: 700 }}>
                             {m.roi.toFixed(0)}%
                             <MiniBar value={m.roi} max={Math.max(maxROI, 100)} color={m.roi > 100 ? '#25d366' : m.roi > 50 ? '#FFD400' : '#e55'} />
@@ -654,17 +768,28 @@ export default function DashboardRentabilidad({ products }: { products: Product[
                       ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                     </td>
                     <td style={{ padding: '10px 12px', color: m.puntoEquilibrio !== null ? 'var(--text)' : 'var(--text-muted)' }}>
-                      {m.puntoEquilibrio !== null
-                        ? <Tip text={`P. Equilibrio = ceil(Meta Ads ${COP(metaAds ?? 0)} ÷ G. Neta/u ${COP(m.ops.gNeta)}) = ${m.puntoEquilibrio} uds\nVendiendo ${m.puntoEquilibrio} de este kit cubrirías TODO el gasto en Meta Ads.`}>{m.puntoEquilibrio} uds</Tip>
-                        : '—'}
+                      {m.puntoEquilibrio !== null ? <Tip text={`ceil(${COP(metaAds ?? 0)} ÷ ${COP(m.ops.gNeta)}) = ${m.puntoEquilibrio} uds`}>{m.puntoEquilibrio} uds</Tip> : '—'}
+                    </td>
+                    <td style={{ padding: '10px 12px', color: m.precioMinimoViable !== null ? (m.precioMinimoViable < m.product.price ? '#25d366' : '#e55') : 'var(--text-muted)' }}>
+                      {m.precioMinimoViable !== null ? <Tip text={`P. Mín. Viable = ${COP(m.product.price)} − ${COP(m.ops.gNeta)} + ${COP(cac ?? 0)} = ${COP(m.precioMinimoViable)}`}>{COP(m.precioMinimoViable)}</Tip> : '—'}
+                    </td>
+                    <td style={{ padding: '10px 12px', fontWeight: 700, color: m.margenSeguridad !== null ? (m.margenSeguridad > 20 ? '#25d366' : m.margenSeguridad > 0 ? '#FFD400' : '#e55') : 'var(--text-muted)' }}>
+                      {m.margenSeguridad !== null ? <Tip text={`Margen de seguridad = ${m.margenSeguridad.toFixed(1)}%\n${cac !== null ? `Precio puede bajar hasta ${COP(m.precioMinimoViable ?? 0)} antes de perder dinero` : 'Sin CAC: % del precio que es ganancia neta'}`}>{m.margenSeguridad.toFixed(1)}%</Tip> : '—'}
                     </td>
                     <td style={{ padding: '10px 12px', color: m.unidades > 0 ? 'var(--text)' : 'var(--text-muted)' }}>
                       {m.unidades > 0 ? `${m.unidades} uds` : '—'}
                     </td>
+                    <td style={{ padding: '10px 12px', color: m.convRate !== null ? accent : 'var(--text-muted)' }}>
+                      {m.convRate !== null ? <Tip text={`Conv. = ${m.unidades} uds ÷ ${performance?.leads ?? 0} leads × 100 = ${m.convRate.toFixed(1)}%`}>{m.convRate.toFixed(1)}%</Tip> : '—'}
+                    </td>
                     <td style={{ padding: '10px 12px', color: m.gananciaAcumulada !== null ? '#25d366' : 'var(--text-muted)', fontWeight: 700 }}>
-                      {m.gananciaAcumulada !== null
-                        ? <Tip text={`G. Acumulada = G. Neta/u (${COP(m.ops.gNeta)}) × ${m.unidades} uds = ${COP(m.gananciaAcumulada)}\nAntes de descontar Meta Ads del mes.`}>{COP(m.gananciaAcumulada)}</Tip>
-                        : '—'}
+                      {m.gananciaAcumulada !== null ? <Tip text={`${COP(m.ops.gNeta)} × ${m.unidades} uds = ${COP(m.gananciaAcumulada)}\nAntes de descontar Meta Ads.`}>{COP(m.gananciaAcumulada)}</Tip> : '—'}
+                    </td>
+                    <td style={{ padding: '10px 12px', fontWeight: 700, color: m.gananciaReal !== null ? (m.gananciaReal >= 0 ? '#25d366' : '#e55') : 'var(--text-muted)' }}>
+                      {m.gananciaReal !== null ? <Tip text={`(${COP(m.ops.gNeta)} − ${COP(m.cac ?? 0)}) × ${m.unidades} = ${COP(m.gananciaReal)}`}>{COP(m.gananciaReal)}</Tip> : '—'}
+                    </td>
+                    <td style={{ padding: '10px 12px', color: m.mesesStock !== null ? (m.mesesStock > 6 ? '#e55' : m.mesesStock > 2 ? '#FFD400' : '#25d366') : 'var(--text-muted)' }}>
+                      {m.mesesStock !== null ? <Tip text={`Stock = ${m.product.inventory ?? 0} uds ÷ ${m.unidades} uds/mes = ${m.mesesStock} meses\n${m.mesesStock > 6 ? '⚠ Exceso de stock — capital inmovilizado' : m.mesesStock > 2 ? 'Stock aceptable' : '✓ Stock eficiente'}`}>{m.mesesStock}m</Tip> : '—'}
                     </td>
                     <td style={{ padding: '10px 12px' }}>
                       <AlertBadge alerta={m.alerta} />
