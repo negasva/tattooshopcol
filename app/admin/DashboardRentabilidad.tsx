@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getSupabase, Product } from '../lib/supabase';
 import {
   buildProductMetrics, buildSimScenarios, effectiveMargin,
-  currentMonthKey, monthOptions, COP,
+  currentMonthKey, monthOptions, prevMonthKey, COP,
   type ProductMetrics,
 } from '../lib/analytics';
 
@@ -26,13 +26,25 @@ interface MonthlySale {
 }
 
 // ─── Small components ─────────────────────────────────────────────────────────
-function KpiCard({ label, value, sub, color, dim }: { label: string; value: string; sub?: string; color?: string; dim?: boolean }) {
+function KpiCard({ label, value, sub, color, dim }: { label: string; value: string; sub?: React.ReactNode; color?: string; dim?: boolean }) {
   return (
     <div style={{ background: dim ? 'var(--surface)' : 'var(--bg)', border: `1px solid ${color ? color + '44' : 'var(--border)'}`, padding: '16px 20px', flex: '1 1 160px', minWidth: '140px' }}>
       <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1.5px', marginBottom: '8px', fontFamily: '"DM Mono", monospace' }}>{label}</div>
       <div style={{ fontSize: '24px', fontFamily: '"Bebas Neue", sans-serif', color: color || 'var(--text)', letterSpacing: '1px', lineHeight: 1 }}>{value}</div>
       {sub && <div style={{ fontSize: '10px', marginTop: '5px', fontFamily: '"DM Mono", monospace', color: color || 'var(--text-muted)' }}>{sub}</div>}
     </div>
+  );
+}
+
+function Delta({ pct, invertColors = false }: { pct: number | null; invertColors?: boolean }) {
+  if (pct === null) return null;
+  const good = invertColors ? pct <= 0 : pct >= 0;
+  const color = good ? '#25d366' : '#e55';
+  const arrow = pct > 0 ? '↑' : '↓';
+  return (
+    <span style={{ display: 'block', fontSize: '10px', color, fontFamily: '"DM Mono", monospace', marginTop: '3px' }}>
+      {arrow}{Math.abs(pct).toFixed(0)}% vs mes ant.
+    </span>
   );
 }
 
@@ -168,6 +180,9 @@ export default function DashboardRentabilidad({ products }: { products: Product[
   const [sortField, setSortField] = useState('roi');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
+  const [prevPerf, setPrevPerf] = useState<MonthlyPerf | null>(null);
+  const [prevSalesData, setPrevSalesData] = useState<MonthlySale[]>([]);
+
   const { toasts, show: showToast } = useToast();
 
   // ── Load monthly data ──────────────────────────────────────────────────────
@@ -194,6 +209,14 @@ export default function DashboardRentabilidad({ products }: { products: Product[
         salesMap[s.product_id] = s.unidades_vendidas;
       });
       setSalesForm(salesMap);
+      // Fetch previous month for comparison
+      const prev = prevMonthKey(selectedMes);
+      const [prevPerfRes, prevSalesRes] = await Promise.all([
+        sb.from('monthly_performance').select('*').eq('mes', prev).maybeSingle(),
+        sb.from('monthly_sales').select('*').eq('mes', prev),
+      ]);
+      setPrevPerf(prevPerfRes.data ?? null);
+      setPrevSalesData(prevSalesRes.data ?? []);
     } catch {
       setTablesReady(false);
       showToast('Error cargando datos del mes', 'error');
@@ -288,7 +311,7 @@ export default function DashboardRentabilidad({ products }: { products: Product[
 
   const kitMetrics: ProductMetrics[] = kitsWithCost.map((p) => {
     const unidades = salesData.find((s) => s.product_id === p.id)?.unidades_vendidas ?? 0;
-    return buildProductMetrics(p, unidades, cac, metaAds);
+    return buildProductMetrics(p, unidades, cac, metaAds, performance?.leads ?? null);
   });
   const otherMetrics: ProductMetrics[] = othersWithCost.map((p) => {
     const unidades = salesData.find((s) => s.product_id === p.id)?.unidades_vendidas ?? 0;
@@ -305,6 +328,11 @@ export default function DashboardRentabilidad({ products }: { products: Product[
       case 'unidades': return m.unidades;
       case 'gananciaAcumulada': return m.gananciaAcumulada ?? -Infinity;
       case 'gananciaReal': return m.gananciaReal ?? -Infinity;
+      case 'revenue': return m.revenue ?? -Infinity;
+      case 'precioMinimoViable': return m.precioMinimoViable ?? -Infinity;
+      case 'margenSeguridad': return m.margenSeguridad ?? -Infinity;
+      case 'convRate': return m.convRate ?? -Infinity;
+      case 'mesesStock': return m.mesesStock ?? Infinity;
       default: return -Infinity;
     }
   };

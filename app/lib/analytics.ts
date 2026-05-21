@@ -49,6 +49,11 @@ export interface ProductMetrics {
   gananciaAcumulada: number | null;  // gNeta × units (before Meta Ads)
   gananciaReal: number | null;       // (gNeta − CAC) × units = true profit after proportional Meta Ads
   puntoEquilibrio: number | null;
+  revenue: number | null;           // price × units
+  precioMinimoViable: number | null; // price at which rentabilidadReal = 0
+  margenSeguridad: number | null;   // % buffer before losing money
+  convRate: number | null;          // (units / totalLeads) × 100
+  mesesStock: number | null;        // inventory / units
   alerta: 'estrella' | 'ok' | 'riesgo' | 'perdida' | 'sin-cac';
 }
 
@@ -56,7 +61,8 @@ export function buildProductMetrics(
   product: Product,
   unidades: number,
   cac: number | null,
-  metaAds: number | null = null
+  metaAds: number | null = null,
+  totalLeads: number | null = null
 ): ProductMetrics {
   const ops = computeOps(
     product.price,
@@ -89,6 +95,27 @@ export function buildProductMetrics(
       ? Math.ceil(metaAds / ops.gNeta)
       : null;
 
+  const revenue = unidades > 0 ? product.price * unidades : null;
+
+  // precioMinimoViable: price where rentabilidadReal = 0 (gNeta = cac)
+  // Formula: currentPrice - gNeta + cac (shift price up until margin covers CAC)
+  const precioMinimoViable = cac !== null ? product.price - ops.gNeta + cac : null;
+
+  // margenSeguridad: % price buffer before breaking even (with CAC) or before going negative (without)
+  const margenSeguridad = precioMinimoViable !== null && product.price > 0
+    ? ((product.price - precioMinimoViable) / product.price) * 100
+    : product.price > 0 ? (ops.gNeta / product.price) * 100 : null;
+
+  // convRate: what % of total monthly leads converted to THIS kit
+  const convRate = totalLeads !== null && totalLeads > 0 && unidades > 0
+    ? (unidades / totalLeads) * 100
+    : null;
+
+  // mesesStock: how many months of inventory at current sales pace
+  const mesesStock = unidades > 0 && product.inventory != null && product.inventory >= 0
+    ? +(product.inventory / unidades).toFixed(1)
+    : null;
+
   // alerta: based on pure margin quality — no Meta Ads data required
   let alerta: ProductMetrics['alerta'] = 'sin-cac';
   if (ops.gNeta < 0) {
@@ -101,7 +128,7 @@ export function buildProductMetrics(
     alerta = 'riesgo';
   }
 
-  return { product, ops, unidades, cac, rentabilidadReal, roi, gananciaAcumulada, gananciaReal, puntoEquilibrio, alerta };
+  return { product, ops, unidades, cac, rentabilidadReal, roi, gananciaAcumulada, gananciaReal, puntoEquilibrio, revenue, precioMinimoViable, margenSeguridad, convRate, mesesStock, alerta };
 }
 
 // ─── Simulator ────────────────────────────────────────────────────────────────
@@ -193,6 +220,12 @@ export function monthOptions(count = 6): { key: string; label: string }[] {
     opts.push({ key, label: label.charAt(0).toUpperCase() + label.slice(1) });
   }
   return opts;
+}
+
+export function prevMonthKey(key: string): string {
+  const [y, m] = key.split('-').map(Number);
+  const d = new Date(y, m - 2, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
 export const COP = (n: number) => `$${Math.round(n).toLocaleString('es-CO')}`;
