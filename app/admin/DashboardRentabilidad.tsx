@@ -159,15 +159,22 @@ export default function DashboardRentabilidad({ products }: { products: Product[
       const sb = getSupabase();
       const payload = { mes: selectedMes, ...perfForm, updated_at: new Date().toISOString() };
       if (performance?.id) {
-        await sb.from('monthly_performance').update(payload).eq('id', performance.id);
+        const { error } = await sb.from('monthly_performance').update(payload).eq('id', performance.id);
+        if (error) throw error;
       } else {
-        await sb.from('monthly_performance').insert([{ ...payload, created_at: new Date().toISOString() }]);
+        const { error } = await sb.from('monthly_performance').insert([{ ...payload, created_at: new Date().toISOString() }]);
+        if (error) throw error;
       }
       await loadData();
       setShowMetaForm(false);
       showToast('Datos Meta Ads guardados');
-    } catch {
-      showToast('Error guardando. ¿Ejecutaste SUPABASE_MONTHLY_DATA.sql?', 'error');
+    } catch (err: unknown) {
+      const msg = err && typeof err === 'object' && 'message' in err ? (err as { message: string }).message : '';
+      if (msg.includes('row-level') || msg.includes('42501') || msg.includes('permission')) {
+        showToast('Error de permisos — ejecuta SUPABASE_FIX_RLS.sql en Supabase', 'error');
+      } else {
+        showToast(`Error guardando: ${msg || '¿Ejecutaste SUPABASE_MONTHLY_DATA.sql?'}`, 'error');
+      }
     } finally {
       setSaving(false);
     }
@@ -183,21 +190,27 @@ export default function DashboardRentabilidad({ products }: { products: Product[
         const existing = salesData.find((s) => s.product_id === product_id);
         const payload = { mes: selectedMes, product_id, unidades_vendidas, updated_at: new Date().toISOString() };
         if (existing?.id) {
-          await sb.from('monthly_sales').update(payload).eq('id', existing.id);
+          const { error } = await sb.from('monthly_sales').update(payload).eq('id', existing.id);
+          if (error) throw error;
         } else {
-          await sb.from('monthly_sales').insert([{ ...payload, created_at: new Date().toISOString() }]);
+          const { error } = await sb.from('monthly_sales').insert([{ ...payload, created_at: new Date().toISOString() }]);
+          if (error) throw error;
         }
       }
-      // Remove products set to 0
       const toDelete = salesData.filter((s) => !salesForm[s.product_id] || salesForm[s.product_id] === 0);
       for (const s of toDelete) {
-        if (s.id) await sb.from('monthly_sales').delete().eq('id', s.id);
+        if (s.id) { const { error } = await sb.from('monthly_sales').delete().eq('id', s.id); if (error) throw error; }
       }
       await loadData();
       setShowSalesForm(false);
       showToast('Ventas guardadas');
-    } catch {
-      showToast('Error guardando ventas', 'error');
+    } catch (err: unknown) {
+      const msg = err && typeof err === 'object' && 'message' in err ? (err as { message: string }).message : '';
+      if (msg.includes('row-level') || msg.includes('42501') || msg.includes('permission')) {
+        showToast('Error de permisos — ejecuta SUPABASE_FIX_RLS.sql en Supabase', 'error');
+      } else {
+        showToast(`Error guardando ventas: ${msg || 'revisa la consola'}`, 'error');
+      }
     } finally {
       setSaving(false);
     }
