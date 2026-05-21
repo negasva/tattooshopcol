@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { getSupabase } from '../lib/supabase';
 import { toSlug } from '../lib/utils';
@@ -9,7 +11,8 @@ import WhatsAppLogo from './WhatsAppLogo';
 import BrandLogo from './BrandLogo';
 import BrandLogoFull from './BrandLogoFull';
 import BrandLogoCombined from './BrandLogoCombined';
-import ReviewsSection from './ReviewsSection';
+// W10: lazy-load reviews — they're below the fold and make an API call
+const ReviewsSection = dynamic(() => import('./ReviewsSection'), { ssr: false });
 
 interface Product {
   id: string;
@@ -415,7 +418,7 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent, onCheckout }: { ca
               <div key={item.id} style={{ padding: '20px 0', borderBottom: '1px solid #2a2a2a', display: 'flex', gap: '16px', alignItems: 'center' }}>
                 <div style={{ width: '64px', height: '64px', background: '#1e1e1e', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {item.image_url ? (
-                    <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <Image src={item.image_url} alt={item.name} width={64} height={64} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
                   ) : (
                     <span style={{ fontSize: '24px', opacity: 0.3 }}>{getCategoryIcon(item.category)}</span>
                   )}
@@ -1250,7 +1253,11 @@ export default function TattooShopHome() {
                 const sp = p.discount_percentage && p.discount_percentage > 0 ? Math.round(p.price - p.price * (p.discount_percentage / 100)) : p.price;
                 return (
                   <div key={p.id} style={{ background: 'var(--surface)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {p.image_url && <img src={p.image_url} alt={p.name} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover' }} />}
+                    {p.image_url && (
+                      <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3' }}>
+                        <Image src={p.image_url} alt={p.name} fill sizes="(max-width: 600px) 100vw, 400px" style={{ objectFit: 'cover' }} loading="lazy" />
+                      </div>
+                    )}
                     <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', color: 'var(--text)' }}>{p.name}</div>
                     <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '24px', color: accent }}>{fmt(sp)}</div>
                     {p.discount_percentage && p.discount_percentage > 0 && <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: '#e55' }}>-{p.discount_percentage}% descuento</div>}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getSupabase } from '@/app/lib/supabase';
 
 const accent = '#FFD400';
@@ -80,7 +81,9 @@ export default function BoughtTogether({ currentProduct, onAddToCart }: { curren
             <div key={p.id} style={{ background: 'var(--surface)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {p.image_url && (
                 <Link href={`/productos/${toSlug(p.name)}`} style={{ display: 'block', textDecoration: 'none' }}>
-                  <img src={p.image_url} alt={p.name} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover' }} />
+                  <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3' }}>
+                    <Image src={p.image_url} alt={p.name} fill sizes="(max-width: 600px) 100vw, 300px" style={{ objectFit: 'cover' }} loading="lazy" />
+                  </div>
                 </Link>
               )}
               <div>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { rateLimit, getIP, rateLimitResponse } from '@/app/lib/ratelimit';
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -8,13 +9,29 @@ function getServiceClient() {
 }
 
 export async function POST(req: NextRequest) {
-  const { email, reference, cart, total, city, method } = await req.json();
+  // W1: 20 cart saves per 10 minutes per IP
+  const ip = getIP(req);
+  const rl = rateLimit(ip, 'save-cart', 20, 10 * 60_000);
+  if (!rl.ok) return rateLimitResponse(rl);
 
+  let body: Record<string, unknown>;
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: 'JSON inválido' }, { status: 400 });
+  }
+
+  const { email, reference, cart, total, city, method } = body;
+
+  // W5: validate required fields
   if (!email || !reference || !cart || !total) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
-
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (typeof total !== 'number' || total <= 0 || total > 100_000_000) {
+    return NextResponse.json({ error: 'Total inválido' }, { status: 400 });
+  }
+  if (!Array.isArray(cart) || cart.length === 0 || cart.length > 50) {
+    return NextResponse.json({ error: 'Carrito inválido' }, { status: 400 });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email))) {
     return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
   }
 

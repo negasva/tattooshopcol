@@ -11,12 +11,24 @@ function verifySignature(payload: string, receivedSig: string): boolean {
   return expected === receivedSig;
 }
 
+// W8: reject webhooks older than 5 minutes (replay attack prevention)
+const MAX_WEBHOOK_AGE_MS = 5 * 60_000;
+
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
   const signature = req.headers.get('x-wompi-signature') || '';
+  const tsHeader = req.headers.get('x-wompi-timestamp') || '';
 
   if (!verifySignature(rawBody, signature)) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+  }
+
+  // W8: timestamp guard against replay attacks
+  if (tsHeader) {
+    const ts = parseInt(tsHeader, 10);
+    if (!isNaN(ts) && Math.abs(Date.now() - ts * 1000) > MAX_WEBHOOK_AGE_MS) {
+      return NextResponse.json({ error: 'Webhook expired' }, { status: 400 });
+    }
   }
 
   let event: Record<string, unknown>;

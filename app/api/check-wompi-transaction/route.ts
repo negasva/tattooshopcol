@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit, getIP, rateLimitResponse } from '@/app/lib/ratelimit';
 
 export async function GET(req: NextRequest) {
+  // W1: 10 transaction checks per minute per IP
+  const rl = rateLimit(getIP(req), 'check-wompi', 10, 60_000);
+  if (!rl.ok) return rateLimitResponse(rl);
+
   const reference = req.nextUrl.searchParams.get('reference');
 
   if (!reference) {

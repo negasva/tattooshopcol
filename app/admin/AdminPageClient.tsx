@@ -138,23 +138,34 @@ function BarChart({ items }: { items: { label: string; price: number; costo: num
 
 // ─── Category Table ───────────────────────────────────────────────────────────
 const CATEGORIES = ['Kits', 'Máquinas', 'Insumos'];
+const PAGE_SIZE = 20;
 
-function CategoryTable({ category, products, onSaveField, onEdit, onDelete }: {
+function CategoryTable({ category, products, onSaveField, onEdit, onDelete, onExport }: {
   category: string; products: Product[];
   onSaveField: (id: string, field: string, value: string | number) => Promise<void>;
   onEdit: (p: Product) => void; onDelete: (id: string, name: string) => void;
+  onExport?: () => void;
 }) {
+  const [page, setPage] = useState(0);
+  const totalPages = Math.ceil(products.length / PAGE_SIZE);
+  const paginated = products.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
   if (products.length === 0) return null;
 
   return (
     <div style={{ marginBottom: '40px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px', color: accent, margin: 0, letterSpacing: '2px' }}>
           {category.toUpperCase()}
         </h2>
         <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', background: 'var(--surface)', border: '1px solid var(--border)', padding: '2px 8px' }}>
           {products.length} producto{products.length !== 1 ? 's' : ''}
         </span>
+        {onExport && (
+          <button onClick={onExport} style={{ padding: '3px 10px', background: 'transparent', border: `1px solid ${accent}44`, color: accent, cursor: 'pointer', fontFamily: '"DM Mono", monospace', fontSize: '10px', letterSpacing: '1px' }}>
+            ↓ CSV
+          </button>
+        )}
       </div>
       <div style={{ overflowX: 'auto', background: 'var(--surface)', border: '1px solid var(--border)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: '"DM Mono", monospace', fontSize: '12px' }}>
@@ -166,7 +177,7 @@ function CategoryTable({ category, products, onSaveField, onEdit, onDelete }: {
             </tr>
           </thead>
           <tbody>
-            {products.map((p, i) => {
+            {paginated.map((p, i) => {
               const ops = (p.costo && p.costo > 0)
                 ? computeOps(p.price, p.costo, p.costo_envio || 40000, p.tasa_devolucion || 25, p.costo_devolucion || 36000)
                 : null;
@@ -234,6 +245,16 @@ function CategoryTable({ category, products, onSaveField, onEdit, onDelete }: {
           </tbody>
         </table>
       </div>
+      {/* A4: pagination */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', fontFamily: '"DM Mono", monospace', fontSize: '11px' }}>
+          <button disabled={page === 0} onClick={() => setPage(0)} style={{ padding: '4px 8px', background: 'transparent', border: '1px solid var(--border)', color: page === 0 ? 'var(--text-muted)' : 'var(--text)', cursor: page === 0 ? 'default' : 'pointer' }}>«</button>
+          <button disabled={page === 0} onClick={() => setPage(p => p - 1)} style={{ padding: '4px 8px', background: 'transparent', border: '1px solid var(--border)', color: page === 0 ? 'var(--text-muted)' : 'var(--text)', cursor: page === 0 ? 'default' : 'pointer' }}>‹</button>
+          <span style={{ color: 'var(--text-muted)' }}>{page + 1} / {totalPages} · {products.length} total</span>
+          <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)} style={{ padding: '4px 8px', background: 'transparent', border: '1px solid var(--border)', color: page >= totalPages - 1 ? 'var(--text-muted)' : 'var(--text)', cursor: page >= totalPages - 1 ? 'default' : 'pointer' }}>›</button>
+          <button disabled={page >= totalPages - 1} onClick={() => setPage(totalPages - 1)} style={{ padding: '4px 8px', background: 'transparent', border: '1px solid var(--border)', color: page >= totalPages - 1 ? 'var(--text-muted)' : 'var(--text)', cursor: page >= totalPages - 1 ? 'default' : 'pointer' }}>»</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -277,12 +298,27 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
   );
 }
 
+// ─── Export helpers ───────────────────────────────────────────────────────────
+function exportCSV(rows: string[][], filename: string) {
+  const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: filename });
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+function exportJSON(data: unknown, filename: string) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: filename });
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function AdminPageClient() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [password, setPassword] = useState('');
   const [authenticated, setAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -300,6 +336,14 @@ export default function AdminPageClient() {
 
   const { toasts, show: showToast } = useToast();
   const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123';
+
+  // A1: check existing server session on mount
+  useEffect(() => {
+    fetch('/api/admin/check')
+      .then((r) => { if (r.ok) setAuthenticated(true); })
+      .catch(() => {})
+      .finally(() => setAuthChecked(true));
+  }, []);
 
   useEffect(() => {
     if (authenticated) { fetch('/api/migrate').catch(() => {}); loadProducts(); loadGroups(); }
@@ -378,18 +422,36 @@ export default function AdminPageClient() {
   };
 
   const handleSaveField = async (id: string, field: string, value: string | number) => {
+    // A3: optimistic update — update UI immediately, revert on error
+    const prev = products.find((p) => p.id === id);
+    setProducts((ps) => ps.map((p) => p.id === id ? { ...p, [field]: value } : p));
     try {
       const { error } = await getSupabase().from('products').update({ [field]: value || null, updated_at: new Date().toISOString() }).eq('id', id);
       if (error) throw error;
-      setProducts((prev) => prev.map((p) => p.id === id ? { ...p, [field]: value } : p));
       showToast('Guardado');
-    } catch { showToast('Error guardando', 'error'); }
+    } catch {
+      if (prev) setProducts((ps) => ps.map((p) => p.id === id ? prev : p));
+      showToast('Error guardando', 'error');
+    }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) { setAuthenticated(true); setPassword(''); }
-    else showToast('Contraseña incorrecta', 'error');
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      if (res.ok) { setAuthenticated(true); setPassword(''); }
+      else { const d = await res.json(); showToast(d.error || 'Contraseña incorrecta', 'error'); }
+    } catch { showToast('Error de conexión', 'error'); }
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/admin/logout', { method: 'POST' });
+    setAuthenticated(false);
+    setProducts([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -578,7 +640,28 @@ export default function AdminPageClient() {
     display: 'block', marginBottom: '6px', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1.5px',
   };
 
+  // ── Export helpers ─────────────────────────────────────────────────────────
+  const exportProductsCSV = (category?: string) => {
+    const src = category ? products.filter((p) => p.category === category) : products;
+    const headers = ['ID', 'Nombre', 'Categoría', 'Precio', 'Precio Original', 'Descuento%', 'Costo', 'Margen%', 'Inventario', 'Etiqueta', 'Creado'];
+    const rows = src.map((p) => [
+      p.id, p.name, p.category, p.price, p.original_price ?? '', p.discount_percentage ?? '',
+      p.costo ?? '', p.margen_deseado ?? '', p.inventory, p.tag, p.created_at.split('T')[0],
+    ]);
+    exportCSV([headers, ...rows as string[][]], `productos-${category ?? 'todos'}-${new Date().toISOString().split('T')[0]}.csv`);
+    showToast(`CSV exportado${category ? ` — ${category}` : ''}`);
+  };
+
+  const exportProductsJSON = () => {
+    exportJSON(products, `productos-${new Date().toISOString().split('T')[0]}.json`);
+    showToast('JSON exportado');
+  };
+
   // ── Login ──────────────────────────────────────────────────────────────────
+  if (!authChecked) {
+    return <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontFamily: '"DM Mono", monospace', color: 'var(--text-muted)' }}>Verificando sesión...</span></div>;
+  }
+
   if (!authenticated) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
@@ -634,7 +717,18 @@ export default function AdminPageClient() {
       <div style={{ maxWidth: '1300px', margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
           <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '48px', color: accent, margin: 0 }}>PANEL ADMIN</h1>
-          <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)' }}>{products.length} productos en total</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)' }}>{products.length} productos</span>
+            <button onClick={() => exportProductsCSV()} style={{ padding: '6px 12px', background: 'transparent', border: `1px solid ${accent}55`, color: accent, cursor: 'pointer', fontFamily: '"DM Mono", monospace', fontSize: '10px', letterSpacing: '1px' }}>
+              ↓ CSV
+            </button>
+            <button onClick={exportProductsJSON} style={{ padding: '6px 12px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: '"DM Mono", monospace', fontSize: '10px', letterSpacing: '1px' }}>
+              ↓ JSON
+            </button>
+            <button onClick={handleLogout} style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #e5533344', color: '#e55', cursor: 'pointer', fontFamily: '"DM Mono", monospace', fontSize: '10px', letterSpacing: '1px' }}>
+              SALIR
+            </button>
+          </div>
         </div>
 
         {/* ── FORM TOGGLE ─────────────────────────────────────────────────── */}
@@ -918,11 +1012,13 @@ export default function AdminPageClient() {
           <>
             {productsByCategory.map(({ category, products: catProducts }) => (
               <CategoryTable key={category} category={category} products={catProducts}
-                onSaveField={handleSaveField} onEdit={handleEdit} onDelete={(id, name) => setDeletingId(id)} />
+                onSaveField={handleSaveField} onEdit={handleEdit} onDelete={(id) => setDeletingId(id)}
+                onExport={() => exportProductsCSV(category)} />
             ))}
             {uncategorized.length > 0 && (
               <CategoryTable category="Otros" products={uncategorized}
-                onSaveField={handleSaveField} onEdit={handleEdit} onDelete={(id, name) => setDeletingId(id)} />
+                onSaveField={handleSaveField} onEdit={handleEdit} onDelete={(id) => setDeletingId(id)}
+                onExport={() => exportProductsCSV('Otros')} />
             )}
           </>
         )}
