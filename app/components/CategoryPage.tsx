@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { getSupabase } from '../lib/supabase';
 import { toSlug } from '../lib/utils';
@@ -205,7 +206,7 @@ function CartDrawer({ cart, onClose, onRemove, onQty, onCheckout }: {
               <div key={item.id} style={{ padding: '20px 0', borderBottom: '1px solid #2a2a2a', display: 'flex', gap: '16px', alignItems: 'center' }}>
                 <div style={{ width: '64px', height: '64px', background: '#1e1e1e', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {item.image_url
-                    ? <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ? <Image src={item.image_url} alt={item.name} width={64} height={64} style={{ objectFit: 'cover', width: '100%', height: '100%' }} loading="lazy" />
                     : <span style={{ fontSize: '24px', opacity: 0.3 }}>{getCategoryIcon(item.category)}</span>
                   }
                 </div>

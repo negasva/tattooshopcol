@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendAbandonedCartEmail } from '@/app/lib/email';
 
-// Vercel cron invoca este endpoint con un header de autorización
+// W6: always require CRON_SECRET — never open in production
 function authorized(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true; // sin secret configurado, permitir (solo para dev)
+  if (!secret) return false; // block if not configured
   return req.headers.get('authorization') === `Bearer ${secret}`;
 }
 
