@@ -29,6 +29,15 @@ interface Product {
   id: string;
   name: string;
   inventory: number;
+  price: number;
+}
+
+interface SelectedItem {
+  id: string;
+  name: string;
+  price: number;
+  qty: number;
+  maxStock: number;
 }
 
 export default function CrmDashboard() {
@@ -44,6 +53,18 @@ export default function CrmDashboard() {
   const [trackingNumberInput, setTrackingNumberInput] = useState('');
   
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Manual Order Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerCity, setCustomerCity] = useState('');
+  const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
+  const [currentSelectedProductId, setCurrentSelectedProductId] = useState('');
+  const [currentQty, setCurrentQty] = useState(1);
+  const [paymentMethod, setPaymentMethod] = useState('NEQUI');
+  const [submittingOrder, setSubmittingOrder] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -73,7 +94,7 @@ export default function CrmDashboard() {
       // Fetch products for stock levels
       const { data: prods, error: prodErr } = await supabase
         .from('products')
-        .select('id, name, inventory');
+        .select('id, name, inventory, price');
       if (prodErr) throw prodErr;
       setProducts(prods || []);
 
@@ -131,7 +152,6 @@ export default function CrmDashboard() {
   };
 
   const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
-    // Optimistic update
     const previousOrders = [...orders];
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
 
@@ -186,6 +206,107 @@ export default function CrmDashboard() {
     e.preventDefault();
   };
 
+  // Manual Order Management
+  const addProductToOrder = () => {
+    if (!currentSelectedProductId) return;
+    const targetProd = products.find(p => p.id === currentSelectedProductId);
+    if (!targetProd) return;
+
+    const existingIdx = selectedItems.findIndex(i => i.id === currentSelectedProductId);
+    const availableStock = targetProd.inventory ?? 0;
+
+    if (existingIdx > -1) {
+      const newQty = selectedItems[existingIdx].qty + currentQty;
+      if (newQty > availableStock) {
+        showToast(`Stock insuficiente. Solo quedan ${availableStock} disponibles.`, 'error');
+        return;
+      }
+      setSelectedItems(prev => prev.map((item, idx) => idx === existingIdx ? { ...item, qty: newQty } : item));
+    } else {
+      if (currentQty > availableStock) {
+        showToast(`Stock insuficiente. Solo quedan ${availableStock} disponibles.`, 'error');
+        return;
+      }
+      setSelectedItems(prev => [...prev, {
+        id: targetProd.id,
+        name: targetProd.name,
+        price: targetProd.price,
+        qty: currentQty,
+        maxStock: availableStock
+      }]);
+    }
+
+    setCurrentSelectedProductId('');
+    setCurrentQty(1);
+  };
+
+  const removeProductFromOrder = (id: string) => {
+    setSelectedItems(prev => prev.filter(i => i.id !== id));
+  };
+
+  const calculateTotalOrderAmount = () => {
+    return selectedItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  };
+
+  const handleCreateManualOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerName) {
+      showToast('El nombre del cliente es requerido', 'error');
+      return;
+    }
+    if (selectedItems.length === 0) {
+      showToast('Debes añadir al menos un producto', 'error');
+      return;
+    }
+
+    try {
+      setSubmittingOrder(true);
+      const total = calculateTotalOrderAmount();
+
+      const response = await fetch('/api/crm/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer: {
+            name: customerName,
+            phone: customerPhone || null,
+            email: customerEmail || null,
+            city: customerCity || null
+          },
+          products: selectedItems.map(i => ({
+            id: i.id,
+            quantity: i.qty
+          })),
+          total,
+          payment_method: paymentMethod,
+          status: 'PAID' // Por defecto se registra como pagada para empaquetar
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Fallo al guardar la orden manual');
+      }
+
+      showToast('Pedido manual creado exitosamente');
+      setIsModalOpen(false);
+      // Reset variables
+      setCustomerName('');
+      setCustomerPhone('');
+      setCustomerEmail('');
+      setCustomerCity('');
+      setSelectedItems([]);
+      setPaymentMethod('NEQUI');
+      // Reload Data
+      loadData();
+
+    } catch (err: any) {
+      showToast(err.message || 'Error guardando pedido manual', 'error');
+    } finally {
+      setSubmittingOrder(false);
+    }
+  };
+
   // Metrics Calculations
   const stockCriticoCount = products.filter(p => (p.inventory ?? 0) < 3).length;
   
@@ -195,7 +316,7 @@ export default function CrmDashboard() {
     return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
   });
   const cajaDelMes = currentMonthOrders
-    .filter(o => o.status !== 'PENDING') // Omitir no pagados
+    .filter(o => o.status !== 'PENDING')
     .reduce((sum, o) => sum + (o.total_amount || 0), 0);
 
   const pedidosPendientesCount = orders.filter(o => o.status === 'PAID' || o.status === 'SHIPPED').length;
@@ -256,12 +377,20 @@ export default function CrmDashboard() {
             <h1 className="text-4xl lg:text-5xl font-black text-[#FFD400] tracking-tight">PANEL CRM</h1>
             <p className="text-sm font-mono text-zinc-500 mt-1">Control de Pedidos & Inventario</p>
           </div>
-          <button
-            onClick={loadData}
-            className="px-4 py-2 border border-zinc-800 hover:border-[#FFD400] hover:text-[#FFD400] font-mono text-xs transition"
-          >
-            ACTUALIZAR DATOS
-          </button>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex-1 sm:flex-none px-4 py-2 bg-[#FFD400] text-black font-bold text-xs tracking-wider transition hover:bg-yellow-400"
+            >
+              + REGISTRAR VENTA MANUAL
+            </button>
+            <button
+              onClick={loadData}
+              className="px-4 py-2 border border-zinc-800 hover:border-[#FFD400] hover:text-[#FFD400] font-mono text-xs transition"
+            >
+              ACTUALIZAR DATOS
+            </button>
+          </div>
         </div>
 
         {/* Metrics Row */}
@@ -358,7 +487,6 @@ export default function CrmDashboard() {
                             {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.total_amount)}
                           </span>
                           
-                          {/* Left/Right actions for Mobile */}
                           <div className="flex items-center gap-1 md:hidden">
                             {col.status !== 'PAID' && (
                               <button
@@ -385,7 +513,6 @@ export default function CrmDashboard() {
                           </div>
                         </div>
 
-                        {/* Tracking Number Section */}
                         {col.status === 'SHIPPED' && (
                           <div className="mt-3 pt-3 border-t border-dashed border-zinc-800">
                             {editingTrackingId === order.id ? (
@@ -435,6 +562,193 @@ export default function CrmDashboard() {
         </div>
 
       </div>
+
+      {/* Manual Order Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 overflow-y-auto">
+          <div className="bg-[#1a1a1a] border border-zinc-800 w-full max-w-2xl rounded-sm shadow-2xl p-6 relative my-8">
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white font-mono text-xl"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-2xl font-black text-[#FFD400] uppercase tracking-wide mb-6">
+              Registrar Venta Manual (WA)
+            </h2>
+
+            <form onSubmit={handleCreateManualOrder} className="space-y-6">
+              
+              {/* Customer Info Group */}
+              <div className="border-b border-zinc-800 pb-4">
+                <h3 className="text-xs font-mono uppercase tracking-wider text-zinc-450 mb-3">Datos del Cliente</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-mono uppercase text-zinc-500 mb-1">Nombre Completo *</label>
+                    <input
+                      type="text"
+                      required
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Ej. Juan Pérez"
+                      className="w-full bg-[#121212] border border-zinc-800 p-2.5 text-sm text-white outline-none focus:border-[#FFD400] transition"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-mono uppercase text-zinc-500 mb-1">Teléfono</label>
+                    <input
+                      type="text"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="Ej. 3001234567"
+                      className="w-full bg-[#121212] border border-zinc-800 p-2.5 text-sm text-white outline-none focus:border-[#FFD400] transition"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-mono uppercase text-zinc-500 mb-1">Correo Electrónico</label>
+                    <input
+                      type="email"
+                      value={customerEmail}
+                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      placeholder="Ej. cliente@gmail.com"
+                      className="w-full bg-[#121212] border border-zinc-800 p-2.5 text-sm text-white outline-none focus:border-[#FFD400] transition"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-mono uppercase text-zinc-500 mb-1">Ciudad</label>
+                    <input
+                      type="text"
+                      value={customerCity}
+                      onChange={(e) => setCustomerCity(e.target.value)}
+                      placeholder="Ej. Bogotá"
+                      className="w-full bg-[#121212] border border-zinc-800 p-2.5 text-sm text-white outline-none focus:border-[#FFD400] transition"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Product Selector Group */}
+              <div className="border-b border-zinc-800 pb-4">
+                <h3 className="text-xs font-mono uppercase tracking-wider text-zinc-450 mb-3">Agregar Productos</h3>
+                <div className="flex flex-col sm:flex-row gap-2 items-end">
+                  <div className="flex-1 w-full">
+                    <label className="block text-[10px] font-mono uppercase text-zinc-500 mb-1">Seleccionar Producto</label>
+                    <select
+                      value={currentSelectedProductId}
+                      onChange={(e) => setCurrentSelectedProductId(e.target.value)}
+                      className="w-full bg-[#121212] border border-zinc-800 p-2.5 text-sm text-white outline-none focus:border-[#FFD400] transition"
+                    >
+                      <option value="">-- Elige un producto --</option>
+                      {products.map(p => (
+                        <option key={p.id} value={p.id} disabled={p.inventory <= 0}>
+                          {p.name} ({p.inventory} disponibles) - ${p.price.toLocaleString('es-CO')}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="w-24">
+                    <label className="block text-[10px] font-mono uppercase text-zinc-500 mb-1">Cantidad</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={currentQty}
+                      onChange={(e) => setCurrentQty(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-full bg-[#121212] border border-zinc-800 p-2.5 text-sm text-white text-center outline-none focus:border-[#FFD400] transition"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={addProductToOrder}
+                    className="w-full sm:w-auto px-6 py-2.5 bg-zinc-800 border border-zinc-700 font-bold hover:bg-zinc-700 text-sm tracking-wider transition"
+                  >
+                    AÑADIR
+                  </button>
+                </div>
+
+                {/* Selected Products Table */}
+                {selectedItems.length > 0 && (
+                  <div className="mt-4 bg-[#121212] border border-zinc-850 p-2 rounded-sm space-y-2">
+                    {selectedItems.map(item => (
+                      <div key={item.id} className="flex justify-between items-center text-xs p-2 border-b border-zinc-900 last:border-0">
+                        <div>
+                          <div className="font-bold text-zinc-300">{item.name}</div>
+                          <div className="text-zinc-500 font-mono">
+                            {item.qty} uds x ${item.price.toLocaleString('es-CO')}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="font-bold font-mono text-[#FFD400]">
+                            ${(item.price * item.qty).toLocaleString('es-CO')}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeProductFromOrder(item.id)}
+                            className="text-red-500 hover:text-red-400 font-mono text-sm"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Payment Method Group */}
+              <div>
+                <h3 className="text-xs font-mono uppercase tracking-wider text-zinc-450 mb-3">Método de Pago</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {['NEQUI', 'BANCOLOMBIA', 'DAVIPLATA', 'MERCADOPAGO'].map(method => (
+                    <button
+                      key={method}
+                      type="button"
+                      onClick={() => setPaymentMethod(method)}
+                      className={`p-3 font-mono text-xs font-bold border transition ${
+                        paymentMethod === method
+                          ? 'bg-[#FFD400] text-black border-[#FFD400]'
+                          : 'bg-[#121212] text-zinc-450 border-zinc-800 hover:border-zinc-650'
+                      }`}
+                    >
+                      {method}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Total & Submit */}
+              <div className="pt-4 border-t border-zinc-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="text-center sm:text-left">
+                  <span className="text-[10px] font-mono uppercase text-zinc-500 block">Total del Pedido</span>
+                  <span className="text-2xl font-black font-mono text-[#FFD400]">
+                    ${calculateTotalOrderAmount().toLocaleString('es-CO')}
+                  </span>
+                </div>
+                
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="w-1/2 sm:w-auto px-6 py-3 border border-zinc-800 text-zinc-400 hover:text-white font-mono text-xs transition"
+                  >
+                    CANCELAR
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingOrder || selectedItems.length === 0}
+                    className="w-1/2 sm:w-auto px-8 py-3 bg-[#FFD400] text-black font-bold text-xs tracking-wider transition hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submittingOrder ? 'REGISTRANDO...' : 'REGISTRAR PEDIDO'}
+                  </button>
+                </div>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Toast Alert */}
       {toast && (
