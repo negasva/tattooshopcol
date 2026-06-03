@@ -27,6 +27,14 @@ export interface Product {
   specs: string;
   tag: string;
   inventory: number;
+  nivel_recomendado?: 'principiante' | 'intermedio' | 'profesional';
+  tipo_uso?: 'liner' | 'shader' | 'ambos' | 'colorear';
+  complejidad_uso?: number;
+  costo?: number;
+  margen_deseado?: number;
+  costo_envio?: number;
+  tasa_devolucion?: number;
+  costo_devolucion?: number;
   created_at: string;
   updated_at: string;
 }

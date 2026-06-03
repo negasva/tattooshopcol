@@ -1,612 +1,1208 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getSupabase, Product } from '../lib/supabase';
+import { computeOps, COP } from '../lib/analytics';
+import DashboardRentabilidad from './DashboardRentabilidad';
+import KitCostBuilder, { type KitComponent, type ComponentGroup } from './KitCostBuilder';
 
+const accent = '#FFD400';
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+interface Toast { id: number; message: string; type: 'success' | 'error' }
+
+function useToast() {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const show = useCallback((message: string, type: Toast['type'] = 'success') => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
+  }, []);
+  return { toasts, show };
+}
+
+function ToastContainer({ toasts }: { toasts: Toast[] }) {
+  return (
+    <div style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center', pointerEvents: 'none' }}>
+      {toasts.map((t) => (
+        <div key={t.id} style={{
+          background: t.type === 'success' ? '#1a2e1a' : '#2e1a1a',
+          border: `1px solid ${t.type === 'success' ? '#25d366' : '#e55'}`,
+          color: t.type === 'success' ? '#25d366' : '#e55',
+          fontFamily: '"DM Mono", monospace', fontSize: '13px', letterSpacing: '0.5px',
+          padding: '10px 20px', whiteSpace: 'nowrap', animation: 'fadeIn 0.2s ease',
+        }}>
+          {t.type === 'success' ? '✓' : '✕'} {t.message}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Inline editable cell ─────────────────────────────────────────────────────
+function EditableCell({ value, field, type = 'text', options, onSave, accent: a }: {
+  value: string | number; field: string; type?: string;
+  options?: string[]; onSave: (field: string, value: string | number) => void; accent: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+
+  const commit = () => { onSave(field, draft); setEditing(false); };
+  const cancel = () => { setDraft(value); setEditing(false); };
+
+  const inputStyle: React.CSSProperties = {
+    background: 'var(--bg)', border: `1px solid ${a}`, color: 'var(--text)',
+    fontFamily: '"DM Mono", monospace', fontSize: '12px', padding: '4px 8px',
+    width: type === 'number' ? '90px' : '140px', outline: 'none',
+  };
+
+  if (editing) {
+    return (
+      <span style={{ display: 'inline-flex', gap: '4px', alignItems: 'center' }}>
+        {options ? (
+          <select value={String(draft)} onChange={(e) => setDraft(e.target.value)} style={inputStyle} autoFocus>
+            {options.map((o) => <option key={o}>{o}</option>)}
+          </select>
+        ) : (
+          <input
+            type={type} value={draft} autoFocus
+            onChange={(e) => setDraft(type === 'number' ? Number(e.target.value) : e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') cancel(); }}
+            style={inputStyle}
+          />
+        )}
+        <button onClick={commit} style={{ background: a, color: '#111', border: 'none', padding: '3px 7px', cursor: 'pointer', fontSize: '11px', fontWeight: 700 }}>✓</button>
+        <button onClick={cancel} style={{ background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', padding: '3px 7px', cursor: 'pointer', fontSize: '11px' }}>✕</button>
+      </span>
+    );
+  }
+
+  return (
+    <span
+      onClick={() => { setDraft(value); setEditing(true); }}
+      title="Clic para editar"
+      style={{ cursor: 'text', borderBottom: '1px dashed var(--border)', paddingBottom: '1px', transition: 'border-color 0.2s' }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLSpanElement).style.borderBottomColor = a; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLSpanElement).style.borderBottomColor = 'var(--border)'; }}
+    >
+      {value === '' || value === 0 || value === null || value === undefined
+        ? <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>—</span>
+        : String(value)}
+    </span>
+  );
+}
+
+// ─── Margin badge ─────────────────────────────────────────────────────────────
+function MarginBadge({ price, costo }: { price: number; costo?: number }) {
+  if (!costo || costo <= 0 || price <= 0) {
+    return <span style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '11px' }}>—</span>;
+  }
+  const pct = ((price - costo) / price) * 100;
+  const color = pct >= 50 ? '#25d366' : pct >= 30 ? '#FFD400' : '#e55';
+  return <span style={{ color, fontWeight: 700, fontFamily: '"DM Mono", monospace', fontSize: '12px' }}>{pct.toFixed(1)}%</span>;
+}
+
+// ─── CSS bar chart ────────────────────────────────────────────────────────────
+function BarChart({ items }: { items: { label: string; price: number; costo: number; gNeta: number; colorGN: string }[] }) {
+  const [activeSeries, setActiveSeries] = useState<string | null>(null);
+  const maxVal = Math.max(...items.map((i) => i.price));
+
+  const SERIES = [
+    { key: 'price',  label: 'Precio  ', color: accent },
+    { key: 'costo',  label: 'Costo   ', color: '#e55' },
+    { key: 'gNeta',  label: 'G. Neta ', color: '#25d366' },
+  ] as const;
+
+  const handleSeriesClick = (key: string) => {
+    setActiveSeries((prev) => (prev === key ? null : key));
+  };
+
+  const opacity = (key: string) =>
+    activeSeries === null || activeSeries === key ? 1 : 0.2;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {items.map((item) => {
+        const vals: Record<string, number> = { price: item.price, costo: item.costo, gNeta: Math.max(item.gNeta, 0) };
+        return (
+          <div key={item.label}>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px', fontFamily: '"DM Mono", monospace', letterSpacing: '0.5px' }}>
+              {item.label}
+            </div>
+            {SERIES.map(({ key, label, color }) => (
+              <div
+                key={key}
+                onClick={() => handleSeriesClick(key)}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px', cursor: 'pointer', opacity: opacity(key), transition: 'opacity 0.2s' }}
+              >
+                <div style={{ width: '56px', fontSize: '10px', color, fontFamily: '"DM Mono", monospace', flexShrink: 0, fontWeight: activeSeries === key ? 700 : 400 }}>{label}</div>
+                <div style={{ flex: 1, background: 'var(--surface2)', height: '14px', overflow: 'hidden' }}>
+                  <div style={{ height: '14px', width: `${Math.max((vals[key] / maxVal) * 100, 0)}%`, background: color, transition: 'width 0.4s ease', minWidth: vals[key] > 0 ? '2px' : '0' }} />
+                </div>
+                <div style={{ width: '88px', fontSize: '10px', textAlign: 'right', fontFamily: '"DM Mono", monospace', color, flexShrink: 0 }}>{COP(vals[key])}</div>
+              </div>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Category Table ───────────────────────────────────────────────────────────
+const CATEGORIES = ['Kits', 'Máquinas', 'Insumos'];
+const PAGE_SIZE = 20;
+
+function CategoryTable({ category, products, onSaveField, onEdit, onDelete, onExport }: {
+  category: string; products: Product[];
+  onSaveField: (id: string, field: string, value: string | number) => Promise<void>;
+  onEdit: (p: Product) => void; onDelete: (id: string, name: string) => void;
+  onExport?: () => void;
+}) {
+  const [page, setPage] = useState(0);
+  const totalPages = Math.ceil(products.length / PAGE_SIZE);
+  const paginated = products.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  if (products.length === 0) return null;
+
+  return (
+    <div style={{ marginBottom: '40px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px', color: accent, margin: 0, letterSpacing: '2px' }}>
+          {category.toUpperCase()}
+        </h2>
+        <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', background: 'var(--surface)', border: '1px solid var(--border)', padding: '2px 8px' }}>
+          {products.length} producto{products.length !== 1 ? 's' : ''}
+        </span>
+        {onExport && (
+          <button onClick={onExport} style={{ padding: '3px 10px', background: 'transparent', border: `1px solid ${accent}44`, color: accent, cursor: 'pointer', fontFamily: '"DM Mono", monospace', fontSize: '10px', letterSpacing: '1px' }}>
+            ↓ CSV
+          </button>
+        )}
+      </div>
+      <div style={{ overflowX: 'auto', background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: '"DM Mono", monospace', fontSize: '12px' }}>
+          <thead>
+            <tr style={{ borderBottom: `2px solid ${accent}33`, background: 'var(--surface2)' }}>
+              {['Imagen', 'Nombre', 'Precio Original', 'Precio Final', 'Descuento %', 'Inventario', 'Etiqueta', 'Nivel', 'Tipo', 'Complejidad', 'Costo', 'Margen %', 'G. Neta', 'Acciones'].map((h) => (
+                <th key={h} style={{ padding: '10px 12px', textAlign: h === 'Acciones' ? 'center' : 'left', color: accent, fontWeight: 700, letterSpacing: '1px', fontSize: '11px', whiteSpace: 'nowrap' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {paginated.map((p, i) => {
+              const ops = (p.costo && p.costo > 0)
+                ? computeOps(p.price, p.costo, p.costo_envio || 40000)
+                : null;
+
+              return (
+                <tr key={p.id} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                  <td style={{ padding: '10px 12px' }}>
+                    {p.image_url
+                      ? <img src={p.image_url} alt={p.name} style={{ width: '44px', height: '44px', objectFit: 'cover' }} />
+                      : <div style={{ width: '44px', height: '44px', background: 'var(--surface2)' }} />}
+                  </td>
+                  <td style={{ padding: '10px 12px', color: 'var(--text)', maxWidth: '200px' }}>
+                    <EditableCell value={p.name} field="name" onSave={(f, v) => onSaveField(p.id, f, v)} accent={accent} />
+                  </td>
+                  <td style={{ padding: '10px 12px', color: p.original_price ? accent : 'var(--text-muted)' }}>
+                    <EditableCell value={p.original_price ?? 0} field="original_price" type="number" onSave={(f, v) => onSaveField(p.id, f, v)} accent={accent} />
+                  </td>
+                  <td style={{ padding: '10px 12px', color: accent, fontWeight: 700 }}>
+                    <EditableCell value={p.price} field="price" type="number" onSave={(f, v) => onSaveField(p.id, f, v)} accent={accent} />
+                  </td>
+                  <td style={{ padding: '10px 12px', color: p.discount_percentage && p.discount_percentage > 0 ? '#e55' : 'var(--text-muted)' }}>
+                    <EditableCell value={p.discount_percentage ?? 0} field="discount_percentage" type="number" onSave={(f, v) => onSaveField(p.id, f, v)} accent={accent} />
+                  </td>
+                  <td style={{ padding: '10px 12px', color: (p.inventory ?? 0) > 0 ? 'var(--text)' : '#e55', fontWeight: (p.inventory ?? 0) === 0 ? 700 : 400 }}>
+                    <EditableCell value={p.inventory ?? 0} field="inventory" type="number" onSave={(f, v) => onSaveField(p.id, f, v)} accent={accent} />
+                  </td>
+                  <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>
+                    <EditableCell value={p.tag ?? ''} field="tag" onSave={(f, v) => onSaveField(p.id, f, v)} accent={accent} />
+                  </td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <EditableCell value={p.nivel_recomendado ?? ''} field="nivel_recomendado" options={['', 'principiante', 'intermedio', 'profesional']} onSave={(f, v) => onSaveField(p.id, f, v)} accent={accent} />
+                  </td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <EditableCell value={p.tipo_uso ?? ''} field="tipo_uso" options={['', 'liner', 'shader', 'ambos', 'colorear']} onSave={(f, v) => onSaveField(p.id, f, v)} accent={accent} />
+                  </td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <EditableCell value={p.complejidad_uso ?? ''} field="complejidad_uso" type="number" onSave={(f, v) => onSaveField(p.id, f, v)} accent={accent} />
+                  </td>
+                  <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>
+                    <EditableCell value={p.costo ?? 0} field="costo" type="number" onSave={(f, v) => onSaveField(p.id, f, v)} accent={accent} />
+                  </td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <MarginBadge price={p.price} costo={p.costo} />
+                  </td>
+                  <td style={{ padding: '10px 12px' }}>
+                    {ops ? (
+                      <span style={{ color: ops.colorGN, fontWeight: 700, fontSize: '12px' }}>
+                        {COP(ops.gNeta)}
+                      </span>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '11px' }}>—</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '10px 12px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                    <button onClick={() => onEdit(p)} style={{ marginRight: '6px', padding: '5px 10px', background: 'transparent', color: accent, border: `1px solid ${accent}33`, cursor: 'pointer', fontSize: '11px', fontFamily: '"DM Mono", monospace' }}>
+                      Editar
+                    </button>
+                    <button onClick={() => onDelete(p.id, p.name)} style={{ padding: '5px 10px', background: 'transparent', color: '#e55', border: '1px solid #e5533344', cursor: 'pointer', fontSize: '11px', fontFamily: '"DM Mono", monospace' }}>
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {/* A4: pagination */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', fontFamily: '"DM Mono", monospace', fontSize: '11px' }}>
+          <button disabled={page === 0} onClick={() => setPage(0)} style={{ padding: '4px 8px', background: 'transparent', border: '1px solid var(--border)', color: page === 0 ? 'var(--text-muted)' : 'var(--text)', cursor: page === 0 ? 'default' : 'pointer' }}>«</button>
+          <button disabled={page === 0} onClick={() => setPage(p => p - 1)} style={{ padding: '4px 8px', background: 'transparent', border: '1px solid var(--border)', color: page === 0 ? 'var(--text-muted)' : 'var(--text)', cursor: page === 0 ? 'default' : 'pointer' }}>‹</button>
+          <span style={{ color: 'var(--text-muted)' }}>{page + 1} / {totalPages} · {products.length} total</span>
+          <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)} style={{ padding: '4px 8px', background: 'transparent', border: '1px solid var(--border)', color: page >= totalPages - 1 ? 'var(--text-muted)' : 'var(--text)', cursor: page >= totalPages - 1 ? 'default' : 'pointer' }}>›</button>
+          <button disabled={page >= totalPages - 1} onClick={() => setPage(totalPages - 1)} style={{ padding: '4px 8px', background: 'transparent', border: '1px solid var(--border)', color: page >= totalPages - 1 ? 'var(--text-muted)' : 'var(--text)', cursor: page >= totalPages - 1 ? 'default' : 'pointer' }}>»</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Empty form state ─────────────────────────────────────────────────────────
+const emptyForm = {
+  name: '', category: 'Kits', price: 0, original_price: 0,
+  discount_percentage: 0, image_url: '', specs: '', tag: '', inventory: 0,
+  costo: 0, margen_deseado: 0,
+  costo_envio: 40000,
+};
+
+// ─── Stat box ─────────────────────────────────────────────────────────────────
+function StatBox({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
+  return (
+    <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', padding: '14px 16px' }}>
+      <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1.5px', marginBottom: '6px', fontFamily: '"DM Mono", monospace' }}>{label}</div>
+      <div style={{ fontSize: '20px', fontFamily: '"Bebas Neue", sans-serif', color: color || 'var(--text)', letterSpacing: '1px' }}>{value}</div>
+      {sub && <div style={{ fontSize: '10px', marginTop: '3px', fontFamily: '"DM Mono", monospace', color: color || 'var(--text-muted)' }}>{sub}</div>}
+    </div>
+  );
+}
+
+// ─── Tab button ───────────────────────────────────────────────────────────────
+function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        padding: '8px 16px', border: 'none', cursor: 'pointer',
+        fontFamily: '"DM Mono", monospace', fontSize: '11px', letterSpacing: '1px',
+        background: active ? accent : 'var(--surface2)',
+        color: active ? '#111' : 'var(--text-muted)',
+        fontWeight: active ? 700 : 400,
+        borderBottom: active ? `2px solid ${accent}` : '2px solid transparent',
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ─── Export helpers ───────────────────────────────────────────────────────────
+function exportCSV(rows: string[][], filename: string) {
+  const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: filename });
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+function exportJSON(data: unknown, filename: string) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: filename });
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export default function AdminPageClient() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [password, setPassword] = useState('');
   const [authenticated, setAuthenticated] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    category: 'Kits',
-    price: 0,
-    original_price: 0,
-    discount_percentage: 0,
-    image_url: '',
-    specs: '',
-    tag: '',
-    inventory: 0,
-  });
+  const [authChecked, setAuthChecked] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [categories, setCategories] = useState<string[]>(['Kits', 'Máquinas', 'Insumos']);
-  const [newCategory, setNewCategory] = useState('');
-  const [discountType, setDiscountType] = useState<'percentage' | 'amount'>('percentage');
+  const [formOpen, setFormOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState(emptyForm);
+  const [finTab, setFinTab] = useState<'basico' | 'operativo'>('basico');
+  const [simUnidades, setSimUnidades] = useState(10);
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [costMode, setCostMode] = useState<'manual' | 'components'>('manual');
+  const [kitComponents, setKitComponents] = useState<KitComponent[]>([]);
+  const [groups, setGroups] = useState<ComponentGroup[]>([]);
+  const [chartCategory, setChartCategory] = useState('Todos');
+  const [chartSelection, setChartSelection] = useState<Set<string> | null>(null);
 
-  const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123';
+  const { toasts, show: showToast } = useToast();
+
+  // A1: check existing server session on mount
+  useEffect(() => {
+    fetch('/api/admin/check')
+      .then((r) => { if (r.ok) setAuthenticated(true); })
+      .catch(() => {})
+      .finally(() => setAuthChecked(true));
+  }, []);
 
   useEffect(() => {
-    if (authenticated) {
-      // Ejecutar migración automática al autenticarse
-      fetch('/api/migrate').catch(() => {});
-      loadProducts();
-    }
+    if (authenticated) { fetch('/api/migrate').catch(() => {}); loadProducts(); loadGroups(); }
   }, [authenticated]);
+
+  // Sync component total → formData.costo when in components mode
+  useEffect(() => {
+    if (costMode === 'components') {
+      const total = kitComponents.reduce((sum, c) => sum + c.cantidad * c.costo_unitario, 0);
+      setFormData((prev) => ({ ...prev, costo: total }));
+    }
+  }, [kitComponents, costMode]);
 
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const sb = getSupabase();
-      const { data, error } = await sb.from('products').select('*').order('created_at', { ascending: false });
+      const { data, error } = await getSupabase().from('products').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       setProducts(data || []);
-    } catch (error) {
-      console.error('Error loading products:', error);
-      alert('Error cargando productos');
-    } finally {
-      setLoading(false);
+    } catch { showToast('Error cargando productos', 'error'); }
+    finally { setLoading(false); }
+  };
+
+  const loadGroups = async () => {
+    try {
+      const { data } = await getSupabase().from('component_groups').select('*').order('created_at');
+      setGroups((data || []).map((g) => ({ ...g, components: g.components as KitComponent[] })));
+    } catch { /* non-critical */ }
+  };
+
+  const handleSaveGroup = async (name: string) => {
+    if (!kitComponents.length) return;
+    try {
+      const sb = getSupabase();
+      const clean = kitComponents.map(({ id: _id, ...rest }) => rest);
+      const { data, error } = await sb
+        .from('component_groups')
+        .insert([{ name, components: clean, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }])
+        .select()
+        .single();
+      if (error) throw error;
+      setGroups((prev) => [...prev, { ...data, components: data.components as KitComponent[] }]);
+      showToast(`Grupo "${name}" guardado`);
+    } catch { showToast('Error guardando grupo', 'error'); }
+  };
+
+  const handleApplyGroup = (group: ComponentGroup, mode: 'replace' | 'append') => {
+    // Auto-sync costs from current product list before applying
+    const synced = (group.components as KitComponent[]).map(({ id: _id, ...c }) => {
+      if (!c.source_product_id) return c;
+      const linked = products.find((p) => p.id === c.source_product_id);
+      return linked?.costo && linked.costo > 0 ? { ...c, costo_unitario: linked.costo } : c;
+    });
+    setKitComponents(mode === 'replace' ? synced : [...kitComponents, ...synced]);
+    setCostMode('components');
+    showToast(mode === 'replace' ? `Grupo "${group.name}" aplicado` : `Grupo "${group.name}" agregado`);
+  };
+
+  const handleDuplicateGroup = async (group: ComponentGroup) => {
+    try {
+      const sb = getSupabase();
+      const newName = `${group.name} (copia)`;
+      const { data, error } = await sb
+        .from('component_groups')
+        .insert([{ name: newName, components: group.components, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }])
+        .select()
+        .single();
+      if (error) throw error;
+      setGroups((prev) => [...prev, { ...data, components: data.components as KitComponent[] }]);
+      showToast(`Grupo duplicado como "${newName}"`);
+    } catch { showToast('Error duplicando grupo', 'error'); }
+  };
+
+  const handleDeleteGroup = async (id: string) => {
+    try {
+      const { error } = await getSupabase().from('component_groups').delete().eq('id', id);
+      if (error) throw error;
+      setGroups((prev) => prev.filter((g) => g.id !== id));
+      showToast('Grupo eliminado');
+    } catch { showToast('Error eliminando grupo', 'error'); }
+  };
+
+  const handleSaveField = async (id: string, field: string, value: string | number) => {
+    // A3: optimistic update — update UI immediately, revert on error
+    const prev = products.find((p) => p.id === id);
+    setProducts((ps) => ps.map((p) => p.id === id ? { ...p, [field]: value } : p));
+    try {
+      const { error } = await getSupabase().from('products').update({ [field]: value || null, updated_at: new Date().toISOString() }).eq('id', id);
+      if (error) throw error;
+      showToast('Guardado');
+    } catch {
+      if (prev) setProducts((ps) => ps.map((p) => p.id === id ? prev : p));
+      showToast('Error guardando', 'error');
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      setAuthenticated(true);
-      setPassword('');
-    } else {
-      alert('Contraseña incorrecta');
-    }
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      if (res.ok) { setAuthenticated(true); setPassword(''); }
+      else { const d = await res.json(); showToast(d.error || 'Contraseña incorrecta', 'error'); }
+    } catch { showToast('Error de conexión', 'error'); }
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/admin/logout', { method: 'POST' });
+    setAuthenticated(false);
+    setProducts([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (formData.costo > 0 && formData.price > 0 && formData.costo >= formData.price) {
+      showToast('El costo no puede ser mayor o igual al precio de venta', 'error'); return;
+    }
+    if (formData.margen_deseado < 0) {
+      showToast('El margen deseado no puede ser negativo', 'error'); return;
+    }
+    if (formData.costo_envio < 0) {
+      showToast('El costo de envío debe ser positivo', 'error'); return;
+    }
+
     try {
       const sb = getSupabase();
-      let finalPrice = formData.price;
-      let discountPercentage = formData.discount_percentage;
-      let originalPrice = formData.original_price;
-
-      // Si hay precio original y descuento %, calcular automáticamente el precio final
-      if (originalPrice > 0 && discountPercentage > 0) {
-        finalPrice = Math.round(originalPrice - (originalPrice * discountPercentage / 100));
-      }
-
-      const productData = {
+      const data = {
         ...formData,
-        price: finalPrice,
-        discount_percentage: discountPercentage > 0 ? discountPercentage : null,
-        original_price: originalPrice > 0 ? originalPrice : null,
+        discount_percentage: formData.discount_percentage > 0 ? formData.discount_percentage : null,
+        original_price: formData.original_price > 0 ? formData.original_price : null,
+        costo: formData.costo > 0 ? formData.costo : null,
+        margen_deseado: formData.margen_deseado > 0 ? formData.margen_deseado : null,
+        updated_at: new Date().toISOString(),
       };
 
+      let savedProductId = editingId;
+
       if (editingId) {
-        const { error } = await sb
-          .from('products')
-          .update({
-            ...productData,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', editingId);
+        const { error } = await sb.from('products').update(data).eq('id', editingId);
         if (error) throw error;
+        showToast('Producto actualizado');
         setEditingId(null);
       } else {
-        const { error } = await sb.from('products').insert([
-          {
-            ...productData,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        ]);
+        const { data: inserted, error } = await sb.from('products')
+          .insert([{ ...data, created_at: new Date().toISOString() }])
+          .select('id')
+          .single();
         if (error) throw error;
+        savedProductId = inserted?.id ?? null;
+        showToast('Producto agregado');
       }
-      setFormData({ name: '', category: 'Kits', price: 0, original_price: 0, discount_percentage: 0, image_url: '', specs: '', tag: '', inventory: 0 });
+
+      // Save kit components if in components mode
+      if (costMode === 'components' && savedProductId) {
+        await sb.from('kit_components').delete().eq('kit_product_id', savedProductId);
+        if (kitComponents.length > 0) {
+          await sb.from('kit_components').insert(
+            kitComponents.map((c) => ({
+              kit_product_id: savedProductId,
+              source_product_id: c.source_product_id ?? null,
+              nombre: c.nombre,
+              cantidad: c.cantidad,
+              costo_unitario: c.costo_unitario,
+              tipo: c.tipo,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }))
+          );
+        }
+      }
+
+      setFormData(emptyForm);
+      setCostMode('manual');
+      setKitComponents([]);
+      setFormOpen(false);
       loadProducts();
-      alert(editingId ? 'Producto actualizado' : 'Producto agregado');
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error guardando producto');
-    }
+    } catch { showToast('Error guardando producto', 'error'); }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro?')) return;
+  const confirmDelete = async () => {
+    if (!deletingId) return;
     try {
-      const sb = getSupabase();
-      const { error } = await sb.from('products').delete().eq('id', id);
+      const { error } = await getSupabase().from('products').delete().eq('id', deletingId);
       if (error) throw error;
-      loadProducts();
-      alert('Producto eliminado');
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error eliminando producto');
-    }
+      setProducts((prev) => prev.filter((p) => p.id !== deletingId));
+      showToast('Producto eliminado');
+    } catch { showToast('Error eliminando', 'error'); }
+    finally { setDeletingId(null); }
   };
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = async (product: Product) => {
     setFormData({
-      name: product.name,
-      category: product.category,
-      price: product.price,
-      original_price: product.original_price || 0,
-      discount_percentage: product.discount_percentage || 0,
-      image_url: product.image_url || '',
-      specs: product.specs,
-      tag: product.tag,
-      inventory: product.inventory,
+      name: product.name, category: product.category, price: product.price,
+      original_price: product.original_price || 0, discount_percentage: product.discount_percentage || 0,
+      image_url: product.image_url || '', specs: product.specs, tag: product.tag, inventory: product.inventory,
+      costo: product.costo || 0, margen_deseado: product.margen_deseado || 0,
+      costo_envio: product.costo_envio ?? 40000,
     });
+    // Load kit components and auto-update costs from linked products
+    try {
+      const { data } = await getSupabase()
+        .from('kit_components')
+        .select('*')
+        .eq('kit_product_id', product.id)
+        .order('created_at');
+      if (data && data.length > 0) {
+        const updated = data.map((c) => {
+          if (c.source_product_id) {
+            const linked = products.find((p) => p.id === c.source_product_id);
+            if (linked?.costo && linked.costo !== c.costo_unitario) {
+              return { ...c, costo_unitario: linked.costo };
+            }
+          }
+          return c;
+        });
+        setKitComponents(updated);
+        setCostMode('components');
+      } else {
+        setKitComponents([]);
+        setCostMode('manual');
+      }
+    } catch {
+      setKitComponents([]);
+      setCostMode('manual');
+    }
     setEditingId(product.id);
-    window.scrollTo(0, 0);
-  };
-
-  const handleAddCategory = () => {
-    if (newCategory.trim() && !categories.includes(newCategory)) {
-      setCategories([...categories, newCategory]);
-      setNewCategory('');
-    }
-  };
-
-  const calculatePrice = (originalPrice: number, discountPercentage: number) => {
-    if (originalPrice && originalPrice > 0 && discountPercentage && discountPercentage > 0) {
-      return Math.round(originalPrice - (originalPrice * discountPercentage / 100));
-    }
-    return formData.price;
+    setFormOpen(true);
+    setFinTab('basico');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleImageUpload = async (file: File) => {
-    if (!file) return;
     try {
       setUploading(true);
       const sb = getSupabase();
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `products/${fileName}`;
-
-      const { error: uploadError, data } = await sb.storage
-        .from('product-images')
-        .upload(filePath, file);
-
+      const filePath = `products/${Date.now()}.${file.name.split('.').pop()}`;
+      const { error: uploadError } = await sb.storage.from('product-images').upload(filePath, file);
       if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = sb.storage
-        .from('product-images')
-        .getPublicUrl(filePath);
-
-      setFormData({ ...formData, image_url: publicUrlData.publicUrl });
-      alert('Imagen subida exitosamente');
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      alert('Error subiendo imagen');
-    } finally {
-      setUploading(false);
-    }
+      const { data: { publicUrl } } = sb.storage.from('product-images').getPublicUrl(filePath);
+      setFormData((prev) => ({ ...prev, image_url: publicUrl }));
+      showToast('Imagen subida');
+    } catch { showToast('Error subiendo imagen', 'error'); }
+    finally { setUploading(false); }
   };
+
+  const downloadCSV = () => {
+    const withCost = products.filter((p) => p.costo && p.costo > 0);
+    if (withCost.length === 0) { showToast('No hay productos con costo definido', 'error'); return; }
+    const headers = ['Nombre', 'Categoría', 'Precio', 'Costo', 'Envío', 'G.Bruta', 'G.Bruta%', 'G.Neta', 'G.Neta%', 'Estado'];
+    const rows = withCost.map((p) => {
+      const ops = computeOps(p.price, p.costo!, p.costo_envio || 40000);
+      return [
+        `"${p.name}"`, p.category, p.price, p.costo,
+        p.costo_envio || 40000,
+        Math.round(ops.gBruta), ops.gBrutaPct.toFixed(1),
+        Math.round(ops.gNeta), ops.gNetaPct.toFixed(1), ops.label,
+      ];
+    });
+    const csv = [headers, ...rows].map((r) => r.join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `analisis-tattooshop-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('CSV descargado');
+  };
+
+  // ── Fase 1 — margin calcs ───────────────────────────────────────────────────
+  const margenPesos = formData.price > 0 && formData.costo > 0 ? formData.price - formData.costo : 0;
+  const margenPctReal = formData.price > 0 && formData.costo > 0 ? (margenPesos / formData.price) * 100 : 0;
+  const margenOk = formData.margen_deseado > 0 ? margenPctReal >= formData.margen_deseado : true;
+  const margenColor = margenPctReal >= 50 ? '#25d366' : margenPctReal >= 30 ? '#FFD400' : '#e55';
+  const showFinancialCalcs = formData.price > 0 && formData.costo > 0;
+  const costoMayorPrecio = formData.costo > 0 && formData.price > 0 && formData.costo >= formData.price;
+
+  // ── Fase 2 — operational calcs ──────────────────────────────────────────────
+  const ops = showFinancialCalcs
+    ? computeOps(formData.price, formData.costo, formData.costo_envio)
+    : null;
+  const gnBajaVsGB = ops ? ops.gNeta < ops.gBruta * 0.5 : false;
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '10px', border: '1px solid var(--border)',
+    background: 'var(--bg)', color: 'var(--text)', fontFamily: '"DM Mono", monospace',
+    fontSize: '13px', outline: 'none', boxSizing: 'border-box',
+  };
+  const labelStyle: React.CSSProperties = {
+    display: 'block', marginBottom: '6px', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1.5px',
+  };
+
+  // ── Export helpers ─────────────────────────────────────────────────────────
+  const exportProductsCSV = (category?: string) => {
+    const src = category ? products.filter((p) => p.category === category) : products;
+    const headers = ['ID', 'Nombre', 'Categoría', 'Precio', 'Precio Original', 'Descuento%', 'Costo', 'Margen%', 'Inventario', 'Etiqueta', 'Creado'];
+    const rows = src.map((p) => [
+      p.id, p.name, p.category, p.price, p.original_price ?? '', p.discount_percentage ?? '',
+      p.costo ?? '', p.margen_deseado ?? '', p.inventory, p.tag, p.created_at.split('T')[0],
+    ]);
+    exportCSV([headers, ...rows as string[][]], `productos-${category ?? 'todos'}-${new Date().toISOString().split('T')[0]}.csv`);
+    showToast(`CSV exportado${category ? ` — ${category}` : ''}`);
+  };
+
+  const exportProductsJSON = () => {
+    exportJSON(products, `productos-${new Date().toISOString().split('T')[0]}.json`);
+    showToast('JSON exportado');
+  };
+
+  // ── Login ──────────────────────────────────────────────────────────────────
+  if (!authChecked) {
+    return <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontFamily: '"DM Mono", monospace', color: 'var(--text-muted)' }}>Verificando sesión...</span></div>;
+  }
 
   if (!authenticated) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-        <div style={{ background: 'var(--surface)', padding: '40px', borderRadius: '8px', maxWidth: '400px', width: '100%' }}>
-          <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '32px', marginBottom: '30px', color: 'var(--text)' }}>ADMIN</h1>
-          <form onSubmit={handleLogin}>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontFamily: '"DM Sans", sans-serif', color: 'var(--text-muted)' }}>
-                Contraseña
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg)',
-                  color: 'var(--text)',
-                  fontFamily: '"DM Sans", sans-serif',
-                  borderRadius: '4px',
-                }}
-              />
-            </div>
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                padding: '12px',
-                background: 'var(--accent)',
-                color: '#111',
-                border: 'none',
-                fontFamily: '"Bebas Neue", sans-serif',
-                fontSize: '18px',
-                cursor: 'pointer',
-                borderRadius: '4px',
-              }}
-            >
-              Ingresar
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', padding: '40px', maxWidth: '380px', width: '100%' }}>
+          <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '36px', marginBottom: '28px', color: accent }}>ADMIN</h1>
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Contraseña" style={inputStyle} />
+            <button type="submit" style={{ padding: '12px', background: accent, color: '#111', border: 'none', fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', cursor: 'pointer', letterSpacing: '1.5px' }}>
+              INGRESAR
             </button>
           </form>
         </div>
+        <ToastContainer toasts={toasts} />
       </div>
     );
   }
 
+  const productsByCategory = CATEGORIES.map((cat) => ({ category: cat, products: products.filter((p) => p.category === cat) }));
+  const uncategorized = products.filter((p) => !CATEGORIES.includes(p.category));
+  const deletingProduct = products.find((p) => p.id === deletingId);
+
+  // Products with cost data for global analysis
+  const productsWithCost = products.filter((p) => p.costo && p.costo > 0);
+
+  const chartCategoryProducts = productsWithCost.filter(
+    (p) => chartCategory === 'Todos' || p.category === chartCategory
+  );
+  const chartDisplayProducts =
+    chartSelection === null
+      ? chartCategoryProducts
+      : chartCategoryProducts.filter((p) => chartSelection.has(p.id));
+  const chartItems = chartDisplayProducts.map((p) => {
+    const o = computeOps(p.price, p.costo!, p.costo_envio || 40000);
+    return { label: p.name, price: p.price, costo: p.costo!, gNeta: o.gNeta, colorGN: o.colorGN };
+  });
+
+  const handleChartCategory = (cat: string) => {
+    setChartCategory(cat);
+    setChartSelection(null);
+  };
+  const toggleChartProduct = (id: string) => {
+    const base = chartSelection ?? new Set(chartCategoryProducts.map((p) => p.id));
+    const next = new Set(base);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setChartSelection(next.size > 0 ? next : null);
+  };
+
+  // ── Main render ────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: '40px 20px', color: 'var(--text)' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '48px', marginBottom: '40px', color: 'var(--accent)' }}>PANEL ADMIN</h1>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: '32px clamp(16px,4vw,40px)', color: 'var(--text)' }}>
+      <style>{`@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }`}</style>
 
-        {/* FORM */}
-        <div style={{ background: 'var(--surface)', padding: '30px', marginBottom: '40px', borderRadius: '8px' }}>
-          <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '24px', marginBottom: '20px' }}>
-            {editingId ? 'Editar Producto' : 'Agregar Producto'}
-          </h2>
-          <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Nombre</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg)',
-                    color: 'var(--text)',
-                    borderRadius: '4px',
-                  }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Categoría</label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    style={{
-                      flex: 1,
-                      padding: '10px',
-                      border: '1px solid var(--border)',
-                      background: 'var(--bg)',
-                      color: 'var(--text)',
-                      borderRadius: '4px',
-                    }}
-                  >
-                    {categories.map((cat) => (
-                      <option key={cat}>{cat}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
-                    placeholder="Nueva"
-                    style={{
-                      flex: 1,
-                      padding: '10px',
-                      border: '1px solid var(--border)',
-                      background: 'var(--bg)',
-                      color: 'var(--text)',
-                      borderRadius: '4px',
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddCategory}
-                    style={{
-                      padding: '10px 16px',
-                      background: 'var(--accent)',
-                      color: '#111',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontWeight: '600',
-                      fontSize: '16px',
-                    }}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Imagen</label>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleImageUpload(file);
-                    }}
-                    disabled={uploading}
-                    style={{
-                      flex: 1,
-                      padding: '10px',
-                      border: '1px solid var(--border)',
-                      background: 'var(--bg)',
-                      color: 'var(--text)',
-                      borderRadius: '4px',
-                      cursor: uploading ? 'not-allowed' : 'pointer',
-                    }}
-                  />
-                  {formData.image_url && (
-                    <div style={{ width: '80px', height: '80px', flexShrink: 0 }}>
-                      <img src={formData.image_url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
-                    </div>
-                  )}
-                </div>
-                {uploading && <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>Subiendo...</div>}
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Precio Original (Sin Descuento)</label>
-                <input
-                  type="number"
-                  value={formData.original_price}
-                  onChange={(e) => {
-                    const newOriginalPrice = Number(e.target.value);
-                    const newPrice = calculatePrice(newOriginalPrice, formData.discount_percentage);
-                    setFormData({ ...formData, original_price: newOriginalPrice, price: newPrice });
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg)',
-                    color: 'var(--text)',
-                    borderRadius: '4px',
-                  }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Precio Final (Lo que Paga el Cliente)</label>
-                <input
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) => {
-                    const newPrice = Number(e.target.value);
-                    let newDiscountPercentage = formData.discount_percentage;
-                    // Calcular descuento % si hay original_price
-                    if (formData.original_price && formData.original_price > 0 && newPrice < formData.original_price) {
-                      newDiscountPercentage = Math.round(((formData.original_price - newPrice) / formData.original_price) * 100);
-                    }
-                    setFormData({ ...formData, price: newPrice, discount_percentage: newDiscountPercentage });
-                  }}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg)',
-                    color: 'var(--text)',
-                    borderRadius: '4px',
-                  }}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Descuento (%)</label>
-                <input
-                  type="number"
-                  value={formData.discount_percentage}
-                  onChange={(e) => {
-                    const newDiscountPercentage = Number(e.target.value);
-                    const newPrice = calculatePrice(formData.original_price, newDiscountPercentage);
-                    setFormData({ ...formData, discount_percentage: newDiscountPercentage, price: newPrice });
-                  }}
-                  min="0"
-                  max="100"
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg)',
-                    color: 'var(--text)',
-                    borderRadius: '4px',
-                  }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Inventario</label>
-                <input
-                  type="number"
-                  value={formData.inventory}
-                  onChange={(e) => setFormData({ ...formData, inventory: Number(e.target.value) })}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg)',
-                    color: 'var(--text)',
-                    borderRadius: '4px',
-                  }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>
-                Especificaciones del Kit
-                <span style={{ marginLeft: '8px', fontSize: '11px', color: 'var(--text-dim)', fontWeight: 'normal' }}>
-                  — Una línea por ítem. Puedes copiar y pegar directamente.
-                </span>
-              </label>
-              <textarea
-                placeholder={"1x Máquina Poseidon Clear\n1x Batería Inalámbrica\n10x Cartuchos de agujas PREMIUM\n1x Bolsita de Cups"}
-                value={formData.specs}
-                onChange={(e) => setFormData({ ...formData, specs: e.target.value })}
-                rows={8}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg)',
-                  color: 'var(--text)',
-                  borderRadius: '4px',
-                  fontFamily: '"DM Mono", monospace',
-                  fontSize: '13px',
-                  lineHeight: '1.6',
-                  resize: 'vertical',
-                  whiteSpace: 'pre',
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Etiqueta</label>
-              <input
-                type="text"
-                placeholder="ej: Más vendido"
-                value={formData.tag}
-                onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg)',
-                  color: 'var(--text)',
-                  borderRadius: '4px',
-                }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button
-                type="submit"
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  background: 'var(--accent)',
-                  color: '#111',
-                  border: 'none',
-                  fontFamily: '"Bebas Neue", sans-serif',
-                  fontSize: '16px',
-                  cursor: 'pointer',
-                  borderRadius: '4px',
-                }}
-              >
-                {editingId ? 'Actualizar' : 'Agregar'}
-              </button>
-              {editingId && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingId(null);
-                    setFormData({ name: '', category: 'Kits', price: 0, original_price: 0, discount_percentage: 0, image_url: '', specs: '', tag: '', inventory: 0 });
-                  }}
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    background: 'var(--surface2)',
-                    color: 'var(--text-muted)',
-                    border: '1px solid var(--border)',
-                    fontFamily: '"DM Sans", sans-serif',
-                    cursor: 'pointer',
-                    borderRadius: '4px',
-                  }}
-                >
-                  Cancelar
-                </button>
-              )}
-            </div>
-          </form>
+      <div style={{ maxWidth: '1300px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
+          <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '48px', color: accent, margin: 0 }}>PANEL ADMIN</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)' }}>{products.length} productos</span>
+            <button onClick={() => exportProductsCSV()} style={{ padding: '6px 12px', background: 'transparent', border: `1px solid ${accent}55`, color: accent, cursor: 'pointer', fontFamily: '"DM Mono", monospace', fontSize: '10px', letterSpacing: '1px' }}>
+              ↓ CSV
+            </button>
+            <button onClick={exportProductsJSON} style={{ padding: '6px 12px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: '"DM Mono", monospace', fontSize: '10px', letterSpacing: '1px' }}>
+              ↓ JSON
+            </button>
+            <button onClick={handleLogout} style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #e5533344', color: '#e55', cursor: 'pointer', fontFamily: '"DM Mono", monospace', fontSize: '10px', letterSpacing: '1px' }}>
+              SALIR
+            </button>
+          </div>
         </div>
 
-        {/* PRODUCTS TABLE */}
-        <div>
-          <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '24px', marginBottom: '20px' }}>Productos ({products.length})</h2>
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Cargando...</div>
-          ) : products.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Sin productos</div>
-          ) : (
-            <div style={{ overflowX: 'auto', background: 'var(--surface)', borderRadius: '8px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: '"DM Sans", sans-serif', fontSize: '14px' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                    <th style={{ padding: '16px', textAlign: 'left', color: 'var(--accent)', fontWeight: '600' }}>Imagen</th>
-                    <th style={{ padding: '16px', textAlign: 'left', color: 'var(--accent)', fontWeight: '600' }}>Nombre</th>
-                    <th style={{ padding: '16px', textAlign: 'left', color: 'var(--accent)', fontWeight: '600' }}>Categoría</th>
-                    <th style={{ padding: '16px', textAlign: 'right', color: 'var(--accent)', fontWeight: '600' }}>Precio Original</th>
-                    <th style={{ padding: '16px', textAlign: 'right', color: 'var(--accent)', fontWeight: '600' }}>Precio Final</th>
-                    <th style={{ padding: '16px', textAlign: 'right', color: 'var(--accent)', fontWeight: '600' }}>Descuento</th>
-                    <th style={{ padding: '16px', textAlign: 'center', color: 'var(--accent)', fontWeight: '600' }}>Inventario</th>
-                    <th style={{ padding: '16px', textAlign: 'center', color: 'var(--accent)', fontWeight: '600' }}>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.map((product) => (
-                    <tr key={product.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                      <td style={{ padding: '16px' }}>
-                        {product.image_url ? (
-                          <img src={product.image_url} alt={product.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} />
+        {/* ── FORM TOGGLE ─────────────────────────────────────────────────── */}
+        <div style={{ marginBottom: '40px' }}>
+          <button
+            onClick={() => { setFormOpen(!formOpen); if (formOpen && editingId) { setEditingId(null); setFormData(emptyForm); setCostMode('manual'); setKitComponents([]); } }}
+            style={{ width: '100%', padding: '14px 20px', background: formOpen && !editingId ? 'var(--surface)' : accent, color: formOpen && !editingId ? 'var(--text)' : '#111', border: `1px solid ${accent}`, fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', cursor: 'pointer', letterSpacing: '1.5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <span>{editingId ? '✏ EDITANDO PRODUCTO' : '+ AGREGAR PRODUCTO'}</span>
+            <span>{formOpen ? '−' : '+'}</span>
+          </button>
+
+          {formOpen && (
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderTop: 'none', padding: '24px' }}>
+              <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                {/* Basic fields */}
+                <div>
+                  <label style={labelStyle}>NOMBRE</label>
+                  <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>CATEGORÍA</label>
+                  <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} style={inputStyle}>
+                    {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>PRECIO ORIGINAL</label>
+                  <input type="number" value={formData.original_price} onChange={(e) => setFormData({ ...formData, original_price: Number(e.target.value) })} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>PRECIO FINAL</label>
+                  <input type="number" value={formData.price} onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })} required style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>DESCUENTO %</label>
+                  <input type="number" min="0" max="100" value={formData.discount_percentage} onChange={(e) => setFormData({ ...formData, discount_percentage: Number(e.target.value) })} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>INVENTARIO</label>
+                  <input type="number" value={formData.inventory} onChange={(e) => setFormData({ ...formData, inventory: Number(e.target.value) })} required style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>ETIQUETA</label>
+                  <input type="text" placeholder="ej: BESTSELLER" value={formData.tag} onChange={(e) => setFormData({ ...formData, tag: e.target.value })} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>IMAGEN</label>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input type="file" accept="image/*" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); }} style={{ ...inputStyle, cursor: uploading ? 'not-allowed' : 'pointer', opacity: uploading ? 0.5 : 1 }} />
+                    {formData.image_url && <img src={formData.image_url} alt="" style={{ width: '44px', height: '44px', objectFit: 'cover', flexShrink: 0 }} />}
+                  </div>
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={labelStyle}>ESPECIFICACIONES</label>
+                  <textarea value={formData.specs} onChange={(e) => setFormData({ ...formData, specs: e.target.value })} rows={6} placeholder="Una línea por ítem..." style={{ ...inputStyle, resize: 'vertical', fontFamily: '"DM Mono", monospace', lineHeight: 1.6 }} />
+                </div>
+
+                {/* ── FINANCIAL SECTION WITH TABS ─────────────────────────── */}
+                <div style={{ gridColumn: '1 / -1', borderTop: `1px solid ${accent}33`, paddingTop: '20px', marginTop: '4px' }}>
+                  <div style={{ fontSize: '11px', color: accent, letterSpacing: '2px', marginBottom: '14px', fontFamily: '"DM Mono", monospace', fontWeight: 700 }}>
+                    ─── INFORMACIÓN FINANCIERA (solo admin)
+                  </div>
+
+                  {/* Tab bar */}
+                  <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', borderBottom: '1px solid var(--border)', paddingBottom: '0' }}>
+                    <TabBtn active={finTab === 'basico'} onClick={() => setFinTab('basico')}>FINANCIERO BÁSICO</TabBtn>
+                    <TabBtn active={finTab === 'operativo'} onClick={() => setFinTab('operativo')}>ANÁLISIS OPERATIVO</TabBtn>
+                  </div>
+
+                  {/* ── TAB 1: BÁSICO (Phase 1) ─────────────────────────── */}
+                  {finTab === 'basico' && (
+                    <>
+                      {/* ── Cost mode toggle ───────────────────────────────── */}
+                      <div style={{ marginBottom: '16px' }}>
+                        <label style={labelStyle}>COSTO (COP)</label>
+                        <div style={{ display: 'flex', gap: '4px', marginBottom: '14px' }}>
+                          <button
+                            type="button"
+                            onClick={() => setCostMode('manual')}
+                            style={{ padding: '7px 16px', border: 'none', cursor: 'pointer', fontFamily: '"DM Mono", monospace', fontSize: '11px', letterSpacing: '1px', background: costMode === 'manual' ? accent : 'var(--surface2)', color: costMode === 'manual' ? '#111' : 'var(--text-muted)', fontWeight: costMode === 'manual' ? 700 : 400 }}
+                          >
+                            MANUAL
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCostMode('components')}
+                            style={{ padding: '7px 16px', border: 'none', cursor: 'pointer', fontFamily: '"DM Mono", monospace', fontSize: '11px', letterSpacing: '1px', background: costMode === 'components' ? accent : 'var(--surface2)', color: costMode === 'components' ? '#111' : 'var(--text-muted)', fontWeight: costMode === 'components' ? 700 : 400 }}
+                          >
+                            POR COMPONENTES
+                          </button>
+                        </div>
+
+                        {costMode === 'manual' ? (
+                          <>
+                            <input
+                              type="number" min="0" value={formData.costo}
+                              onChange={(e) => setFormData({ ...formData, costo: Number(e.target.value) })}
+                              style={{ ...inputStyle, borderColor: costoMayorPrecio ? '#e55' : 'var(--border)' }}
+                            />
+                            {costoMayorPrecio && (
+                              <div style={{ marginTop: '4px', color: '#e55', fontSize: '11px', fontFamily: '"DM Mono", monospace' }}>
+                                ✕ El costo no puede ser mayor o igual al precio
+                              </div>
+                            )}
+                          </>
                         ) : (
-                          <div style={{ width: '50px', height: '50px', background: 'var(--surface2)', borderRadius: '4px' }} />
+                          <KitCostBuilder
+                            components={kitComponents}
+                            onChange={setKitComponents}
+                            products={products}
+                            inputStyle={inputStyle}
+                            groups={groups}
+                            onSaveGroup={handleSaveGroup}
+                            onApplyGroup={handleApplyGroup}
+                            onDuplicateGroup={handleDuplicateGroup}
+                            onDeleteGroup={handleDeleteGroup}
+                          />
                         )}
-                      </td>
-                      <td style={{ padding: '16px', color: 'var(--text)' }}>{product.name}</td>
-                      <td style={{ padding: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>{product.category}</td>
-                      <td style={{ padding: '16px', textAlign: 'right', color: product.original_price ? 'var(--accent)' : 'var(--text-muted)' }}>
-                        {product.original_price ? `$${product.original_price.toLocaleString('es-CO')}` : '—'}
-                      </td>
-                      <td style={{ padding: '16px', textAlign: 'right', color: 'var(--accent)', fontWeight: '600' }}>
-                        ${product.price.toLocaleString('es-CO')}
-                      </td>
-                      <td style={{ padding: '16px', textAlign: 'right', color: product.discount_percentage && product.discount_percentage > 0 ? '#e55' : 'var(--text-muted)' }}>
-                        {product.discount_percentage && product.discount_percentage > 0 ? `${product.discount_percentage}%` : '—'}
-                      </td>
-                      <td style={{ padding: '16px', textAlign: 'center', color: product.inventory > 0 ? 'var(--text)' : '#e55' }}>
-                        {product.inventory}
-                      </td>
-                      <td style={{ padding: '16px', textAlign: 'center' }}>
-                        <button
-                          onClick={() => handleEdit(product)}
-                          style={{
-                            marginRight: '8px',
-                            padding: '6px 12px',
-                            background: 'var(--surface2)',
-                            color: 'var(--accent)',
-                            border: '1px solid var(--border)',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                          }}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product.id)}
-                          style={{
-                            padding: '6px 12px',
-                            background: 'transparent',
-                            color: '#e55',
-                            border: '1px solid #e55',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                          }}
-                        >
-                          Eliminar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+
+                      {/* Margen deseado + calcs (always visible) */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div>
+                          <label style={labelStyle}>MARGEN % DESEADO</label>
+                          <input type="number" min="0" max="100" value={formData.margen_deseado} onChange={(e) => setFormData({ ...formData, margen_deseado: Number(e.target.value) })} style={inputStyle} />
+                        </div>
+                        {costoMayorPrecio && costMode === 'manual' && (
+                          <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '2px' }}>
+                            <div style={{ color: '#e55', fontSize: '11px', fontFamily: '"DM Mono", monospace' }}>
+                              ✕ Costo ≥ precio, corrige antes de guardar
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {showFinancialCalcs && (
+                        <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                          <StatBox label="MARGEN $" value={COP(margenPesos)} color={margenPesos >= 0 ? 'var(--text)' : '#e55'} />
+                          <StatBox label="MARGEN % REAL" value={`${margenPctReal.toFixed(1)}%`} sub={margenPctReal >= 50 ? '● Alto' : margenPctReal >= 30 ? '● Medio' : '● Bajo'} color={margenColor} />
+                          <StatBox
+                            label="OBJETIVO"
+                            value={formData.margen_deseado > 0 ? (margenOk ? '✓ OK' : `⚠ Falta ${(formData.margen_deseado - margenPctReal).toFixed(1)}%`) : '— Sin obj.'}
+                            color={margenOk ? '#25d366' : '#FFD400'}
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* ── TAB 2: OPERATIVO (Phase 2) ──────────────────────── */}
+                  {finTab === 'operativo' && (
+                    <>
+                      <div>
+                        <label style={labelStyle}>COSTO ENVÍO (COP)</label>
+                        <input type="number" min="0" value={formData.costo_envio} onChange={(e) => setFormData({ ...formData, costo_envio: Number(e.target.value) })} style={inputStyle} />
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px', fontFamily: '"DM Mono", monospace' }}>
+                          Costo que pagas por enviar este producto al cliente
+                        </div>
+                      </div>
+
+                      {ops ? (
+                        <>
+                          {gnBajaVsGB && (
+                            <div style={{ marginTop: '12px', padding: '10px 14px', background: '#2e1a0a', border: '1px solid #e55', color: '#e55', fontFamily: '"DM Mono", monospace', fontSize: '12px' }}>
+                              ⚠ Ganancia neta es menor al 50% de la ganancia bruta. Revisa los costos operativos.
+                            </div>
+                          )}
+
+                          {/* Metrics grid */}
+                          <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                            <StatBox label="G. BRUTA" value={COP(ops.gBruta)} sub={`${ops.gBrutaPct.toFixed(1)}% del precio`} />
+                            <StatBox label="G. NETA ESPERADA" value={COP(ops.gNeta)} sub={`${ops.gNetaPct.toFixed(1)}% del precio`} color={ops.colorGN} />
+                            <StatBox label="ESTADO" value={ops.label} color={ops.colorGN} />
+                            <StatBox label="COSTO TOTAL OP." value={COP(ops.costoTotal)} sub="Costo + Envío" />
+                            <StatBox label="IMPACTO ENVÍOS" value={COP(ops.impactoEnvio)} color="#e55" />
+                          </div>
+
+                          {/* Comparison: bruta vs neta */}
+                          <div style={{ marginTop: '16px', background: 'var(--bg)', border: `1px solid ${accent}22`, padding: '16px 20px' }}>
+                            <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1.5px', marginBottom: '12px', fontFamily: '"DM Mono", monospace' }}>COMPARACIÓN BRUTA vs NETA</div>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
+                              <div style={{ width: '80px', fontSize: '10px', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace' }}>G. Bruta</div>
+                              <div style={{ flex: 1, background: 'var(--surface2)', height: '20px', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: '100%', background: '#25d366' }} />
+                              </div>
+                              <div style={{ width: '80px', fontSize: '11px', textAlign: 'right', fontFamily: '"DM Mono", monospace', color: '#25d366' }}>{COP(ops.gBruta)}</div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <div style={{ width: '80px', fontSize: '10px', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace' }}>G. Neta</div>
+                              <div style={{ flex: 1, background: 'var(--surface2)', height: '20px', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${Math.max((ops.gNeta / ops.gBruta) * 100, 0)}%`, background: ops.colorGN, transition: 'width 0.4s ease' }} />
+                              </div>
+                              <div style={{ width: '80px', fontSize: '11px', textAlign: 'right', fontFamily: '"DM Mono", monospace', color: ops.colorGN }}>{COP(ops.gNeta)}</div>
+                            </div>
+                          </div>
+
+                          {/* Simulator */}
+                          <div style={{ marginTop: '16px', background: 'var(--bg)', border: `1px solid ${accent}22`, padding: '16px 20px' }}>
+                            <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1.5px', marginBottom: '12px', fontFamily: '"DM Mono", monospace' }}>SIMULADOR DE VENTAS</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace' }}>Si vendo</span>
+                                <input
+                                  type="number" min="1" value={simUnidades}
+                                  onChange={(e) => setSimUnidades(Math.max(1, Number(e.target.value)))}
+                                  style={{ ...inputStyle, width: '80px', padding: '6px 10px' }}
+                                />
+                                <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace' }}>unidades:</span>
+                              </div>
+                              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                                <div>
+                                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace' }}>GANANCIA NETA TOTAL</div>
+                                  <div style={{ fontSize: '22px', fontFamily: '"Bebas Neue", sans-serif', color: ops.colorGN, letterSpacing: '1px' }}>
+                                    {COP(ops.gNeta * simUnidades)}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace' }}>INGRESOS BRUTOS</div>
+                                  <div style={{ fontSize: '22px', fontFamily: '"Bebas Neue", sans-serif', color: accent, letterSpacing: '1px' }}>
+                                    {COP(formData.price * simUnidades)}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ marginTop: '16px', padding: '20px', background: 'var(--bg)', border: '1px solid var(--border)', fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
+                          Completa el Costo en la pestaña "Financiero Básico" para ver el análisis operativo.
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* Submit */}
+                <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '12px' }}>
+                  <button
+                    type="submit"
+                    disabled={costoMayorPrecio}
+                    style={{ flex: 1, padding: '12px', background: costoMayorPrecio ? 'var(--surface2)' : accent, color: costoMayorPrecio ? 'var(--text-muted)' : '#111', border: 'none', fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', cursor: costoMayorPrecio ? 'not-allowed' : 'pointer', letterSpacing: '1.5px' }}
+                  >
+                    {editingId ? 'ACTUALIZAR' : 'AGREGAR'}
+                  </button>
+                  {editingId && (
+                    <button type="button" onClick={() => { setEditingId(null); setFormOpen(false); setFormData(emptyForm); setCostMode('manual'); setKitComponents([]); }}
+                      style={{ padding: '12px 20px', background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', fontFamily: '"DM Mono", monospace', fontSize: '13px', cursor: 'pointer' }}>
+                      Cancelar
+                    </button>
+                  )}
+                </div>
+              </form>
             </div>
           )}
         </div>
+
+        {/* HINT */}
+        <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '24px', letterSpacing: '0.5px' }}>
+          💡 Haz clic en cualquier celda subrayada para editarla directamente.
+        </div>
+
+        {/* TABLES BY CATEGORY */}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace' }}>Cargando...</div>
+        ) : (
+          <>
+            {productsByCategory.map(({ category, products: catProducts }) => (
+              <CategoryTable key={category} category={category} products={catProducts}
+                onSaveField={handleSaveField} onEdit={handleEdit} onDelete={(id) => setDeletingId(id)}
+                onExport={() => exportProductsCSV(category)} />
+            ))}
+            {uncategorized.length > 0 && (
+              <CategoryTable category="Otros" products={uncategorized}
+                onSaveField={handleSaveField} onEdit={handleEdit} onDelete={(id) => setDeletingId(id)}
+                onExport={() => exportProductsCSV('Otros')} />
+            )}
+          </>
+        )}
+
+        {/* ── ANÁLISIS OPERATIVO GLOBAL ──────────────────────────────────── */}
+        <div style={{ marginTop: '40px' }}>
+          <button
+            onClick={() => setShowAnalysis(!showAnalysis)}
+            style={{ width: '100%', padding: '14px 20px', background: showAnalysis ? accent : 'var(--surface)', color: showAnalysis ? '#111' : 'var(--text)', border: `1px solid ${accent}`, fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', cursor: 'pointer', letterSpacing: '1.5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <span>📊 ANÁLISIS OPERATIVO GLOBAL</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              {productsWithCost.length > 0 && (
+                <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', background: showAnalysis ? '#11111133' : `${accent}22`, padding: '3px 10px', letterSpacing: '0.5px' }}>
+                  {productsWithCost.length} producto{productsWithCost.length !== 1 ? 's' : ''} con costo
+                </span>
+              )}
+              {showAnalysis ? '−' : '+'}
+            </span>
+          </button>
+
+          {showAnalysis && (
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderTop: 'none', padding: '24px' }}>
+              {productsWithCost.length === 0 ? (
+                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '13px' }}>
+                  Ningún producto tiene costo definido. Edita un producto y completa el campo "Costo" para ver el análisis.
+                </div>
+              ) : (
+                <>
+                  {/* Action bar */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+                    <button
+                      onClick={downloadCSV}
+                      style={{ padding: '9px 18px', background: accent, color: '#111', border: 'none', fontFamily: '"Bebas Neue", sans-serif', fontSize: '15px', cursor: 'pointer', letterSpacing: '1px' }}
+                    >
+                      ↓ DESCARGAR CSV
+                    </button>
+                  </div>
+
+                  {/* Metrics table */}
+                  <div style={{ overflowX: 'auto', marginBottom: '32px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: '"DM Mono", monospace', fontSize: '12px' }}>
+                      <thead>
+                        <tr style={{ borderBottom: `2px solid ${accent}33`, background: 'var(--surface2)' }}>
+                          {['Nombre', 'Precio', 'Costo', 'Envío', 'G. Bruta', 'G. Bruta%', 'G. Neta', 'G. Neta%', 'Estado'].map((h) => (
+                            <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: accent, fontWeight: 700, letterSpacing: '1px', fontSize: '11px', whiteSpace: 'nowrap' }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {productsWithCost.map((p, i) => {
+                          const o = computeOps(p.price, p.costo!, p.costo_envio || 40000);
+                          return (
+                            <tr key={p.id} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                              <td style={{ padding: '10px 12px', color: 'var(--text)', maxWidth: '200px' }}>{p.name}</td>
+                              <td style={{ padding: '10px 12px', color: accent, fontWeight: 700 }}>{COP(p.price)}</td>
+                              <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{COP(p.costo!)}</td>
+                              <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{COP(p.costo_envio || 40000)}</td>
+                              <td style={{ padding: '10px 12px' }}>{COP(o.gBruta)}</td>
+                              <td style={{ padding: '10px 12px', color: o.gBrutaPct >= 50 ? '#25d366' : o.gBrutaPct >= 30 ? '#FFD400' : '#e55' }}>{o.gBrutaPct.toFixed(1)}%</td>
+                              <td style={{ padding: '10px 12px', color: o.colorGN, fontWeight: 700 }}>{COP(o.gNeta)}</td>
+                              <td style={{ padding: '10px 12px', color: o.colorGN }}>{o.gNetaPct.toFixed(1)}%</td>
+                              <td style={{ padding: '10px 12px' }}>
+                                <span style={{ color: o.colorGN, fontWeight: 700, fontSize: '11px', border: `1px solid ${o.colorGN}44`, padding: '2px 8px' }}>{o.label}</span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Bar chart */}
+                  {productsWithCost.length > 0 && (
+                    <div style={{ background: 'var(--bg)', border: `1px solid ${accent}22`, padding: '20px 24px' }}>
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '2px', marginBottom: '16px', fontFamily: '"DM Mono", monospace' }}>
+                        COMPARATIVO PRECIO / COSTO / GANANCIA NETA
+                      </div>
+
+                      {/* Category filter */}
+                      <div style={{ display: 'flex', gap: '4px', marginBottom: '14px', flexWrap: 'wrap' }}>
+                        {['Todos', 'Kits', 'Máquinas', 'Insumos'].map((cat) => (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => handleChartCategory(cat)}
+                            style={{
+                              padding: '5px 14px', border: 'none', cursor: 'pointer',
+                              fontFamily: '"DM Mono", monospace', fontSize: '11px', letterSpacing: '1px',
+                              background: chartCategory === cat ? accent : 'var(--surface2)',
+                              color: chartCategory === cat ? '#111' : 'var(--text-muted)',
+                              fontWeight: chartCategory === cat ? 700 : 400,
+                            }}
+                          >
+                            {cat.toUpperCase()}
+                          </button>
+                        ))}
+                        <span style={{ marginLeft: '8px', fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)', alignSelf: 'center' }}>
+                          {chartCategoryProducts.length} productos
+                        </span>
+                      </div>
+
+                      {/* Product checkboxes */}
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px', padding: '10px', background: 'var(--surface2)', border: '1px solid var(--border)' }}>
+                        <button
+                          type="button"
+                          onClick={() => setChartSelection(null)}
+                          style={{ padding: '3px 10px', border: `1px solid ${chartSelection === null ? accent : 'var(--border)'}`, background: chartSelection === null ? `${accent}22` : 'transparent', color: chartSelection === null ? accent : 'var(--text-muted)', cursor: 'pointer', fontFamily: '"DM Mono", monospace', fontSize: '10px', letterSpacing: '0.5px' }}
+                        >
+                          TODOS
+                        </button>
+                        {chartCategoryProducts.map((p) => {
+                          const checked = chartSelection === null || chartSelection.has(p.id);
+                          return (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => toggleChartProduct(p.id)}
+                              style={{
+                                padding: '3px 10px', cursor: 'pointer',
+                                fontFamily: '"DM Mono", monospace', fontSize: '10px',
+                                border: `1px solid ${checked ? accent + '88' : 'var(--border)'}`,
+                                background: checked ? `${accent}18` : 'transparent',
+                                color: checked ? 'var(--text)' : 'var(--text-muted)',
+                                letterSpacing: '0.3px',
+                              }}
+                            >
+                              {checked ? '✓ ' : ''}{p.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {chartItems.length > 0 ? (
+                        <>
+                          <BarChart items={chartItems} />
+                          <div style={{ display: 'flex', gap: '20px', marginTop: '16px', flexWrap: 'wrap' }}>
+                            {[{ color: accent, label: 'Precio' }, { color: '#e55', label: 'Costo' }, { color: '#25d366', label: 'Ganancia Neta' }].map(({ color, label }) => (
+                              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)' }}>
+                                <div style={{ width: '12px', height: '12px', background: color, flexShrink: 0 }} />
+                                {label}
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '12px', border: '1px solid var(--border)' }}>
+                          Selecciona al menos un producto para ver el comparativo.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── DASHBOARD RENTABILIDAD (Fase 3) ──────────────────────────────── */}
+        <div style={{ marginTop: '40px' }}>
+          <button
+            onClick={() => setShowDashboard(!showDashboard)}
+            style={{ width: '100%', padding: '14px 20px', background: showDashboard ? '#1a1200' : 'var(--surface)', color: showDashboard ? accent : 'var(--text)', border: `2px solid ${accent}`, fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', cursor: 'pointer', letterSpacing: '1.5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <span>📈 DASHBOARD DE RENTABILIDAD · CAC · ROI</span>
+            <span>{showDashboard ? '−' : '+'}</span>
+          </button>
+          {showDashboard && <DashboardRentabilidad products={products} />}
+        </div>
       </div>
+
+      {/* DELETE CONFIRM MODAL */}
+      {deletingId && (
+        <div onClick={() => setDeletingId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: 'var(--surface)', border: '1px solid #e55', padding: '28px 32px', maxWidth: '380px', width: '90%' }}>
+            <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px', color: '#e55', marginBottom: '12px' }}>¿ELIMINAR PRODUCTO?</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text)', marginBottom: '24px' }}>{deletingProduct?.name}</div>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button onClick={confirmDelete} style={{ flex: 1, padding: '10px', background: '#e55', color: '#fff', border: 'none', fontFamily: '"Bebas Neue", sans-serif', fontSize: '16px', cursor: 'pointer' }}>ELIMINAR</button>
+              <button onClick={() => setDeletingId(null)} style={{ flex: 1, padding: '10px', background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', fontFamily: '"DM Mono", monospace', fontSize: '13px', cursor: 'pointer' }}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ToastContainer toasts={toasts} />
     </div>
   );
 }

@@ -2,10 +2,17 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { getSupabase } from '../lib/supabase';
 import { toSlug } from '../lib/utils';
 import WhatsAppLogo from './WhatsAppLogo';
+import BrandLogo from './BrandLogo';
+import BrandLogoFull from './BrandLogoFull';
+import BrandLogoCombined from './BrandLogoCombined';
+// W10: lazy-load reviews — they're below the fold and make an API call
+const ReviewsSection = dynamic(() => import('./ReviewsSection'), { ssr: false });
 
 interface Product {
   id: string;
@@ -81,24 +88,16 @@ function ProductPlaceholder({ icon, category, accent }: { icon: string; category
   );
 }
 
-function LogoMark({ accent }: { accent: string }) {
-  return (
-    <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style={{ width: 80, height: 80 }}>
-      <circle cx="60" cy="60" r="55" fill="none" stroke={accent} strokeWidth="2" opacity="0.6" />
-      <circle cx="60" cy="60" r="44" fill="none" stroke={accent} strokeWidth="0.5" opacity="0.3" />
-      <line x1="60" y1="20" x2="60" y2="90" stroke={accent} strokeWidth="2.5" strokeLinecap="round" />
-      <polygon points="60,90 55,75 65,75" fill={accent} />
-      <line x1="38" y1="45" x2="82" y2="45" stroke={accent} strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
-      <line x1="44" y1="36" x2="76" y2="36" stroke={accent} strokeWidth="0.8" strokeLinecap="round" opacity="0.4" />
-    </svg>
-  );
-}
 
-function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: number; onAdd: (p: Product) => void; accent: string }) {
+function ProductCard({ product, idx, onAdd, accent, cartQty, onCompare, inCompare }: { product: Product; idx: number; onAdd: (p: Product) => void; accent: string; cartQty: number; onCompare?: (id: string) => void; inCompare?: boolean }) {
   const [hovered, setHovered] = useState(false);
   const [added, setAdded] = useState(false);
 
+  const outOfStock = (product.inventory ?? 0) <= 0;
+  const atLimit = !outOfStock && cartQty >= (product.inventory ?? 0);
+
   const handleAdd = () => {
+    if (outOfStock || atLimit) return;
     onAdd(product);
     setAdded(true);
     setTimeout(() => setAdded(false), 1400);
@@ -130,10 +129,30 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: hasDiscount ? `0 0 24px rgba(229, 85, 85, 0.3)` : 'none',
+        boxShadow: hasDiscount && !outOfStock ? `0 0 24px rgba(229, 85, 85, 0.3)` : 'none',
+        opacity: outOfStock ? 0.7 : 1,
       }}
     >
-      {(product.discount_percentage && product.discount_percentage > 0) ? (
+      {outOfStock ? (
+        <div
+          style={{
+            position: 'absolute',
+            top: 12,
+            left: 12,
+            zIndex: 2,
+            background: '#555',
+            color: '#ccc',
+            fontFamily: '"DM Mono", monospace',
+            fontSize: '9px',
+            letterSpacing: '2px',
+            padding: '3px 8px',
+            textTransform: 'uppercase',
+            fontWeight: '700',
+          }}
+        >
+          AGOTADO
+        </div>
+      ) : (product.discount_percentage && product.discount_percentage > 0) ? (
         <div
           style={{
             position: 'absolute',
@@ -267,34 +286,56 @@ function ProductCard({ product, idx, onAdd, accent }: { product: Product; idx: n
           </div>
           <button
             onClick={handleAdd}
+            disabled={outOfStock || atLimit}
             style={{
-              background: added ? accent : 'transparent',
-              color: added ? '#111' : accent,
-              border: `1px solid ${accent}`,
+              background: outOfStock || atLimit ? '#2a2a2a' : added ? accent : 'transparent',
+              color: outOfStock || atLimit ? '#555' : added ? '#111' : accent,
+              border: `1px solid ${outOfStock || atLimit ? '#444' : accent}`,
               fontFamily: '"DM Mono", monospace',
               fontSize: '10px',
               letterSpacing: '1.5px',
               padding: '8px 14px',
-              cursor: 'pointer',
+              cursor: outOfStock || atLimit ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s',
               textTransform: 'uppercase',
               whiteSpace: 'nowrap',
             }}
             onMouseEnter={(e) => {
-              if (!added) {
+              if (!added && !outOfStock && !atLimit) {
                 (e.currentTarget as HTMLButtonElement).style.background = accent;
                 (e.currentTarget as HTMLButtonElement).style.color = '#111';
               }
             }}
             onMouseLeave={(e) => {
-              if (!added) {
+              if (!added && !outOfStock && !atLimit) {
                 (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
                 (e.currentTarget as HTMLButtonElement).style.color = accent;
               }
             }}
           >
-            {added ? '✓ Agregado' : '+ Carrito'}
+            {outOfStock ? 'Agotado' : atLimit ? 'Límite' : added ? '✓ Agregado' : '+ Carrito'}
           </button>
+          {onCompare && (
+            <button
+              onClick={() => onCompare(product.id)}
+              style={{
+                background: inCompare ? accent : 'transparent',
+                color: inCompare ? '#111' : 'var(--text-muted)',
+                border: `1px solid ${inCompare ? accent : 'var(--border)'}`,
+                fontFamily: '"DM Mono", monospace',
+                fontSize: '10px',
+                letterSpacing: '1px',
+                padding: '8px 10px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                textTransform: 'uppercase',
+                whiteSpace: 'nowrap',
+              }}
+              title={inCompare ? 'Quitar de comparación' : 'Comparar'}
+            >
+              {inCompare ? '✓' : '⇔'}
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -377,7 +418,7 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent, onCheckout }: { ca
               <div key={item.id} style={{ padding: '20px 0', borderBottom: '1px solid #2a2a2a', display: 'flex', gap: '16px', alignItems: 'center' }}>
                 <div style={{ width: '64px', height: '64px', background: '#1e1e1e', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {item.image_url ? (
-                    <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <Image src={item.image_url} alt={item.name} width={64} height={64} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
                   ) : (
                     <span style={{ fontSize: '24px', opacity: 0.3 }}>{getCategoryIcon(item.category)}</span>
                   )}
@@ -402,7 +443,8 @@ function CartDrawer({ cart, onClose, onRemove, onQty, accent, onCheckout }: { ca
                     <span style={{ width: '28px', textAlign: 'center', fontFamily: '"DM Mono", monospace', fontSize: '12px' }}>{item.qty}</span>
                     <button
                       onClick={() => onQty(item.id, 1)}
-                      style={{ width: '28px', height: '28px', background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      disabled={item.qty >= (item.inventory ?? 0)}
+                      style={{ width: '28px', height: '28px', background: 'none', border: 'none', color: item.qty >= (item.inventory ?? 0) ? '#444' : 'var(--text)', cursor: item.qty >= (item.inventory ?? 0) ? 'not-allowed' : 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       +
                     </button>
@@ -501,8 +543,12 @@ export default function TattooShopHome() {
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState('kits');
   const [navScrolled, setNavScrolled] = useState(false);
+  const [search, setSearch] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [compareList, setCompareList] = useState<string[]>([]);
+  const [showCompare, setShowCompare] = useState(false);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterDone, setNewsletterDone] = useState(false);
 
@@ -551,12 +597,33 @@ export default function TattooShopHome() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const filtered = activeFilter === 'all' ? products : products.filter((p) => p.category.toLowerCase() === activeFilter.toLowerCase());
+  const searchTerm = search.trim().toLowerCase();
+  const filtered = (activeFilter === 'all'
+    ? products
+    : products.filter((p) => p.category && p.category.toLowerCase() === activeFilter.toLowerCase())
+  ).filter((p) =>
+    !searchTerm ||
+    p.name.toLowerCase().includes(searchTerm) ||
+    (p.specs || '').toLowerCase().includes(searchTerm) ||
+    (p.category || '').toLowerCase().includes(searchTerm)
+  ).slice(0, searchTerm ? products.length : 4);
+
+  const toggleCompare = (id: string) => {
+    setCompareList((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 3 ? [...prev, id] : prev
+    );
+  };
+  const compareProducts = products.filter((p) => compareList.includes(p.id));
 
   const addToCart = (product: Product) => {
     setCart((prev) => {
       const existing = prev.find((i) => i.id === product.id);
-      if (existing) return prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + 1 } : i));
+      const stock = product.inventory ?? 0;
+      if (stock <= 0) return prev;
+      if (existing) {
+        if (existing.qty >= stock) return prev;
+        return prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + 1 } : i));
+      }
       return [...prev, { ...product, qty: 1 }];
     });
     setCartOpen(true);
@@ -564,14 +631,21 @@ export default function TattooShopHome() {
 
   const removeFromCart = (id: string) => setCart((prev) => prev.filter((i) => i.id !== id));
   const changeQty = (id: string, delta: number) =>
-    setCart((prev) => prev.map((i) => (i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i)).filter((i) => i.qty > 0));
+    setCart((prev) =>
+      prev.map((i) => {
+        if (i.id !== id) return i;
+        const stock = i.inventory ?? 0;
+        const newQty = Math.max(1, i.qty + delta);
+        return { ...i, qty: Math.min(newQty, stock) };
+      }).filter((i) => i.qty > 0)
+    );
 
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
 
   const categories = [
-    { key: 'kits', label: 'Kits', count: products.filter(p => p.category === 'Kits').length },
-    { key: 'máquinas', label: 'Máquinas', count: products.filter(p => p.category === 'Máquinas').length },
-    { key: 'insumos', label: 'Insumos', count: products.filter(p => p.category === 'Insumos').length },
+    { key: 'kits', label: 'Kits', count: products.filter(p => p.category === 'Kits').length, slug: 'kits' },
+    { key: 'máquinas', label: 'Máquinas', count: products.filter(p => p.category === 'Máquinas').length, slug: 'maquinas' },
+    { key: 'insumos', label: 'Insumos', count: products.filter(p => p.category === 'Insumos').length, slug: 'insumos' },
   ];
 
   const handleNewsletter = (e: React.FormEvent) => {
@@ -601,47 +675,95 @@ export default function TattooShopHome() {
           height: '64px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <LogoMark accent={accent} />
-          <div>
-            <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px', color: 'var(--text)', letterSpacing: '1px', lineHeight: 1 }}>TATTOOSHOP</div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px' }}>COLOMBIA</div>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', color: accent }}>
+          <BrandLogo size={40} />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
-          {['Kits', 'Máquinas', 'Insumos'].map((cat) => (
-            <button
-              key={cat}
-              onClick={() => {
-                setActiveFilter(cat.toLowerCase());
-                document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }}
+          {categories.map((cat) => (
+            <Link
+              key={cat.key}
+              href={`/${cat.slug}`}
               style={{
-                background: 'none',
-                border: 'none',
                 color: 'var(--text-muted)',
                 fontFamily: '"DM Mono", monospace',
                 fontSize: '11px',
                 letterSpacing: '1.5px',
-                cursor: 'pointer',
                 textTransform: 'uppercase',
                 padding: '4px 0',
                 borderBottom: '1px solid transparent',
                 transition: 'all 0.2s',
+                textDecoration: 'none',
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.color = accent;
-                (e.currentTarget as HTMLButtonElement).style.borderBottomColor = accent;
+                (e.currentTarget as HTMLAnchorElement).style.color = accent;
+                (e.currentTarget as HTMLAnchorElement).style.borderBottomColor = accent;
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
-                (e.currentTarget as HTMLButtonElement).style.borderBottomColor = 'transparent';
+                (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)';
+                (e.currentTarget as HTMLAnchorElement).style.borderBottomColor = 'transparent';
               }}
             >
-              {cat}
-            </button>
+              {cat.label}
+            </Link>
           ))}
+          <Link href="/calculadora" style={{ color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '11px', letterSpacing: '1.5px', textTransform: 'uppercase', padding: '4px 0', textDecoration: 'none', borderBottom: '1px solid transparent', transition: 'all 0.2s' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = accent; (e.currentTarget as HTMLAnchorElement).style.borderBottomColor = accent; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLAnchorElement).style.borderBottomColor = 'transparent'; }}>
+            Calculadora
+          </Link>
+          <Link href="/blog" style={{ color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '11px', letterSpacing: '1.5px', textTransform: 'uppercase', padding: '4px 0', textDecoration: 'none', borderBottom: '1px solid transparent', transition: 'all 0.2s' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = accent; (e.currentTarget as HTMLAnchorElement).style.borderBottomColor = accent; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLAnchorElement).style.borderBottomColor = 'transparent'; }}>
+            Blog
+          </Link>
+          {/* Search icon + expandable input */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0', position: 'relative' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center',
+              overflow: 'hidden',
+              width: searchOpen ? '200px' : '0',
+              transition: 'width 0.3s ease',
+            }}>
+              <input
+                type="text"
+                value={search}
+                autoFocus={searchOpen}
+                onChange={(e) => { setSearch(e.target.value); setActiveFilter('all'); }}
+                onKeyDown={(e) => { if (e.key === 'Escape') { setSearch(''); setSearchOpen(false); } }}
+                placeholder="Buscar productos..."
+                style={{
+                  width: '100%', background: 'var(--surface)', border: '1px solid var(--border)',
+                  borderRight: 'none', color: 'var(--text)', fontFamily: '"DM Mono", monospace',
+                  fontSize: '11px', padding: '8px 12px', outline: 'none', letterSpacing: '0.5px',
+                }}
+              />
+            </div>
+            <button
+              onClick={() => {
+                if (searchOpen && search) { setSearch(''); }
+                else { setSearchOpen(!searchOpen); }
+                if (!searchOpen) {
+                  setTimeout(() => document.querySelector<HTMLElement>('#productos')?.scrollIntoView({ behavior: 'smooth' }), 350);
+                }
+              }}
+              style={{
+                background: 'var(--surface)', border: '1px solid var(--border)',
+                color: search ? accent : 'var(--text-muted)',
+                width: '36px', height: '36px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.2s', flexShrink: 0,
+              }}
+              title="Buscar"
+            >
+              {search ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              )}
+            </button>
+          </div>
+
           <button
             onClick={() => setCartOpen(true)}
             style={{
@@ -705,26 +827,13 @@ export default function TattooShopHome() {
         </div>
 
         <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '4px', marginBottom: '28px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span>EST. 2018</span>
+          <span>EST. 2021</span>
           <span style={{ flex: 1, height: '1px', background: 'var(--border)', maxWidth: '80px' }} />
-          <span>BOGOTÁ, COL</span>
+          <span>MEDELLÍN, COL</span>
         </div>
 
-        <div
-          style={{
-            fontFamily: '"Bebas Neue", sans-serif',
-            fontSize: 'clamp(72px,14vw,200px)',
-            lineHeight: 0.88,
-            color: 'var(--text)',
-            textTransform: 'uppercase',
-            position: 'relative',
-            zIndex: 1,
-          }}
-        >
-          TATTOO
-          <span style={{ color: accent }}>SHOP</span>
-          <br />
-          <span style={{ fontSize: 'clamp(40px,7vw,100px)', color: 'var(--text-muted)' }}>COLOMBIA</span>
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <BrandLogoFull width="clamp(260px,60vw,860px)" />
         </div>
 
         <div style={{ marginTop: '32px', marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
@@ -748,48 +857,47 @@ export default function TattooShopHome() {
           }}
         >
           {categories.map((cat, i) => (
-            <button
+            <Link
               key={cat.key}
-              onClick={() => {
-                setActiveFilter(cat.key);
-                document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }}
+              href={`/${cat.slug}`}
               style={{
                 background: 'var(--surface)',
                 border: `2px solid ${accent}`,
                 borderRadius: '4px',
                 padding: 'clamp(28px,5vw,56px) clamp(20px,4vw,48px)',
-                cursor: 'pointer',
                 textAlign: 'left',
                 transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 position: 'relative',
                 overflow: 'hidden',
+                display: 'block',
+                textDecoration: 'none',
+                color: 'var(--text)',
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = accent;
-                (e.currentTarget as HTMLButtonElement).style.color = '#111';
-                (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-4px)';
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 12px 32px ${accent}44`;
+                (e.currentTarget as HTMLAnchorElement).style.background = accent;
+                (e.currentTarget as HTMLAnchorElement).style.color = '#111';
+                (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-4px)';
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow = `0 12px 32px ${accent}44`;
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface)';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)';
-                (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
+                (e.currentTarget as HTMLAnchorElement).style.background = 'var(--surface)';
+                (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text)';
+                (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)';
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow = 'none';
               }}
             >
               <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>0{i + 1}</span>
                 <span style={{ height: '2px', width: '20px', background: accent }} />
               </div>
-              <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(32px,5vw,64px)', lineHeight: 0.9, color: 'var(--text)', marginBottom: '16px' }}>
+              <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(32px,5vw,64px)', lineHeight: 0.9, color: 'inherit', marginBottom: '16px' }}>
                 {cat.label.toUpperCase()}
               </div>
               <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-dim)', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span>{cat.count} productos</span>
                 <span style={{ transition: 'transform 0.3s' }}>→</span>
               </div>
-            </button>
+            </Link>
           ))}
         </div>
       </section>
@@ -841,7 +949,9 @@ export default function TattooShopHome() {
             </h2>
           </div>
 
-          <div style={{ display: 'flex', gap: '1px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-end' }}>
+            {/* Category filters */}
+            <div style={{ display: 'flex', gap: '1px', flexWrap: 'wrap' }}>
             {[{ key: 'all', label: 'Todos' }, ...categories.map((c) => ({ key: c.key, label: c.label }))].map((f) => (
               <button
                 key={f.key}
@@ -874,6 +984,7 @@ export default function TattooShopHome() {
                 {f.label}
               </button>
             ))}
+            </div>
           </div>
         </div>
 
@@ -883,20 +994,22 @@ export default function TattooShopHome() {
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: '80px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
-            No hay productos en esta categoría
+            {search ? `Sin resultados para "${search}"` : 'No hay productos en esta categoría'}
           </div>
         ) : (
           <>
             <div
+              data-products-grid=""
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gridTemplateColumns: 'repeat(4, 1fr)',
                 gap: '1px',
                 background: 'var(--border)',
+                maxWidth: '100%',
               }}
             >
               {filtered.map((p, i) => (
-                <ProductCard key={p.id} product={p} idx={i} onAdd={addToCart} accent={accent} />
+                <ProductCard key={p.id} product={p} idx={i} onAdd={addToCart} accent={accent} cartQty={cart.find((c) => c.id === p.id)?.qty ?? 0} onCompare={toggleCompare} inCompare={compareList.includes(p.id)} />
               ))}
             </div>
 
@@ -917,14 +1030,14 @@ export default function TattooShopHome() {
             <span style={{ color: accent }}>REALES.</span>
           </h3>
           <p style={{ color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: '400px', fontSize: '14px' }}>
-            Desde 2018 somos el proveedor de confianza de tatuadores profesionales en Colombia. Trabajamos directamente con fabricantes certificados para garantizar insumos de alta calidad a precios justos. Envío a todas las ciudades del país.
+            Desde 2021 somos el proveedor de confianza de tatuadores profesionales en Colombia. Trabajamos directamente con fabricantes certificados para garantizar insumos de alta calidad a precios justos. Envío a todas las ciudades del país.
           </p>
         </div>
         <div style={{ padding: 'clamp(48px,8vw,96px) clamp(24px,5vw,80px)', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--surface)' }}>
           {[
-            { n: '500+', label: 'Clientes activos' },
-            { n: '48h', label: 'Tiempo de entrega promedio' },
-            { n: '100%', label: 'Garantía en productos' },
+            { n: '1000+', label: 'Clientes activos' },
+            { n: '2 a 4 días', label: 'Tiempo de entrega promedio' },
+            { n: 'Garantía 6 meses', label: 'Por defectos de fábrica' },
           ].map((s, i) => (
             <div
               key={i}
@@ -944,11 +1057,14 @@ export default function TattooShopHome() {
         </div>
       </section>
 
+      {/* RESEÑAS */}
+      <ReviewsSection />
+
       {/* FOOTER */}
       <footer style={{ borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
         <div style={{ padding: 'clamp(40px,6vw,80px) clamp(20px,5vw,80px)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '40px', flexWrap: 'wrap' }}>
           <div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: accent, letterSpacing: '3px', marginBottom: '12px' }}>NEWSLETTER</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '3px', marginBottom: '12px', fontWeight: '700' }}>NEWSLETTER</div>
             <h4 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(24px,3vw,42px)', lineHeight: 0.95, color: 'var(--text)' }}>
               OFERTAS EXCLUSIVAS<br />
               PARA TATUADORES
@@ -983,14 +1099,10 @@ export default function TattooShopHome() {
 
         <div style={{ padding: 'clamp(40px,6vw,72px) clamp(20px,5vw,80px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '40px 60px', borderBottom: '1px solid var(--border)' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <LogoMark accent={accent} />
-              <div>
-                <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: 'var(--text)' }}>TATTOOSHOP</div>
-                <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '8px', color: accent, letterSpacing: '3px' }}>COLOMBIA</div>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px', color: accent }}>
+              <BrandLogoFull width={120} />
             </div>
-            <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-dim)', lineHeight: 1.7, letterSpacing: '0.5px' }}>
+            <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, letterSpacing: '0.5px' }}>
               Tu proveedor profesional<br />
               de insumos para tatuaje<br />
               en Colombia.
@@ -998,12 +1110,16 @@ export default function TattooShopHome() {
           </div>
 
           <div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>CATÁLOGO</div>
-            {['Kits de Inicio', 'Máquinas Rotary', 'Máquinas Coil', 'Agujas y Cartridges', 'Tintas', 'Insumos Descartables'].map((l) => (
-              <div key={l} style={{ marginBottom: '10px' }}>
-                <a
-                  href="#"
-                  style={{ color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '12px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s' }}
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '3px', marginBottom: '18px', fontWeight: '700' }}>CATÁLOGO</div>
+            {[
+              { label: 'Kits', slug: 'kits' },
+              { label: 'Máquinas', slug: 'maquinas' },
+              { label: 'Insumos', slug: 'insumos' },
+            ].map((l) => (
+              <div key={l.slug} style={{ marginBottom: '10px' }}>
+                <Link
+                  href={`/${l.slug}`}
+                  style={{ color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '13px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s' }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLAnchorElement).style.color = accent;
                   }}
@@ -1011,19 +1127,24 @@ export default function TattooShopHome() {
                     (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)';
                   }}
                 >
-                  {l}
-                </a>
+                  {l.label}
+                </Link>
               </div>
             ))}
           </div>
 
           <div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>INFORMACIÓN</div>
-            {['Política de Envíos', 'Devoluciones y Garantía', 'Preguntas Frecuentes', 'Métodos de Pago', 'Sobre Nosotros', 'Términos y Condiciones'].map((l) => (
-              <div key={l} style={{ marginBottom: '10px' }}>
-                <a
-                  href="#"
-                  style={{ color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '12px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s' }}
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '3px', marginBottom: '18px', fontWeight: '700' }}>INFORMACIÓN</div>
+            {[
+              { label: 'Políticas de Envíos', href: '/politica-envios' },
+              { label: 'Garantía', href: '/devoluciones-garantia' },
+              { label: 'Preguntas Frecuentes', href: '/preguntas-frecuentes' },
+              { label: 'Métodos de Pago', href: '/metodos-pago' },
+            ].map((item) => (
+              <div key={item.label} style={{ marginBottom: '10px' }}>
+                <Link
+                  href={item.href}
+                  style={{ color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '13px', textDecoration: 'none', letterSpacing: '0.5px', transition: 'color 0.2s' }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLAnchorElement).style.color = accent;
                   }}
@@ -1031,62 +1152,44 @@ export default function TattooShopHome() {
                     (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)';
                   }}
                 >
-                  {l}
-                </a>
+                  {item.label}
+                </Link>
               </div>
             ))}
           </div>
 
           <div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>CONTACTO</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '3px', marginBottom: '18px', fontWeight: '700' }}>CONTACTO</div>
             <div style={{ marginBottom: '20px' }}>
-              <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.8 }}>
-                Cra 7 #45-23<br />
-                Bogotá, Colombia<br />
-                Lun-Vie 8am-6pm
+              <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.8 }}>
+                Tienda Virtual<br />
+                Medellín, Antioquia<br />
+                Abierto todos los días<br />
+                8am - 7pm
               </p>
             </div>
-            <a
-              href="https://wa.me/573000000000"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: accent,
-                color: '#111',
-                textDecoration: 'none',
-                padding: '10px 16px',
-                fontFamily: '"DM Mono", monospace',
-                fontSize: '11px',
-                letterSpacing: '1px',
-                marginBottom: '24px',
-                transition: 'background 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.background = '#ffe033';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.background = accent;
-              }}
-            >
-              <WhatsAppLogo size="16px" />
-              WHATSAPP
-            </a>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '12px' }}>REDES SOCIALES</div>
+            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: accent, letterSpacing: '3px', marginBottom: '12px', fontWeight: '700' }}>REDES SOCIALES</div>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              {['Instagram', 'TikTok', 'Facebook', 'YouTube'].map((s) => (
+              {[
+                { label: 'Instagram', href: 'https://instagram.com' },
+                { label: 'Facebook', href: 'https://facebook.com' },
+                { label: 'WhatsApp', href: 'https://wa.me/573000000000' },
+              ].map((s) => (
                 <a
-                  key={s}
-                  href="#"
+                  key={s.label}
+                  href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     color: 'var(--text-muted)',
                     fontFamily: '"DM Mono", monospace',
-                    fontSize: '10px',
+                    fontSize: '12px',
                     textDecoration: 'none',
                     border: '1px solid var(--border)',
                     padding: '6px 10px',
                     letterSpacing: '1px',
                     transition: 'all 0.2s',
+                    display: 'inline-block',
                   }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLAnchorElement).style.color = accent;
@@ -1097,36 +1200,16 @@ export default function TattooShopHome() {
                     (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border)';
                   }}
                 >
-                  {s}
+                  {s.label}
                 </a>
               ))}
             </div>
           </div>
-
-          <div>
-            <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '9px', color: accent, letterSpacing: '3px', marginBottom: '18px' }}>PAGAMOS CON</div>
-            {['PSE / Bancolombia', 'Nequi / Daviplata', 'Contraentrega', 'Tarjeta Crédito/Débito', 'Efecty / Baloto'].map((p) => (
-              <div
-                key={p}
-                style={{
-                  marginBottom: '8px',
-                  padding: '8px 12px',
-                  border: '1px solid var(--border)',
-                  fontFamily: '"DM Mono", monospace',
-                  fontSize: '10px',
-                  color: 'var(--text-muted)',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                {p}
-              </div>
-            ))}
-          </div>
         </div>
 
         <div style={{ padding: '20px clamp(20px,5vw,80px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>TattooShop Colombia ©2026 — Todos los derechos reservados</div>
-          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>
+          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '1px' }}>TattooShop Colombia ©2026 — Todos los derechos reservados</div>
+          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '1px' }}>
             Hecho con <span style={{ color: accent }}>✦</span> en Colombia
           </div>
         </div>
@@ -1134,6 +1217,67 @@ export default function TattooShopHome() {
 
       {/* CART DRAWER */}
       {cartOpen && <CartDrawer cart={cart} onClose={() => setCartOpen(false)} onRemove={removeFromCart} onQty={changeQty} accent={accent} onCheckout={() => { setCartOpen(false); router.push('/checkout'); }} />}
+
+      {/* COMPARE BAR */}
+      {compareList.length > 0 && (
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 500, background: 'rgba(17,17,17,0.97)', borderTop: `2px solid ${accent}`, backdropFilter: 'blur(12px)', padding: '12px clamp(20px,5vw,80px)', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '2px', flexShrink: 0 }}>COMPARAR ({compareList.length}/3)</span>
+          <div style={{ display: 'flex', gap: '8px', flex: 1, flexWrap: 'wrap' }}>
+            {compareProducts.map((p) => (
+              <span key={p.id} style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text)', background: 'var(--surface)', border: '1px solid var(--border)', padding: '4px 10px' }}>{p.name}</span>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+            {compareList.length >= 2 && (
+              <button onClick={() => setShowCompare(true)} style={{ background: accent, color: '#111', border: 'none', fontFamily: '"Bebas Neue", sans-serif', fontSize: '16px', padding: '8px 20px', cursor: 'pointer', letterSpacing: '1px' }}>
+                VER COMPARACIÓN
+              </button>
+            )}
+            <button onClick={() => setCompareList([])} style={{ background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', fontFamily: '"DM Mono", monospace', fontSize: '10px', padding: '8px 14px', cursor: 'pointer', letterSpacing: '1px' }}>
+              LIMPIAR
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* COMPARE MODAL */}
+      {showCompare && (
+        <div onClick={() => setShowCompare(false)} style={{ position: 'fixed', inset: 0, zIndex: 600, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: 'var(--bg)', border: `1px solid ${accent}`, maxWidth: '900px', width: '100%', maxHeight: '90vh', overflow: 'auto', padding: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '28px', color: accent, letterSpacing: '2px' }}>COMPARACIÓN DE PRODUCTOS</span>
+              <button onClick={() => setShowCompare(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${compareProducts.length}, 1fr)`, gap: '1px', background: 'var(--border)' }}>
+              {compareProducts.map((p) => {
+                const sp = p.discount_percentage && p.discount_percentage > 0 ? Math.round(p.price - p.price * (p.discount_percentage / 100)) : p.price;
+                return (
+                  <div key={p.id} style={{ background: 'var(--surface)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {p.image_url && (
+                      <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3' }}>
+                        <Image src={p.image_url} alt={p.name} fill sizes="(max-width: 600px) 100vw, 400px" style={{ objectFit: 'cover' }} loading="lazy" />
+                      </div>
+                    )}
+                    <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', color: 'var(--text)' }}>{p.name}</div>
+                    <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '24px', color: accent }}>{fmt(sp)}</div>
+                    {p.discount_percentage && p.discount_percentage > 0 && <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: '#e55' }}>-{p.discount_percentage}% descuento</div>}
+                    <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '8px' }}>CATEGORÍA</div>
+                    <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text)' }}>{p.category}</div>
+                    <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '8px' }}>ESPECIFICACIONES</div>
+                    <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text)', lineHeight: 1.7, whiteSpace: 'pre-line' }}>{p.specs || '—'}</div>
+                    <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: (p.inventory ?? 0) > 0 ? '#25d366' : '#e55', marginTop: '4px' }}>
+                      {(p.inventory ?? 0) > 0 ? `✓ En stock (${p.inventory} uds)` : '✗ Agotado'}
+                    </div>
+                    <Link href={`/productos/${toSlug(p.name)}`} style={{ background: accent, color: '#111', textAlign: 'center', padding: '10px', fontFamily: '"Bebas Neue", sans-serif', fontSize: '16px', letterSpacing: '1px', textDecoration: 'none', marginTop: 'auto' }}>
+                      VER PRODUCTO
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
