@@ -67,6 +67,15 @@ export default function CrmDashboard() {
   const [submittingOrder, setSubmittingOrder] = useState(false);
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [editCustName, setEditCustName] = useState('');
+  const [editCustPhone, setEditCustPhone] = useState('');
+  const [editCustEmail, setEditCustEmail] = useState('');
+  const [editCustCity, setEditCustCity] = useState('');
+  const [editPayMethod, setEditPayMethod] = useState('NEQUI');
+  const [editStatus, setEditStatus] = useState<Order['status']>('PENDING');
+  const [editTracking, setEditTracking] = useState('');
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -309,6 +318,54 @@ export default function CrmDashboard() {
     }
   };
 
+  const startEditingOrder = (order: Order) => {
+    setEditingOrder(order);
+    setEditCustName(order.crm_customers?.name || '');
+    setEditCustPhone(order.crm_customers?.phone || '');
+    setEditCustEmail(order.crm_customers?.email || '');
+    setEditCustCity(order.crm_customers?.city || '');
+    setEditPayMethod(order.payment_method || 'NEQUI');
+    setEditStatus(order.status);
+    setEditTracking(order.tracking_number || '');
+  };
+
+  const handleUpdateOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingOrder) return;
+    try {
+      const supabase = getSupabase();
+      
+      if (editingOrder.crm_customers?.id) {
+        const { error: custErr } = await supabase
+          .from('crm_customers')
+          .update({
+            name: editCustName,
+            phone: editCustPhone || null,
+            email: editCustEmail || null,
+            city: editCustCity || null
+          })
+          .eq('id', editingOrder.crm_customers.id);
+        if (custErr) throw custErr;
+      }
+
+      const { error: orderErr } = await supabase
+        .from('crm_orders')
+        .update({
+          payment_method: editPayMethod,
+          status: editStatus,
+          tracking_number: editTracking || null
+        })
+        .eq('id', editingOrder.id);
+      if (orderErr) throw orderErr;
+
+      showToast('Pedido actualizado exitosamente');
+      setEditingOrder(null);
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Error al actualizar pedido', 'error');
+    }
+  };
+
   // Metrics Calculations
   const stockCriticoCount = products.filter(p => (p.inventory ?? 0) < 3).length;
   
@@ -464,7 +521,7 @@ export default function CrmDashboard() {
           </div>
         </div>
 
-        {/* Filters and Search Bar */}
+        {/* Filters, Search Bar, and View Switched */}
         <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-6">
           <div className="flex flex-wrap gap-2">
             {statuses.map(s => (
@@ -481,156 +538,271 @@ export default function CrmDashboard() {
               </button>
             ))}
           </div>
-          <div className="relative flex-1 max-w-md">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar por cliente, ciudad, método, guía..."
-              className="w-full bg-[#1c1c1c] border border-[#2e2e2e] text-[#e8e8e8] font-mono text-xs px-4 py-3 outline-none focus:border-[#FFD400] transition rounded-none uppercase placeholder:text-zinc-600"
-            />
+          
+          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center flex-1 max-w-xl">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar por cliente, ciudad, método, guía..."
+                className="w-full bg-[#1c1c1c] border border-[#2e2e2e] text-[#e8e8e8] font-mono text-xs px-4 py-3 outline-none focus:border-[#FFD400] transition rounded-none uppercase placeholder:text-zinc-600"
+              />
+            </div>
+            
+            <div className="flex border border-[#2e2e2e] bg-[#1c1c1c] p-1 gap-1">
+              <button
+                onClick={() => setViewMode('table')}
+                className={`px-3 py-1.5 text-[10px] font-mono tracking-wider transition ${
+                  viewMode === 'table' ? 'bg-[#FFD400] text-black font-bold' : 'text-[#b0b0b0] hover:text-white'
+                }`}
+              >
+                TABLA
+              </button>
+              <button
+                onClick={() => setViewMode('kanban')}
+                className={`px-3 py-1.5 text-[10px] font-mono tracking-wider transition ${
+                  viewMode === 'kanban' ? 'bg-[#FFD400] text-black font-bold' : 'text-[#b0b0b0] hover:text-white'
+                }`}
+              >
+                KANBAN
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Centered Orders Table */}
-        <div className="bg-[#1c1c1c] border border-[#2e2e2e] overflow-hidden">
-          {loading ? (
-            <div className="text-center py-20 text-[#9a9a9a] text-sm font-mono tracking-widest">
-              CARGANDO PEDIDOS...
-            </div>
-          ) : filteredOrders.length === 0 ? (
-            <div className="text-center py-20 text-[#9a9a9a] text-sm font-mono border border-dashed border-[#2e2e2e] m-4">
-              NO SE ENCONTRARON PEDIDOS CON ESTOS CRITERIOS
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse font-mono text-xs">
-                <thead>
-                  <tr className="border-b border-[#2e2e2e] bg-[#121212] text-[#FFD400]">
-                    <th className="p-4 text-left font-bold tracking-wider">PEDIDO / FECHA</th>
-                    <th className="p-4 text-left font-bold tracking-wider">CLIENTE</th>
-                    <th className="p-4 text-left font-bold tracking-wider">ORIGEN</th>
-                    <th className="p-4 text-left font-bold tracking-wider">PAGO</th>
-                    <th className="p-4 text-right font-bold tracking-wider">TOTAL</th>
-                    <th className="p-4 text-left font-bold tracking-wider">ESTADO</th>
-                    <th className="p-4 text-left font-bold tracking-wider">GUÍA DE ENVÍO</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredOrders.map((order, index) => {
-                    const orderDate = new Date(order.created_at).toLocaleDateString('es-CO', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    });
-                    
-                    return (
-                      <tr
-                        key={order.id}
-                        className={`border-b border-[#2e2e2e] hover:bg-[#222] transition ${
-                          index % 2 === 0 ? 'bg-[#181818]/40' : 'bg-transparent'
-                        }`}
-                      >
-                        {/* ID & Date */}
-                        <td className="p-4 whitespace-nowrap">
-                          <span className="font-bold text-[#e8e8e8]">#{order.id.slice(0, 5).toUpperCase()}</span>
-                          <div className="text-[10px] text-[#9a9a9a] mt-1">{orderDate}</div>
-                        </td>
+        {viewMode === 'table' && (
+          <div className="bg-[#1c1c1c] border border-[#2e2e2e] overflow-hidden">
+            {loading ? (
+              <div className="text-center py-20 text-[#9a9a9a] text-sm font-mono tracking-widest">
+                CARGANDO PEDIDOS...
+              </div>
+            ) : filteredOrders.length === 0 ? (
+              <div className="text-center py-20 text-[#9a9a9a] text-sm font-mono border border-dashed border-[#2e2e2e] m-4">
+                NO SE ENCONTRARON PEDIDOS CON ESTOS CRITERIOS
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse font-mono text-xs">
+                  <thead>
+                    <tr className="border-b border-[#2e2e2e] bg-[#121212] text-[#FFD400]">
+                      <th className="p-4 text-left font-bold tracking-wider">PEDIDO / FECHA</th>
+                      <th className="p-4 text-left font-bold tracking-wider">CLIENTE</th>
+                      <th className="p-4 text-left font-bold tracking-wider">ORIGEN</th>
+                      <th className="p-4 text-left font-bold tracking-wider">PAGO</th>
+                      <th className="p-4 text-right font-bold tracking-wider">TOTAL</th>
+                      <th className="p-4 text-left font-bold tracking-wider">ESTADO</th>
+                      <th className="p-4 text-left font-bold tracking-wider">GUÍA DE ENVÍO</th>
+                      <th className="p-4 text-center font-bold tracking-wider">ACCIONES</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredOrders.map((order, index) => {
+                      const orderDate = new Date(order.created_at).toLocaleDateString('es-CO', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      });
+                      
+                      return (
+                        <tr
+                          key={order.id}
+                          className={`border-b border-[#2e2e2e] hover:bg-[#222] transition ${
+                            index % 2 === 0 ? 'bg-[#181818]/40' : 'bg-transparent'
+                          }`}
+                        >
+                          {/* ID & Date */}
+                          <td className="p-4 whitespace-nowrap">
+                            <span className="font-bold text-[#e8e8e8]">#{order.id.slice(0, 5).toUpperCase()}</span>
+                            <div className="text-[10px] text-[#9a9a9a] mt-1">{orderDate}</div>
+                          </td>
 
-                        {/* Customer details */}
-                        <td className="p-4">
-                          <span className="font-bold text-[#e8e8e8] uppercase block">{order.crm_customers?.name || 'Cliente'}</span>
-                          <span className="text-[10px] text-[#9a9a9a] block mt-0.5">
-                            {order.crm_customers?.phone || 'Sin tel.'} · {order.crm_customers?.city || 'Sin ciudad'}
-                          </span>
-                        </td>
+                          {/* Customer details */}
+                          <td className="p-4">
+                            <span className="font-bold text-[#e8e8e8] uppercase block">{order.crm_customers?.name || 'Cliente'}</span>
+                            <span className="text-[10px] text-[#9a9a9a] block mt-0.5">
+                              {order.crm_customers?.phone || 'Sin tel.'} · {order.crm_customers?.city || 'Sin ciudad'}
+                            </span>
+                          </td>
 
-                        {/* Source badge */}
-                        <td className="p-4 whitespace-nowrap">
-                          <span
-                            className={`text-[9px] tracking-wider font-bold px-2 py-0.5 ${
-                              order.source === 'WEB' ? 'bg-[#FFD400] text-black' : 'bg-[#25d366] text-white'
-                            }`}
-                          >
-                            {order.source}
-                          </span>
-                        </td>
-
-                        {/* Payment method */}
-                        <td className="p-4 uppercase whitespace-nowrap text-[#b0b0b0]">
-                          {order.payment_method || 'Sin método'}
-                        </td>
-
-                        {/* Total amount */}
-                        <td className="p-4 text-right font-bold text-[#FFD400] whitespace-nowrap">
-                          {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.total_amount)}
-                        </td>
-
-                        {/* Status Select dropdown */}
-                        <td className="p-4 whitespace-nowrap">
-                          <select
-                            value={order.status}
-                            onChange={(e) => updateOrderStatus(order.id, e.target.value as Order['status'])}
-                            className={`bg-[#141414] border border-[#2e2e2e] text-[11px] font-bold px-2 py-1 outline-none transition uppercase ${
-                              order.status === 'PAID' ? 'text-blue-400 border-blue-900/50' :
-                              order.status === 'PENDING' ? 'text-orange-400 border-orange-900/50' :
-                              order.status === 'SHIPPED' ? 'text-purple-400 border-purple-900/50' :
-                              'text-green-400 border-green-900/50'
-                            }`}
-                          >
-                            <option value="PAID">Por Empacar (Pagado)</option>
-                            <option value="PENDING">Por Despachar</option>
-                            <option value="SHIPPED">Enviado</option>
-                            <option value="DELIVERED">Entregado</option>
-                          </select>
-                        </td>
-
-                        {/* Tracking number edit inline */}
-                        <td className="p-4">
-                          {editingTrackingId === order.id ? (
-                            <div className="flex gap-2 min-w-[200px]">
-                              <input
-                                type="text"
-                                value={trackingNumberInput}
-                                onChange={(e) => setTrackingNumberInput(e.target.value)}
-                                placeholder="GUÍA DE ENVÍO"
-                                className="w-full bg-[#141414] border border-[#2e2e2e] p-2 text-xs text-white outline-none uppercase font-mono"
-                                autoFocus
-                              />
-                              <button
-                                onClick={() => updateTrackingNumber(order.id)}
-                                className="px-3 py-1 bg-[#FFD400] text-black text-xs font-bold"
-                              >
-                                ✓
-                              </button>
-                              <button
-                                onClick={() => setEditingTrackingId(null)}
-                                className="px-3 py-1 bg-[#141414] border border-[#2e2e2e] text-[#9a9a9a] text-xs"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          ) : (
-                            <div
-                              onClick={() => {
-                                setEditingTrackingId(order.id);
-                                setTrackingNumberInput(order.tracking_number || '');
-                              }}
-                              className="text-xs text-[#FFD400] hover:text-[#ffe033] cursor-pointer hover:underline flex justify-between items-center max-w-[200px] border border-transparent hover:border-[#2e2e2e] px-2 py-1"
+                          {/* Source badge */}
+                          <td className="p-4 whitespace-nowrap">
+                            <span
+                              className={`text-[9px] tracking-wider font-bold px-2 py-0.5 ${
+                                order.source === 'WEB' ? 'bg-[#FFD400] text-black' : 'bg-[#25d366] text-white'
+                              }`}
                             >
-                              <span>{order.tracking_number || 'AÑADIR GUÍA...'}</span>
-                              <span className="text-[10px] text-[#9a9a9a] ml-2">✏</span>
+                              {order.source}
+                            </span>
+                          </td>
+
+                          {/* Payment method */}
+                          <td className="p-4 uppercase whitespace-nowrap text-[#b0b0b0]">
+                            {order.payment_method || 'Sin método'}
+                          </td>
+
+                          {/* Total amount */}
+                          <td className="p-4 text-right font-bold text-[#FFD400] whitespace-nowrap">
+                            {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.total_amount)}
+                          </td>
+
+                          {/* Status Select dropdown */}
+                          <td className="p-4 whitespace-nowrap">
+                            <select
+                              value={order.status}
+                              onChange={(e) => updateOrderStatus(order.id, e.target.value as Order['status'])}
+                              className={`bg-[#141414] border border-[#2e2e2e] text-[11px] font-bold px-2 py-1 outline-none transition uppercase ${
+                                order.status === 'PAID' ? 'text-blue-400 border-blue-900/50' :
+                                order.status === 'PENDING' ? 'text-orange-400 border-orange-900/50' :
+                                order.status === 'SHIPPED' ? 'text-purple-400 border-purple-900/50' :
+                                'text-green-400 border-green-900/50'
+                              }`}
+                            >
+                              <option value="PAID">Por Empacar (Pagado)</option>
+                              <option value="PENDING">Por Despachar</option>
+                              <option value="SHIPPED">Enviado</option>
+                              <option value="DELIVERED">Entregado</option>
+                            </select>
+                          </td>
+
+                          {/* Tracking number edit inline */}
+                          <td className="p-4">
+                            {editingTrackingId === order.id ? (
+                              <div className="flex gap-2 min-w-[200px]">
+                                <input
+                                  type="text"
+                                  value={trackingNumberInput}
+                                  onChange={(e) => setTrackingNumberInput(e.target.value)}
+                                  placeholder="GUÍA DE ENVÍO"
+                                  className="w-full bg-[#141414] border border-[#2e2e2e] p-2 text-xs text-white outline-none uppercase font-mono"
+                                  autoFocus
+                                />
+                                <button
+                                  onClick={() => updateTrackingNumber(order.id)}
+                                  className="px-3 py-1 bg-[#FFD400] text-black text-xs font-bold"
+                                >
+                                  ✓
+                                </button>
+                                <button
+                                  onClick={() => setEditingTrackingId(null)}
+                                  className="px-3 py-1 bg-[#141414] border border-[#2e2e2e] text-[#9a9a9a] text-xs"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ) : (
+                              <div
+                                onClick={() => {
+                                  setEditingTrackingId(order.id);
+                                  setTrackingNumberInput(order.tracking_number || '');
+                                }}
+                                className="text-xs text-[#FFD400] hover:text-[#ffe033] cursor-pointer hover:underline flex justify-between items-center max-w-[200px] border border-transparent hover:border-[#2e2e2e] px-2 py-1"
+                              >
+                                <span>{order.tracking_number || 'AÑADIR GUÍA...'}</span>
+                                <span className="text-[10px] text-[#9a9a9a] ml-2">✏</span>
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="p-4 text-center whitespace-nowrap">
+                            <button
+                              onClick={() => startEditingOrder(order)}
+                              className="px-3 py-1.5 bg-zinc-800 border border-[#2e2e2e] text-[#FFD400] font-mono text-[10px] font-bold hover:bg-zinc-700 transition"
+                            >
+                              EDITAR
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Kanban Board View */}
+        {viewMode === 'kanban' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { title: 'Por Empacar', status: 'PAID' as Order['status'], color: 'border-blue-500/20' },
+              { title: 'Por Despachar', status: 'PENDING' as Order['status'], color: 'border-orange-500/20' },
+              { title: 'Enviado', status: 'SHIPPED' as Order['status'], color: 'border-purple-500/20' },
+              { title: 'Entregado', status: 'DELIVERED' as Order['status'], color: 'border-green-500/20' }
+            ].map(col => {
+              const columnOrders = filteredOrders.filter(o => o.status === col.status);
+              return (
+                <div
+                  key={col.status}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, col.status)}
+                  className={`bg-[#181818] border ${col.color} p-4 rounded-none flex flex-col min-h-[500px]`}
+                >
+                  <div className="flex justify-between items-center mb-4 border-b border-[#2e2e2e] pb-2 text-[#FFD400]">
+                    <h3 className="font-display text-2xl tracking-wider uppercase">{col.title}</h3>
+                    <span className="bg-[#1c1c1c] text-[#b0b0b0] border border-[#2e2e2e] font-mono text-xs px-2 py-0.5">
+                      {columnOrders.length}
+                    </span>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto space-y-3">
+                    {loading ? (
+                      <div className="text-center py-8 text-[#9a9a9a] text-xs font-mono">CARGANDO...</div>
+                    ) : columnOrders.length === 0 ? (
+                      <div className="text-center py-8 text-[#9a9a9a] text-xs font-mono border border-dashed border-[#2e2e2e]">
+                        ARRASTRAR AQUÍ
+                      </div>
+                    ) : (
+                      columnOrders.map(order => (
+                        <div
+                          key={order.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, order.id)}
+                          className="bg-[#1c1c1c] border border-[#2e2e2e] hover:border-[#FFD400]/40 p-4 rounded-none cursor-grab active:cursor-grabbing transition"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <span className={`text-[9px] font-mono tracking-wider font-bold px-1.5 py-0.5 ${order.source === 'WEB' ? 'bg-[#FFD400] text-black' : 'bg-[#25d366] text-white'}`}>
+                              {order.source}
+                            </span>
+                            <span className="text-[10px] font-mono text-[#9a9a9a]">
+                              {new Date(order.created_at).toLocaleDateString('es-CO')}
+                            </span>
+                          </div>
+
+                          <div className="font-display text-xl text-[#e8e8e8] tracking-wide mb-1 uppercase">{order.crm_customers?.name || 'Cliente'}</div>
+                          <div className="text-[11px] text-[#b0b0b0] font-mono mb-2 uppercase">
+                            {order.crm_customers?.city || 'Sin ciudad'} · {order.payment_method || 'Sin método'}
+                          </div>
+
+                          <div className="flex justify-between items-center pt-2 border-t border-[#2e2e2e] gap-2">
+                            <span className="text-sm font-bold font-mono text-[#FFD400]">
+                              {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.total_amount)}
+                            </span>
+                            <button
+                              onClick={() => startEditingOrder(order)}
+                              className="px-2 py-1 bg-zinc-800 border border-[#2e2e2e] text-[#FFD400] text-[10px] font-mono hover:bg-zinc-700 transition"
+                            >
+                              EDITAR
+                            </button>
+                          </div>
+
+                          {order.tracking_number && (
+                            <div className="mt-2 text-[10px] font-mono text-[#9a9a9a] border-t border-dashed border-[#2e2e2e] pt-1">
+                              GUÍA: {order.tracking_number}
                             </div>
                           )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
       </div>
 
@@ -814,6 +986,131 @@ export default function CrmDashboard() {
                     {submittingOrder ? 'REGISTRANDO...' : 'REGISTRAR PEDIDO'}
                   </button>
                 </div>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Order Modal */}
+      {editingOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 overflow-y-auto backdrop-blur-sm">
+          <div className="bg-[#1c1c1c] border border-[#2e2e2e] w-full max-w-2xl rounded-none shadow-[0_0_50px_rgba(0,0,0,0.9)] p-6 relative my-8">
+            <button
+              onClick={() => setEditingOrder(null)}
+              className="absolute top-4 right-4 text-[#9a9a9a] hover:text-white font-mono text-xl"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-3xl font-display text-[#FFD400] uppercase tracking-wider mb-6">
+              EDITAR PEDIDO #{editingOrder.id.slice(0, 5).toUpperCase()}
+            </h2>
+
+            <form onSubmit={handleUpdateOrder} className="space-y-6">
+              
+              {/* Customer Info Group */}
+              <div className="border-b border-[#2e2e2e] pb-4">
+                <h3 className="text-xs font-mono uppercase tracking-wider text-[#9a9a9a] mb-3">Datos del Cliente</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-mono uppercase text-[#9a9a9a] mb-1">Nombre Completo *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editCustName}
+                      onChange={(e) => setEditCustName(e.target.value)}
+                      className="w-full bg-[#141414] border border-[#2e2e2e] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-mono uppercase text-[#9a9a9a] mb-1">Teléfono</label>
+                    <input
+                      type="text"
+                      value={editCustPhone}
+                      onChange={(e) => setEditCustPhone(e.target.value)}
+                      className="w-full bg-[#141414] border border-[#2e2e2e] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-mono uppercase text-[#9a9a9a] mb-1">Correo Electrónico</label>
+                    <input
+                      type="email"
+                      value={editCustEmail}
+                      onChange={(e) => setEditCustEmail(e.target.value)}
+                      className="w-full bg-[#141414] border border-[#2e2e2e] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-mono uppercase text-[#9a9a9a] mb-1">Ciudad</label>
+                    <input
+                      type="text"
+                      value={editCustCity}
+                      onChange={(e) => setEditCustCity(e.target.value)}
+                      className="w-full bg-[#141414] border border-[#2e2e2e] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Status & Tracking & Payment Group */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-b border-[#2e2e2e] pb-4">
+                <div>
+                  <label className="block text-[10px] font-mono uppercase text-[#9a9a9a] mb-1">Estado de Pedido</label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value as Order['status'])}
+                    className="w-full bg-[#141414] border border-[#2e2e2e] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase"
+                  >
+                    <option value="PAID">Por Empacar (Pagado)</option>
+                    <option value="PENDING">Por Despachar</option>
+                    <option value="SHIPPED">Enviado</option>
+                    <option value="DELIVERED">Entregado</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-[10px] font-mono uppercase text-[#9a9a9a] mb-1">Guía de Envío</label>
+                  <input
+                    type="text"
+                    value={editTracking}
+                    onChange={(e) => setEditTracking(e.target.value)}
+                    placeholder="NÚMERO DE GUÍA"
+                    className="w-full bg-[#141414] border border-[#2e2e2e] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-mono uppercase text-[#9a9a9a] mb-1">Método de Pago</label>
+                  <select
+                    value={editPayMethod}
+                    onChange={(e) => setEditPayMethod(e.target.value)}
+                    className="w-full bg-[#141414] border border-[#2e2e2e] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase"
+                  >
+                    <option value="NEQUI">NEQUI</option>
+                    <option value="BANCOLOMBIA">BANCOLOMBIA</option>
+                    <option value="DAVIPLATA">DAVIPLATA</option>
+                    <option value="MERCADOPAGO">MERCADOPAGO</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setEditingOrder(null)}
+                  className="px-6 py-3 border border-[#2e2e2e] text-[#9a9a9a] hover:text-white font-mono text-xs transition rounded-none uppercase"
+                >
+                  CANCELAR
+                </button>
+                <button
+                  type="submit"
+                  className="px-8 py-3 bg-[#FFD400] text-black font-display font-bold text-xl tracking-wider transition hover:bg-[#ffe033] rounded-none"
+                >
+                  GUARDAR CAMBIOS
+                </button>
               </div>
 
             </form>
