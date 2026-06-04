@@ -576,12 +576,40 @@ export default function CrmDashboard() {
         </div>
 
         {/* Kanban Board View */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {[
-            { title: 'Por Empacar', status: 'PAID' as Order['status'], color: 'border-blue-500/20' },
-            { title: 'Por Despachar', status: 'PENDING' as Order['status'], color: 'border-orange-500/20' },
-            { title: 'Enviado', status: 'SHIPPED' as Order['status'], color: 'border-purple-500/20' },
-            { title: 'Entregado', status: 'DELIVERED' as Order['status'], color: 'border-green-500/20' }
+            {
+              title: 'Por Empacar',
+              status: 'PAID' as Order['status'],
+              accent: '#3b82f6',
+              accentBg: 'rgba(59,130,246,0.08)',
+              badge: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+              headerGlow: '0 2px 20px rgba(59,130,246,0.15)',
+            },
+            {
+              title: 'Por Despachar',
+              status: 'PENDING' as Order['status'],
+              accent: '#f59e0b',
+              accentBg: 'rgba(245,158,11,0.08)',
+              badge: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+              headerGlow: '0 2px 20px rgba(245,158,11,0.15)',
+            },
+            {
+              title: 'Enviado',
+              status: 'SHIPPED' as Order['status'],
+              accent: '#a855f7',
+              accentBg: 'rgba(168,85,247,0.08)',
+              badge: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+              headerGlow: '0 2px 20px rgba(168,85,247,0.15)',
+            },
+            {
+              title: 'Entregado',
+              status: 'DELIVERED' as Order['status'],
+              accent: '#22c55e',
+              accentBg: 'rgba(34,197,94,0.08)',
+              badge: 'bg-green-500/20 text-green-400 border-green-500/30',
+              headerGlow: '0 2px 20px rgba(34,197,94,0.15)',
+            },
           ].map(col => {
             const columnOrders = filteredOrders.filter(o => o.status === col.status);
             return (
@@ -589,20 +617,36 @@ export default function CrmDashboard() {
                 key={col.status}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, col.status)}
-                className={`bg-[#181818] border ${col.color} p-4 rounded-none flex flex-col min-h-[500px]`}
+                style={{ background: col.accentBg, borderTop: `2px solid ${col.accent}` }}
+                className="border border-[#2a2a2a] p-4 flex flex-col min-h-[520px] transition-all"
               >
-                <div className="flex justify-between items-center mb-4 border-b border-[#2e2e2e] pb-2 text-[#FFD400]">
-                  <h3 className="font-display text-2xl tracking-wider uppercase">{col.title}</h3>
-                  <span className="bg-[#1c1c1c] text-[#b0b0b0] border border-[#2e2e2e] font-mono text-xs px-2 py-0.5">
+                {/* Column Header */}
+                <div className="flex justify-between items-center mb-5 pb-3" style={{ borderBottom: `1px solid ${col.accent}33` }}>
+                  <div>
+                    <h3
+                      className="font-display text-lg tracking-widest uppercase"
+                      style={{ color: col.accent, textShadow: `0 0 14px ${col.accent}66` }}
+                    >
+                      {col.title}
+                    </h3>
+                  </div>
+                  <span className={`border font-mono text-xs font-bold px-2 py-0.5 ${col.badge}`}>
                     {columnOrders.length}
                   </span>
                 </div>
 
-                <div className="flex-1 overflow-y-auto space-y-3">
+                {/* Cards */}
+                <div className="flex-1 overflow-y-auto space-y-3 pr-0.5">
                   {loading ? (
-                    <div className="text-center py-8 text-[#9a9a9a] text-xs font-mono">CARGANDO...</div>
+                    <div className="text-center py-10 text-[#555] text-[10px] font-mono tracking-widest animate-pulse">
+                      CARGANDO...
+                    </div>
                   ) : columnOrders.length === 0 ? (
-                    <div className="text-center py-8 text-[#9a9a9a] text-xs font-mono border border-dashed border-[#2e2e2e]">
+                    <div
+                      className="flex flex-col items-center justify-center py-10 border border-dashed text-[10px] font-mono tracking-widest text-[#444] gap-2"
+                      style={{ borderColor: `${col.accent}33` }}
+                    >
+                      <span style={{ color: col.accent, opacity: 0.4, fontSize: '1.5rem' }}>⬇</span>
                       ARRASTRAR AQUÍ
                     </div>
                   ) : (
@@ -611,37 +655,52 @@ export default function CrmDashboard() {
                         key={order.id}
                         draggable
                         onDragStart={(e) => handleDragStart(e, order.id)}
-                        className="bg-[#1c1c1c] border border-[#2e2e2e] hover:border-[#FFD400]/40 p-4 rounded-none cursor-grab active:cursor-grabbing transition text-left"
+                        className="group bg-[#141414] border border-[#2a2a2a] p-4 cursor-grab active:cursor-grabbing transition-all duration-150"
+                        style={{
+                          boxShadow: '0 1px 8px rgba(0,0,0,0.4)',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.borderColor = col.accent + '66')}
+                        onMouseLeave={e => (e.currentTarget.style.borderColor = '#2a2a2a')}
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <span className={`text-[9px] font-mono tracking-wider font-bold px-1.5 py-0.5 ${order.source === 'WEB' ? 'bg-[#FFD400] text-black' : 'bg-[#25d366] text-white'}`}>
+                        {/* Top row: source badge + date */}
+                        <div className="flex justify-between items-center mb-3">
+                          <span
+                            className={`text-[9px] font-mono tracking-wider font-bold px-2 py-0.5 ${order.source === 'WEB' ? 'bg-[#FFD400] text-black' : 'bg-[#25d366]/20 text-[#25d366] border border-[#25d366]/40'}`}
+                          >
                             {order.source}
                           </span>
-                          <span className="text-[10px] font-mono text-[#9a9a9a]">
+                          <span className="text-[9px] font-mono text-[#555]">
                             {new Date(order.created_at).toLocaleDateString('es-CO')}
                           </span>
                         </div>
 
-                        <div className="font-display text-xl text-[#e8e8e8] tracking-wide mb-1 uppercase">{order.crm_customers?.name || 'Cliente'}</div>
-                        <div className="text-[11px] text-[#b0b0b0] font-mono mb-2 uppercase">
-                          {order.crm_customers?.city || 'Sin ciudad'} · {order.payment_method || 'Sin método'}
+                        {/* Customer name */}
+                        <div className="font-display text-base text-[#e8e8e8] tracking-wide uppercase leading-tight mb-1">
+                          {order.crm_customers?.name || 'Cliente'}
                         </div>
 
-                        <div className="flex justify-between items-center pt-2 border-t border-[#2e2e2e] gap-2">
-                          <span className="text-sm font-bold font-mono text-[#FFD400]">
+                        {/* Meta */}
+                        <div className="text-[10px] text-[#666] font-mono uppercase tracking-wider mb-3">
+                          {order.crm_customers?.city || '—'} · {order.payment_method || '—'}
+                        </div>
+
+                        {/* Bottom row: total + edit */}
+                        <div className="flex justify-between items-center pt-2.5 border-t border-[#2a2a2a]">
+                          <span className="text-sm font-black font-mono" style={{ color: col.accent }}>
                             {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.total_amount)}
                           </span>
                           <button
                             onClick={() => startEditingOrder(order)}
-                            className="px-2 py-1 bg-zinc-800 border border-[#2e2e2e] text-[#FFD400] text-[10px] font-mono hover:bg-zinc-700 transition"
+                            className="px-2.5 py-1 text-[9px] font-mono tracking-widest border border-[#2e2e2e] text-[#888] hover:text-[#FFD400] hover:border-[#FFD400]/50 transition bg-[#1a1a1a]"
                           >
                             EDITAR
                           </button>
                         </div>
 
+                        {/* Tracking */}
                         {order.tracking_number && (
-                          <div className="mt-2 text-[10px] font-mono text-[#9a9a9a] border-t border-dashed border-[#2e2e2e] pt-1">
-                            GUÍA: {order.tracking_number}
+                          <div className="mt-2.5 pt-2 border-t border-dashed border-[#2a2a2a] text-[9px] font-mono text-[#555] tracking-wider">
+                            📦 GUÍA: <span className="text-[#888]">{order.tracking_number}</span>
                           </div>
                         )}
                       </div>
