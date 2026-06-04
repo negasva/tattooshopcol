@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { getSupabase } from '../lib/supabase';
+import Link from 'next/link';
+import BrandLogo from '../components/BrandLogo';
 
 interface Customer {
   id: string;
@@ -63,6 +65,8 @@ export default function CrmDashboard() {
   const [currentQty, setCurrentQty] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState('NEQUI');
   const [submittingOrder, setSubmittingOrder] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -358,34 +362,66 @@ export default function CrmDashboard() {
     );
   }
 
-  const columns: { title: string; status: Order['status']; color: string }[] = [
-    { title: 'Por Empacar', status: 'PAID', color: 'border-blue-500/20' },
-    { title: 'Por Despachar', status: 'PENDING', color: 'border-orange-500/20' },
-    { title: 'Enviado', status: 'SHIPPED', color: 'border-purple-500/20' },
-    { title: 'Entregado', status: 'DELIVERED', color: 'border-green-500/20' }
+  const filteredOrders = orders.filter(order => {
+    if (filterStatus !== 'ALL' && order.status !== filterStatus) return false;
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      (order.crm_customers?.name || '').toLowerCase().includes(term) ||
+      (order.crm_customers?.city || '').toLowerCase().includes(term) ||
+      (order.payment_method || '').toLowerCase().includes(term) ||
+      (order.tracking_number || '').toLowerCase().includes(term) ||
+      (order.id || '').toLowerCase().includes(term)
+    );
+  });
+
+  const statuses = [
+    { key: 'ALL', label: 'TODOS' },
+    { key: 'PAID', label: 'POR EMPACAR' },
+    { key: 'PENDING', label: 'POR DESPACHAR' },
+    { key: 'SHIPPED', label: 'ENVIADO' },
+    { key: 'DELIVERED', label: 'ENTREGADO' }
   ];
 
-
   return (
-    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] p-6 lg:p-8 font-body">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-[#141414] text-[#e8e8e8] font-body relative pb-16">
+      
+      {/* Brand Header */}
+      <header className="border-b border-[#2e2e2e] bg-[#121212]/90 backdrop-blur-md sticky top-0 z-40 px-6 py-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 hover:opacity-85 transition">
+            <BrandLogo size={36} />
+            <span className="font-display text-2xl text-[#FFD400] tracking-wider uppercase">TattooShop Colombia</span>
+          </Link>
+          <div className="flex gap-4">
+            <Link href="/" className="font-mono text-xs text-[#b0b0b0] hover:text-[#FFD400] transition uppercase tracking-wider">
+              Ver Tienda
+            </Link>
+            <Link href="/admin" className="font-mono text-xs text-[#b0b0b0] hover:text-[#FFD400] transition uppercase tracking-wider">
+              Panel Admin
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-6xl mx-auto px-4 mt-8">
         
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 border-b border-[var(--border)] pb-6">
+        {/* Title & Control Actions */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8 border-b border-[#2e2e2e] pb-6">
           <div>
             <h1 className="font-display text-4xl lg:text-5xl text-[#FFD400] tracking-wider uppercase">PANEL CRM</h1>
-            <p className="text-xs font-mono text-[var(--text-dim)] mt-1 uppercase tracking-widest">CONTROL DE PEDIDOS & INVENTARIO</p>
+            <p className="text-xs font-mono text-[#9a9a9a] mt-1 uppercase tracking-widest">CONTROL & SEGUIMIENTO DE PEDIDOS</p>
           </div>
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex-1 sm:flex-none px-6 py-3 bg-[#FFD400] text-black font-display font-bold text-lg tracking-wider hover:bg-[#ffe033] active:scale-98 transition rounded-none uppercase"
+              className="flex-1 md:flex-none px-6 py-3 bg-[#FFD400] text-black font-display font-bold text-lg tracking-wider hover:bg-[#ffe033] active:scale-95 transition rounded-none uppercase"
             >
               + REGISTRAR VENTA MANUAL
             </button>
             <button
               onClick={loadData}
-              className="px-4 py-3 border border-[var(--border)] hover:border-[#FFD400] hover:text-[#FFD400] font-mono text-xs tracking-wider transition rounded-none uppercase"
+              className="px-4 py-3 border border-[#2e2e2e] hover:border-[#FFD400] hover:text-[#FFD400] font-mono text-xs tracking-wider transition rounded-none uppercase bg-[#1c1c1c]"
             >
               ACTUALIZAR DATOS
             </button>
@@ -394,170 +430,206 @@ export default function CrmDashboard() {
 
         {/* Metrics Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          
-          {/* Metric 1: Stock Crítico */}
-          <div className="bg-[var(--surface)] border border-[var(--border)] p-5 rounded-none">
-            <span className="font-mono text-[10px] text-[var(--text-dim)] uppercase tracking-widest block mb-2">STOCK CRÍTICO</span>
-            <span className={`text-3xl font-bold font-mono ${stockCriticoCount > 0 ? 'text-red-500' : 'text-[var(--text)]'}`}>
+          <div className="bg-[#1c1c1c] border border-[#2e2e2e] p-5 rounded-none">
+            <span className="font-mono text-[10px] text-[#9a9a9a] uppercase tracking-widest block mb-2">STOCK CRÍTICO</span>
+            <span className={`text-3xl font-bold font-mono ${stockCriticoCount > 0 ? 'text-red-500' : 'text-[#e8e8e8]'}`}>
               {stockCriticoCount}
             </span>
-            <span className="text-xs text-[var(--text-muted)] block mt-1">Productos con stock &lt; 3</span>
+            <span className="text-xs text-[#b0b0b0] block mt-1">Productos con stock &lt; 3</span>
           </div>
 
-          {/* Metric 2: Caja del Mes */}
-          <div className="bg-[var(--surface)] border border-[var(--border)] p-5 rounded-none">
-            <span className="font-mono text-[10px] text-[var(--text-dim)] uppercase tracking-widest block mb-2">CAJA DEL MES</span>
+          <div className="bg-[#1c1c1c] border border-[#2e2e2e] p-5 rounded-none">
+            <span className="font-mono text-[10px] text-[#9a9a9a] uppercase tracking-widest block mb-2">CAJA DEL MES</span>
             <span className="text-3xl font-bold text-[#FFD400] font-mono">
               {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(cajaDelMes)}
             </span>
-            <span className="text-xs text-[var(--text-muted)] block mt-1">Ingresos mes actual</span>
+            <span className="text-xs text-[#b0b0b0] block mt-1">Ingresos mes actual</span>
           </div>
 
-          {/* Metric 3: Pedidos Pendientes */}
-          <div className="bg-[var(--surface)] border border-[var(--border)] p-5 rounded-none">
-            <span className="font-mono text-[10px] text-[var(--text-dim)] uppercase tracking-widest block mb-2">PEDIDOS PENDIENTES</span>
-            <span className="text-3xl font-bold text-[var(--text)] font-mono">
+          <div className="bg-[#1c1c1c] border border-[#2e2e2e] p-5 rounded-none">
+            <span className="font-mono text-[10px] text-[#9a9a9a] uppercase tracking-widest block mb-2">PEDIDOS PENDIENTES</span>
+            <span className="text-3xl font-bold text-[#e8e8e8] font-mono">
               {pedidosPendientesCount}
             </span>
-            <span className="text-xs text-[var(--text-muted)] block mt-1">Por empaquetar / enviar</span>
+            <span className="text-xs text-[#b0b0b0] block mt-1">Por empaquetar / enviar</span>
           </div>
 
-          {/* Metric 4: Conversión Web vs WA */}
-          <div className="bg-[var(--surface)] border border-[var(--border)] p-5 rounded-none">
-            <span className="font-mono text-[10px] text-[var(--text-dim)] uppercase tracking-widest block mb-2">CONVERSIÓN WEB VS WA</span>
+          <div className="bg-[#1c1c1c] border border-[#2e2e2e] p-5 rounded-none">
+            <span className="font-mono text-[10px] text-[#9a9a9a] uppercase tracking-widest block mb-2">CONVERSIÓN WEB VS WA</span>
             <div className="flex gap-4 items-baseline">
-              <span className="text-2xl font-bold text-[var(--text)] font-mono">{webPct}% <span className="text-xs text-[var(--text-muted)] font-sans">Web</span></span>
-              <span className="text-xl font-bold text-[#FFD400] font-mono">{waPct}% <span className="text-xs text-[var(--text-muted)] font-sans">WA</span></span>
+              <span className="text-2xl font-bold text-[#e8e8e8] font-mono">{webPct}% <span className="text-xs text-[#b0b0b0] font-sans">Web</span></span>
+              <span className="text-xl font-bold text-[#FFD400] font-mono">{waPct}% <span className="text-xs text-[#b0b0b0] font-sans">WA</span></span>
             </div>
-            <span className="text-xs text-[var(--text-muted)] block mt-1">Origen de pedidos</span>
+            <span className="text-xs text-[#b0b0b0] block mt-1">Origen de pedidos</span>
           </div>
-
         </div>
 
-        {/* Kanban Board */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {columns.map(col => {
-            const columnOrders = orders.filter(o => o.status === col.status);
-            return (
-              <div
-                key={col.status}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, col.status)}
-                className={`bg-[#181818] border ${col.color} p-4 rounded-none flex flex-col min-h-[500px]`}
+        {/* Filters and Search Bar */}
+        <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-6">
+          <div className="flex flex-wrap gap-2">
+            {statuses.map(s => (
+              <button
+                key={s.key}
+                onClick={() => setFilterStatus(s.key)}
+                className={`px-4 py-2 text-xs font-mono tracking-wider transition ${
+                  filterStatus === s.key
+                    ? 'bg-[#FFD400] text-black font-bold'
+                    : 'bg-[#1c1c1c] border border-[#2e2e2e] text-[#b0b0b0] hover:border-[#FFD400] hover:text-[#FFD400]'
+                }`}
               >
-                <div className="flex justify-between items-center mb-4 border-b border-[var(--border)] pb-2">
-                  <h3 className="font-display text-2xl tracking-wider text-[var(--text)] uppercase">{col.title}</h3>
-                  <span className="bg-[#1c1c1c] text-[var(--text-muted)] border border-[var(--border)] font-mono text-xs px-2 py-0.5 rounded-none">
-                    {columnOrders.length}
-                  </span>
-                </div>
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <div className="relative flex-1 max-w-md">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar por cliente, ciudad, método, guía..."
+              className="w-full bg-[#1c1c1c] border border-[#2e2e2e] text-[#e8e8e8] font-mono text-xs px-4 py-3 outline-none focus:border-[#FFD400] transition rounded-none uppercase placeholder:text-zinc-600"
+            />
+          </div>
+        </div>
 
-                <div className="flex-1 overflow-y-auto space-y-3">
-                  {loading ? (
-                    <div className="text-center py-8 text-[var(--text-dim)] text-xs font-mono">CARGANDO...</div>
-                  ) : columnOrders.length === 0 ? (
-                    <div className="text-center py-8 text-[var(--text-dim)] text-xs font-mono border border-dashed border-[var(--border)] rounded-none">
-                      ARRASTRAR AQUÍ
-                    </div>
-                  ) : (
-                    columnOrders.map(order => (
-                      <div
+        {/* Centered Orders Table */}
+        <div className="bg-[#1c1c1c] border border-[#2e2e2e] overflow-hidden">
+          {loading ? (
+            <div className="text-center py-20 text-[#9a9a9a] text-sm font-mono tracking-widest">
+              CARGANDO PEDIDOS...
+            </div>
+          ) : filteredOrders.length === 0 ? (
+            <div className="text-center py-20 text-[#9a9a9a] text-sm font-mono border border-dashed border-[#2e2e2e] m-4">
+              NO SE ENCONTRARON PEDIDOS CON ESTOS CRITERIOS
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse font-mono text-xs">
+                <thead>
+                  <tr className="border-b border-[#2e2e2e] bg-[#121212] text-[#FFD400]">
+                    <th className="p-4 text-left font-bold tracking-wider">PEDIDO / FECHA</th>
+                    <th className="p-4 text-left font-bold tracking-wider">CLIENTE</th>
+                    <th className="p-4 text-left font-bold tracking-wider">ORIGEN</th>
+                    <th className="p-4 text-left font-bold tracking-wider">PAGO</th>
+                    <th className="p-4 text-right font-bold tracking-wider">TOTAL</th>
+                    <th className="p-4 text-left font-bold tracking-wider">ESTADO</th>
+                    <th className="p-4 text-left font-bold tracking-wider">GUÍA DE ENVÍO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredOrders.map((order, index) => {
+                    const orderDate = new Date(order.created_at).toLocaleDateString('es-CO', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    });
+                    
+                    return (
+                      <tr
                         key={order.id}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, order.id)}
-                        className="bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--border-light)] p-4 rounded-none cursor-grab active:cursor-grabbing transition"
+                        className={`border-b border-[#2e2e2e] hover:bg-[#222] transition ${
+                          index % 2 === 0 ? 'bg-[#181818]/40' : 'bg-transparent'
+                        }`}
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <span className={`text-[9px] font-mono tracking-wider font-bold px-1.5 py-0.5 rounded-none ${order.source === 'WEB' ? 'bg-[#FFD400] text-black' : 'bg-[#25d366] text-white'}`}>
+                        {/* ID & Date */}
+                        <td className="p-4 whitespace-nowrap">
+                          <span className="font-bold text-[#e8e8e8]">#{order.id.slice(0, 5).toUpperCase()}</span>
+                          <div className="text-[10px] text-[#9a9a9a] mt-1">{orderDate}</div>
+                        </td>
+
+                        {/* Customer details */}
+                        <td className="p-4">
+                          <span className="font-bold text-[#e8e8e8] uppercase block">{order.crm_customers?.name || 'Cliente'}</span>
+                          <span className="text-[10px] text-[#9a9a9a] block mt-0.5">
+                            {order.crm_customers?.phone || 'Sin tel.'} · {order.crm_customers?.city || 'Sin ciudad'}
+                          </span>
+                        </td>
+
+                        {/* Source badge */}
+                        <td className="p-4 whitespace-nowrap">
+                          <span
+                            className={`text-[9px] tracking-wider font-bold px-2 py-0.5 ${
+                              order.source === 'WEB' ? 'bg-[#FFD400] text-black' : 'bg-[#25d366] text-white'
+                            }`}
+                          >
                             {order.source}
                           </span>
-                          <span className="text-[10px] font-mono text-[var(--text-dim)]">
-                            {new Date(order.created_at).toLocaleDateString('es-CO')}
-                          </span>
-                        </div>
+                        </td>
 
-                        <div className="font-display text-xl text-[var(--text)] tracking-wide mb-1 uppercase">{order.crm_customers?.name || 'Cliente'}</div>
-                        <div className="text-[11px] text-[var(--text-muted)] font-mono mb-2 uppercase">
-                          {order.crm_customers?.city || 'Sin ciudad'} · {order.payment_method || 'Sin método'}
-                        </div>
+                        {/* Payment method */}
+                        <td className="p-4 uppercase whitespace-nowrap text-[#b0b0b0]">
+                          {order.payment_method || 'Sin método'}
+                        </td>
 
-                        <div className="flex justify-between items-center pt-2 border-t border-[var(--border)]">
-                          <span className="text-sm font-bold font-mono text-[#FFD400]">
-                            {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.total_amount)}
-                          </span>
-                          
-                          <div className="flex items-center gap-1 md:hidden">
-                            {col.status !== 'PAID' && (
+                        {/* Total amount */}
+                        <td className="p-4 text-right font-bold text-[#FFD400] whitespace-nowrap">
+                          {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.total_amount)}
+                        </td>
+
+                        {/* Status Select dropdown */}
+                        <td className="p-4 whitespace-nowrap">
+                          <select
+                            value={order.status}
+                            onChange={(e) => updateOrderStatus(order.id, e.target.value as Order['status'])}
+                            className={`bg-[#141414] border border-[#2e2e2e] text-[11px] font-bold px-2 py-1 outline-none transition uppercase ${
+                              order.status === 'PAID' ? 'text-blue-400 border-blue-900/50' :
+                              order.status === 'PENDING' ? 'text-orange-400 border-orange-900/50' :
+                              order.status === 'SHIPPED' ? 'text-purple-400 border-purple-900/50' :
+                              'text-green-400 border-green-900/50'
+                            }`}
+                          >
+                            <option value="PAID">Por Empacar (Pagado)</option>
+                            <option value="PENDING">Por Despachar</option>
+                            <option value="SHIPPED">Enviado</option>
+                            <option value="DELIVERED">Entregado</option>
+                          </select>
+                        </td>
+
+                        {/* Tracking number edit inline */}
+                        <td className="p-4">
+                          {editingTrackingId === order.id ? (
+                            <div className="flex gap-2 min-w-[200px]">
+                              <input
+                                type="text"
+                                value={trackingNumberInput}
+                                onChange={(e) => setTrackingNumberInput(e.target.value)}
+                                placeholder="GUÍA DE ENVÍO"
+                                className="w-full bg-[#141414] border border-[#2e2e2e] p-2 text-xs text-white outline-none uppercase font-mono"
+                                autoFocus
+                              />
                               <button
-                                onClick={() => {
-                                  const idx = columns.findIndex(c => c.status === col.status);
-                                  if (idx > 0) updateOrderStatus(order.id, columns[idx - 1].status);
-                                }}
-                                className="p-1 bg-[#141414] border border-[var(--border)] text-[var(--text-dim)] hover:text-white text-xs rounded-none"
+                                onClick={() => updateTrackingNumber(order.id)}
+                                className="px-3 py-1 bg-[#FFD400] text-black text-xs font-bold"
                               >
-                                ◀
+                                ✓
                               </button>
-                            )}
-                            {col.status !== 'DELIVERED' && (
                               <button
-                                onClick={() => {
-                                  const idx = columns.findIndex(c => c.status === col.status);
-                                  if (idx < columns.length - 1) updateOrderStatus(order.id, columns[idx + 1].status);
-                                }}
-                                className="p-1 bg-[#141414] border border-[var(--border)] text-[var(--text-dim)] hover:text-white text-xs rounded-none"
+                                onClick={() => setEditingTrackingId(null)}
+                                className="px-3 py-1 bg-[#141414] border border-[#2e2e2e] text-[#9a9a9a] text-xs"
                               >
-                                ▶
+                                ✕
                               </button>
-                            )}
-                          </div>
-                        </div>
-
-                        {col.status === 'SHIPPED' && (
-                          <div className="mt-3 pt-3 border-t border-dashed border-[var(--border)]">
-                            {editingTrackingId === order.id ? (
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={trackingNumberInput}
-                                  onChange={(e) => setTrackingNumberInput(e.target.value)}
-                                  placeholder="GUÍA DE ENVÍO"
-                                  className="w-full bg-[#141414] border border-[var(--border)] p-2 text-xs text-white outline-none rounded-none uppercase font-mono"
-                                  autoFocus
-                                />
-                                <button
-                                  onClick={() => updateTrackingNumber(order.id)}
-                                  className="px-3 py-1 bg-[#FFD400] text-black text-xs font-bold rounded-none"
-                                >
-                                  ✓
-                                </button>
-                                <button
-                                  onClick={() => setEditingTrackingId(null)}
-                                  className="px-3 py-1 bg-[#141414] border border-[var(--border)] text-[var(--text-dim)] text-xs rounded-none"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            ) : (
-                              <div
-                                onClick={() => {
-                                  setEditingTrackingId(order.id);
-                                  setTrackingNumberInput(order.tracking_number || '');
-                                }}
-                                className="text-xs text-[#FFD400] hover:text-[#ffe033] cursor-pointer hover:underline flex justify-between items-center font-mono"
-                              >
-                                <span>GUÍA: {order.tracking_number || 'AÑADIR NÚMERO...'}</span>
-                                <span className="text-[10px] text-[var(--text-dim)]">✏</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            );
-          })}
+                            </div>
+                          ) : (
+                            <div
+                              onClick={() => {
+                                setEditingTrackingId(order.id);
+                                setTrackingNumberInput(order.tracking_number || '');
+                              }}
+                              className="text-xs text-[#FFD400] hover:text-[#ffe033] cursor-pointer hover:underline flex justify-between items-center max-w-[200px] border border-transparent hover:border-[#2e2e2e] px-2 py-1"
+                            >
+                              <span>{order.tracking_number || 'AÑADIR GUÍA...'}</span>
+                              <span className="text-[10px] text-[#9a9a9a] ml-2">✏</span>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
       </div>
@@ -565,10 +637,10 @@ export default function CrmDashboard() {
       {/* Manual Order Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 overflow-y-auto backdrop-blur-sm">
-          <div className="bg-[var(--surface)] border border-[var(--border)] w-full max-w-2xl rounded-none shadow-[0_0_50px_rgba(0,0,0,0.9)] p-6 relative my-8">
+          <div className="bg-[#1c1c1c] border border-[#2e2e2e] w-full max-w-2xl rounded-none shadow-[0_0_50px_rgba(0,0,0,0.9)] p-6 relative my-8">
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 text-[var(--text-dim)] hover:text-white font-mono text-xl"
+              className="absolute top-4 right-4 text-[#9a9a9a] hover:text-white font-mono text-xl"
             >
               ✕
             </button>
@@ -580,67 +652,67 @@ export default function CrmDashboard() {
             <form onSubmit={handleCreateManualOrder} className="space-y-6">
               
               {/* Customer Info Group */}
-              <div className="border-b border-[var(--border)] pb-4">
-                <h3 className="text-xs font-mono uppercase tracking-wider text-[var(--text-dim)] mb-3">Datos del Cliente</h3>
+              <div className="border-b border-[#2e2e2e] pb-4">
+                <h3 className="text-xs font-mono uppercase tracking-wider text-[#9a9a9a] mb-3">Datos del Cliente</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-mono uppercase text-[var(--text-dim)] mb-1">Nombre Completo *</label>
+                    <label className="block text-[10px] font-mono uppercase text-[#9a9a9a] mb-1">Nombre Completo *</label>
                     <input
                       type="text"
                       required
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       placeholder="EJ. JUAN PÉREZ"
-                      className="w-full bg-[#141414] border border-[var(--border)] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase placeholder:text-zinc-700"
+                      className="w-full bg-[#141414] border border-[#2e2e2e] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase placeholder:text-zinc-700"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-mono uppercase text-[var(--text-dim)] mb-1">Teléfono</label>
+                    <label className="block text-[10px] font-mono uppercase text-[#9a9a9a] mb-1">Teléfono</label>
                     <input
                       type="text"
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
                       placeholder="EJ. 3001234567"
-                      className="w-full bg-[#141414] border border-[var(--border)] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase placeholder:text-zinc-700"
+                      className="w-full bg-[#141414] border border-[#2e2e2e] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase placeholder:text-zinc-700"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-mono uppercase text-[var(--text-dim)] mb-1">Correo Electrónico</label>
+                    <label className="block text-[10px] font-mono uppercase text-[#9a9a9a] mb-1">Correo Electrónico</label>
                     <input
                       type="email"
                       value={customerEmail}
                       onChange={(e) => setCustomerEmail(e.target.value)}
                       placeholder="EJ. CLIENTE@GMAIL.COM"
-                      className="w-full bg-[#141414] border border-[var(--border)] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase placeholder:text-zinc-700"
+                      className="w-full bg-[#141414] border border-[#2e2e2e] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase placeholder:text-zinc-700"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-mono uppercase text-[var(--text-dim)] mb-1">Ciudad</label>
+                    <label className="block text-[10px] font-mono uppercase text-[#9a9a9a] mb-1">Ciudad</label>
                     <input
                       type="text"
                       value={customerCity}
                       onChange={(e) => setCustomerCity(e.target.value)}
                       placeholder="EJ. BOGOTÁ"
-                      className="w-full bg-[#141414] border border-[var(--border)] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase placeholder:text-zinc-700"
+                      className="w-full bg-[#141414] border border-[#2e2e2e] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase placeholder:text-zinc-700"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Product Selector Group */}
-              <div className="border-b border-[var(--border)] pb-4">
-                <h3 className="text-xs font-mono uppercase tracking-wider text-[var(--text-dim)] mb-3">Agregar Productos</h3>
+              <div className="border-b border-[#2e2e2e] pb-4">
+                <h3 className="text-xs font-mono uppercase tracking-wider text-[#9a9a9a] mb-3">Agregar Productos</h3>
                 <div className="flex flex-col sm:flex-row gap-2 items-end">
                   <div className="flex-1 w-full">
-                    <label className="block text-[10px] font-mono uppercase text-[var(--text-dim)] mb-1">Seleccionar Producto</label>
+                    <label className="block text-[10px] font-mono uppercase text-[#9a9a9a] mb-1">Seleccionar Producto</label>
                     <select
                       value={currentSelectedProductId}
                       onChange={(e) => setCurrentSelectedProductId(e.target.value)}
-                      className="w-full bg-[#141414] border border-[var(--border)] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase"
+                      className="w-full bg-[#141414] border border-[#2e2e2e] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase"
                     >
                       <option value="">-- ELIGE UN PRODUCTO --</option>
                       {products.map(p => (
-                        <option key={p.id} value={p.id} disabled={p.inventory <= 0} className="bg-[var(--surface)] text-[var(--text)]">
+                        <option key={p.id} value={p.id} disabled={p.inventory <= 0} className="bg-[#1c1c1c] text-[#e8e8e8]">
                           {p.name.toUpperCase()} ({p.inventory} DISPONIBLES) - ${p.price.toLocaleString('es-CO')}
                         </option>
                       ))}
@@ -648,13 +720,13 @@ export default function CrmDashboard() {
                   </div>
                   
                   <div className="w-24">
-                    <label className="block text-[10px] font-mono uppercase text-[var(--text-dim)] mb-1">Cantidad</label>
+                    <label className="block text-[10px] font-mono uppercase text-[#9a9a9a] mb-1">Cantidad</label>
                     <input
                       type="number"
                       min={1}
                       value={currentQty}
                       onChange={(e) => setCurrentQty(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="w-full bg-[#141414] border border-[var(--border)] p-2.5 text-xs text-white text-center outline-none focus:border-[#FFD400] transition rounded-none"
+                      className="w-full bg-[#141414] border border-[#2e2e2e] p-2.5 text-xs text-white text-center outline-none focus:border-[#FFD400] transition rounded-none"
                     />
                   </div>
 
@@ -669,12 +741,12 @@ export default function CrmDashboard() {
 
                 {/* Selected Products Table */}
                 {selectedItems.length > 0 && (
-                  <div className="mt-4 bg-[#141414] border border-[var(--border)] p-2 rounded-none space-y-2">
+                  <div className="mt-4 bg-[#141414] border border-[#2e2e2e] p-2 rounded-none space-y-2">
                     {selectedItems.map(item => (
-                      <div key={item.id} className="flex justify-between items-center text-xs p-2 border-b border-[var(--border)] last:border-0">
+                      <div key={item.id} className="flex justify-between items-center text-xs p-2 border-b border-[#2e2e2e] last:border-0">
                         <div>
                           <div className="font-bold text-zinc-300 uppercase">{item.name}</div>
-                          <div className="text-[var(--text-muted)] font-mono text-[10px]">
+                          <div className="text-[#b0b0b0] font-mono text-[10px]">
                             {item.qty} UDS X ${item.price.toLocaleString('es-CO')}
                           </div>
                         </div>
@@ -698,7 +770,7 @@ export default function CrmDashboard() {
 
               {/* Payment Method Group */}
               <div>
-                <h3 className="text-xs font-mono uppercase tracking-wider text-[var(--text-dim)] mb-3">Método de Pago</h3>
+                <h3 className="text-xs font-mono uppercase tracking-wider text-[#9a9a9a] mb-3">Método de Pago</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {['NEQUI', 'BANCOLOMBIA', 'DAVIPLATA', 'MERCADOPAGO'].map(method => (
                     <button
@@ -708,7 +780,7 @@ export default function CrmDashboard() {
                       className={`p-3 font-mono text-xs font-bold border transition rounded-none ${
                         paymentMethod === method
                           ? 'bg-[#FFD400] text-black border-[#FFD400]'
-                          : 'bg-[#141414] text-[var(--text-dim)] border-[var(--border)] hover:border-zinc-500'
+                          : 'bg-[#141414] text-[#9a9a9a] border-[#2e2e2e] hover:border-zinc-500'
                       }`}
                     >
                       {method}
@@ -718,9 +790,9 @@ export default function CrmDashboard() {
               </div>
 
               {/* Total & Submit */}
-              <div className="pt-4 border-t border-[var(--border)] flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="pt-4 border-t border-[#2e2e2e] flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div className="text-center sm:text-left">
-                  <span className="text-[10px] font-mono uppercase text-[var(--text-dim)] block">Total del Pedido</span>
+                  <span className="text-[10px] font-mono uppercase text-[#9a9a9a] block">Total del Pedido</span>
                   <span className="text-2xl font-black font-mono text-[#FFD400]">
                     ${calculateTotalOrderAmount().toLocaleString('es-CO')}
                   </span>
@@ -730,7 +802,7 @@ export default function CrmDashboard() {
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="w-1/2 sm:w-auto px-6 py-3 border border-[var(--border)] text-[var(--text-dim)] hover:text-white font-mono text-xs transition rounded-none uppercase"
+                    className="w-1/2 sm:w-auto px-6 py-3 border border-[#2e2e2e] text-[#9a9a9a] hover:text-white font-mono text-xs transition rounded-none uppercase"
                   >
                     CANCELAR
                   </button>
