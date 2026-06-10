@@ -18,7 +18,7 @@ interface Order {
   customer_id: string;
   source: 'WEB' | 'WHATSAPP';
   payment_method: string;
-  status: 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED';
+  status: 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'RETURNED';
   tracking_number: string | null;
   total_amount: number;
   created_at: string;
@@ -38,6 +38,21 @@ interface SelectedItem {
   price: number;
   qty: number;
   maxStock: number;
+}
+
+const STATUS_LABELS: Record<Order['status'], string> = {
+  PENDING: 'POR DESPACHAR',
+  SHIPPED: 'ENVIADO',
+  DELIVERED: 'ENTREGADO',
+  RETURNED: 'DEVUELTO',
+};
+
+const RETURNED_PENALTY = 40000;
+
+function normalizeStatus(status: string): Order['status'] {
+  if (status === 'PAID') return 'PENDING';
+  if (status === 'SHIPPED' || status === 'DELIVERED' || status === 'RETURNED') return status;
+  return 'PENDING';
 }
 
 export default function CrmDashboard() {
@@ -131,7 +146,10 @@ export default function CrmDashboard() {
         .order('created_at', { ascending: false });
       
       if (ordErr) throw ordErr;
-      setOrders(ords as unknown as Order[] || []);
+      setOrders(((ords as unknown as Order[]) || []).map((order) => ({
+        ...order,
+        status: normalizeStatus(order.status),
+      })));
 
     } catch (err: any) {
       console.error(err);
@@ -289,7 +307,7 @@ export default function CrmDashboard() {
           })),
           total,
           payment_method: paymentMethod,
-          status: 'PAID' // Por defecto se registra como pagada para empaquetar
+          status: 'PENDING' // Entra como por despachar
         })
       });
 
@@ -373,17 +391,15 @@ export default function CrmDashboard() {
     const orderDate = new Date(o.created_at);
     return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
   });
-  const cajaDelMes = currentMonthOrders
-    .filter(o => o.status !== 'PENDING')
-    .reduce((sum, o) => sum + (o.total_amount || 0), 0);
+  const deliveredCount = currentMonthOrders.filter(o => o.status === 'DELIVERED').length;
+  const returnedCount = currentMonthOrders.filter(o => o.status === 'RETURNED').length;
+  const cajaDelMes = currentMonthOrders.reduce((sum, o) => {
+    if (o.status === 'DELIVERED') return sum + (o.total_amount || 0);
+    if (o.status === 'RETURNED') return sum - RETURNED_PENALTY;
+    return sum;
+  }, 0);
 
-  const pedidosPendientesCount = orders.filter(o => o.status === 'PAID' || o.status === 'SHIPPED').length;
-
-  const webOrdersCount = orders.filter(o => o.source === 'WEB').length;
-  const waOrdersCount = orders.filter(o => o.source === 'WHATSAPP').length;
-  const totalConversionOrders = webOrdersCount + waOrdersCount;
-  const webPct = totalConversionOrders > 0 ? Math.round((webOrdersCount / totalConversionOrders) * 100) : 0;
-  const waPct = totalConversionOrders > 0 ? Math.round((waOrdersCount / totalConversionOrders) * 100) : 0;
+  const pedidosPendientesCount = orders.filter(o => o.status === 'PENDING' || o.status === 'SHIPPED').length;
 
   if (!authChecked) {
     return (
@@ -456,7 +472,7 @@ export default function CrmDashboard() {
       
       {/* Brand Header */}
       <header className="border-b border-[#2e2e2e] bg-[#121212]/90 backdrop-blur-md sticky top-0 z-40 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <div className="max-w-[1600px] mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 hover:opacity-85 transition">
             <BrandLogo size={36} />
             <span className="font-display text-2xl text-[#FFD400] tracking-wider uppercase">TattooShop Colombia</span>
@@ -472,7 +488,7 @@ export default function CrmDashboard() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 mt-8">
+      <div className="max-w-[1600px] mx-auto px-4 mt-8">
         
         {/* Title & Control Actions */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8 border-b border-[#2e2e2e] pb-6">
@@ -496,8 +512,14 @@ export default function CrmDashboard() {
           </div>
         </div>
 
+        <div className="mb-6 flex flex-wrap items-center gap-3 text-[10px] font-mono uppercase tracking-widest text-[#9a9a9a]">
+          <span className="border border-[#2e2e2e] px-3 py-1">Caja: solo entregados</span>
+          <span className="border border-[#2e2e2e] px-3 py-1">Devuelto: -$40.000</span>
+          <span className="border border-[#2e2e2e] px-3 py-1">Estados: por despachar, enviado, entregado, devuelto</span>
+        </div>
+
         {/* Metrics Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
           <div className="bg-[#1c1c1c] border border-[#2e2e2e] p-5 rounded-none">
             <span className="font-mono text-[10px] text-[#9a9a9a] uppercase tracking-widest block mb-2">STOCK CRÍTICO</span>
             <span className={`text-3xl font-bold font-mono ${stockCriticoCount > 0 ? 'text-red-500' : 'text-[#e8e8e8]'}`}>
@@ -511,7 +533,9 @@ export default function CrmDashboard() {
             <span className="text-3xl font-bold text-[#FFD400] font-mono">
               {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(cajaDelMes)}
             </span>
-            <span className="text-xs text-[#b0b0b0] block mt-1">Ingresos mes actual</span>
+            <span className="text-xs text-[#b0b0b0] block mt-1">
+              {deliveredCount} entregados · {returnedCount} devueltos
+            </span>
           </div>
 
           <div className="bg-[#1c1c1c] border border-[#2e2e2e] p-5 rounded-none">
@@ -523,12 +547,14 @@ export default function CrmDashboard() {
           </div>
 
           <div className="bg-[#1c1c1c] border border-[#2e2e2e] p-5 rounded-none">
-            <span className="font-mono text-[10px] text-[#9a9a9a] uppercase tracking-widest block mb-2">CONVERSIÓN WEB VS WA</span>
-            <div className="flex gap-4 items-baseline">
-              <span className="text-2xl font-bold text-[#e8e8e8] font-mono">{webPct}% <span className="text-xs text-[#b0b0b0] font-sans">Web</span></span>
-              <span className="text-xl font-bold text-[#FFD400] font-mono">{waPct}% <span className="text-xs text-[#b0b0b0] font-sans">WA</span></span>
+            <span className="font-mono text-[10px] text-[#9a9a9a] uppercase tracking-widest block mb-2">RESUMEN DE ESTADOS</span>
+            <div className="flex gap-3 items-baseline flex-wrap">
+              <span className="text-xl font-bold text-[#e8e8e8] font-mono">{orders.filter(o => o.status === 'PENDING').length} <span className="text-xs text-[#b0b0b0] font-sans">PD</span></span>
+              <span className="text-xl font-bold text-[#f59e0b] font-mono">{orders.filter(o => o.status === 'SHIPPED').length} <span className="text-xs text-[#b0b0b0] font-sans">EN</span></span>
+              <span className="text-xl font-bold text-[#22c55e] font-mono">{orders.filter(o => o.status === 'DELIVERED').length} <span className="text-xs text-[#b0b0b0] font-sans">OK</span></span>
+              <span className="text-xl font-bold text-[#ef4444] font-mono">{orders.filter(o => o.status === 'RETURNED').length} <span className="text-xs text-[#b0b0b0] font-sans">DV</span></span>
             </div>
-            <span className="text-xs text-[#b0b0b0] block mt-1">Origen de pedidos</span>
+            <span className="text-xs text-[#b0b0b0] block mt-1">Vista rápida del CRM</span>
           </div>
         </div>
 
@@ -579,20 +605,12 @@ export default function CrmDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {[
             {
-              title: 'Por Empacar',
-              status: 'PAID' as Order['status'],
+              title: 'Por Despachar',
+              status: 'PENDING' as Order['status'],
               accent: '#3b82f6',
               accentBg: 'rgba(59,130,246,0.08)',
               badge: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
               headerGlow: '0 2px 20px rgba(59,130,246,0.15)',
-            },
-            {
-              title: 'Por Despachar',
-              status: 'PENDING' as Order['status'],
-              accent: '#f59e0b',
-              accentBg: 'rgba(245,158,11,0.08)',
-              badge: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-              headerGlow: '0 2px 20px rgba(245,158,11,0.15)',
             },
             {
               title: 'Enviado',
@@ -609,6 +627,14 @@ export default function CrmDashboard() {
               accentBg: 'rgba(34,197,94,0.08)',
               badge: 'bg-green-500/20 text-green-400 border-green-500/30',
               headerGlow: '0 2px 20px rgba(34,197,94,0.15)',
+            },
+            {
+              title: 'Devuelto',
+              status: 'RETURNED' as Order['status'],
+              accent: '#ef4444',
+              accentBg: 'rgba(239,68,68,0.08)',
+              badge: 'bg-red-500/20 text-red-400 border-red-500/30',
+              headerGlow: '0 2px 20px rgba(239,68,68,0.15)',
             },
           ].map(col => {
             const columnOrders = filteredOrders.filter(o => o.status === col.status);
@@ -971,10 +997,10 @@ export default function CrmDashboard() {
                     onChange={(e) => setEditStatus(e.target.value as Order['status'])}
                     className="w-full bg-[#141414] border border-[#2e2e2e] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase"
                   >
-                    <option value="PAID">Por Empacar (Pagado)</option>
                     <option value="PENDING">Por Despachar</option>
                     <option value="SHIPPED">Enviado</option>
                     <option value="DELIVERED">Entregado</option>
+                    <option value="RETURNED">Devuelto</option>
                   </select>
                 </div>
                 
