@@ -184,13 +184,15 @@ export default function CrmDashboard() {
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
 
     try {
-      const supabase = getSupabase();
-      const { error } = await supabase
-        .from('crm_orders')
-        .update({ status: newStatus })
-        .eq('id', orderId);
-
-      if (error) throw error;
+      const response = await fetch('/api/crm/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, status: newStatus }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Error al actualizar la orden');
+      }
       showToast('Estado actualizado');
     } catch (err) {
       setOrders(previousOrders);
@@ -204,17 +206,40 @@ export default function CrmDashboard() {
     setEditingTrackingId(null);
 
     try {
-      const supabase = getSupabase();
-      const { error } = await supabase
-        .from('crm_orders')
-        .update({ tracking_number: trackingNumberInput || null })
-        .eq('id', orderId);
-
-      if (error) throw error;
+      const currentStatus = orders.find(o => o.id === orderId)?.status || 'PENDING';
+      const response = await fetch('/api/crm/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, status: currentStatus, tracking_number: trackingNumberInput || null }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Error al guardar la guía');
+      }
       showToast('Guía de envío actualizada');
     } catch (err) {
       setOrders(previousOrders);
       showToast('Error al guardar la guía', 'error');
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!window.confirm('¿Borrar este registro de venta? Se devolverá el inventario.')) return;
+    const previousOrders = [...orders];
+    setOrders(prev => prev.filter(o => o.id !== orderId));
+
+    try {
+      const response = await fetch(`/api/crm/orders?orderId=${encodeURIComponent(orderId)}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Error al borrar la venta');
+      }
+      showToast('Venta borrada');
+    } catch (err) {
+      setOrders(previousOrders);
+      showToast('Error al borrar la venta', 'error');
     }
   };
 
@@ -715,12 +740,20 @@ export default function CrmDashboard() {
                           <span className="text-sm font-black font-mono" style={{ color: col.accent }}>
                             {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.total_amount)}
                           </span>
-                          <button
-                            onClick={() => startEditingOrder(order)}
-                            className="px-2.5 py-1 text-[9px] font-mono tracking-widest border border-[#2e2e2e] text-[#888] hover:text-[#FFD400] hover:border-[#FFD400]/50 transition bg-[#1a1a1a]"
-                          >
-                            EDITAR
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => startEditingOrder(order)}
+                              className="px-2.5 py-1 text-[9px] font-mono tracking-widest border border-[#2e2e2e] text-[#888] hover:text-[#FFD400] hover:border-[#FFD400]/50 transition bg-[#1a1a1a]"
+                            >
+                              EDITAR
+                            </button>
+                            <button
+                              onClick={() => handleDeleteOrder(order.id)}
+                              className="px-2.5 py-1 text-[9px] font-mono tracking-widest border border-[#3a1f1f] text-[#ef4444] hover:text-white hover:border-[#ef4444] transition bg-[#1a1a1a]"
+                            >
+                              BORRAR
+                            </button>
+                          </div>
                         </div>
 
                         {/* Tracking */}
