@@ -252,6 +252,53 @@ export default function DashboardRentabilidad({ products }: { products: Product[
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // ── Importar ventas reales desde el CRM ────────────────────────────────────
+  // Suma las unidades vendidas/devueltas de los pedidos del CRM (web + WhatsApp)
+  // del mes seleccionado y llena el formulario de ventas para guardarlas.
+  const [importingCrm, setImportingCrm] = useState(false);
+  const importCrmSales = async () => {
+    setImportingCrm(true);
+    try {
+      const sb = getSupabase();
+      const [y, m] = selectedMes.split('-').map(Number);
+      const from = new Date(y, m - 1, 1).toISOString();
+      const to = new Date(y, m, 1).toISOString();
+
+      const { data: crmOrders, error } = await sb
+        .from('crm_orders')
+        .select('id, status, created_at, crm_order_items ( product_id, quantity )')
+        .gte('created_at', from)
+        .lt('created_at', to);
+      if (error) throw error;
+
+      const sold: Record<string, number> = {};
+      const returned: Record<string, number> = {};
+      (crmOrders ?? []).forEach((o: any) => {
+        (o.crm_order_items ?? []).forEach((item: any) => {
+          if (!item.product_id) return;
+          if (o.status === 'RETURNED') {
+            returned[item.product_id] = (returned[item.product_id] ?? 0) + (item.quantity ?? 0);
+          }
+          sold[item.product_id] = (sold[item.product_id] ?? 0) + (item.quantity ?? 0);
+        });
+      });
+
+      const totalUnits = Object.values(sold).reduce((s, n) => s + n, 0);
+      if (totalUnits === 0) {
+        showToast('El CRM no tiene pedidos en este mes', 'error');
+        return;
+      }
+      setSalesForm(sold);
+      setDevueltasForm(returned);
+      setShowSalesForm(true);
+      showToast(`${totalUnits} unidades importadas del CRM — revisa y guarda`);
+    } catch {
+      showToast('Error importando ventas del CRM — ¿ejecutaste SUPABASE_CRM_SETUP.sql?', 'error');
+    } finally {
+      setImportingCrm(false);
+    }
+  };
+
   // ── Save Meta Ads performance ──────────────────────────────────────────────
   const savePerfData = async () => {
     setSaving(true);
@@ -703,6 +750,18 @@ export default function DashboardRentabilidad({ products }: { products: Product[
               </div>
             ) : (
               <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={importCrmSales}
+                    disabled={importingCrm}
+                    style={{ padding: '8px 16px', background: 'transparent', color: accent, border: `1px solid ${accent}`, fontFamily: '"DM Mono", monospace', fontSize: '11px', cursor: importingCrm ? 'not-allowed' : 'pointer', letterSpacing: '1px', opacity: importingCrm ? 0.6 : 1 }}
+                  >
+                    {importingCrm ? 'IMPORTANDO...' : '⟳ IMPORTAR VENTAS DEL CRM'}
+                  </button>
+                  <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)' }}>
+                    Llena las unidades con los pedidos reales registrados en /crm para {selectedMes}
+                  </span>
+                </div>
                 {(['Kits', 'Máquinas', 'Insumos'] as const).map((cat) => {
                   const catProducts = productsWithCost.filter((p) => p.category === cat);
                   if (catProducts.length === 0) return null;

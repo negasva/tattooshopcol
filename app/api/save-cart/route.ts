@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'JSON inválido' }, { status: 400 });
   }
 
-  const { email, reference, cart, total, city, method } = body;
+  const { email, reference, cart, total, city, method, customer_name, customer_phone } = body;
 
   // W5: validate required fields
   if (!email || !reference || !cart || !total) {
@@ -37,10 +37,21 @@ export async function POST(req: NextRequest) {
 
   const supabase = getServiceClient();
 
-  const { error } = await supabase.from('abandoned_carts').upsert(
-    { email, reference, cart, total, city, method, status: 'pending', updated_at: new Date().toISOString() },
-    { onConflict: 'reference' }
-  );
+  const record: Record<string, unknown> = {
+    email, reference, cart, total, city, method,
+    status: 'pending', updated_at: new Date().toISOString(),
+  };
+  if (customer_name) record.customer_name = String(customer_name).slice(0, 120);
+  if (customer_phone) record.customer_phone = String(customer_phone).slice(0, 30);
+
+  let { error } = await supabase.from('abandoned_carts').upsert(record, { onConflict: 'reference' });
+
+  // Compatibilidad: si las columnas customer_name/customer_phone aún no existen
+  if (error && (customer_name || customer_phone)) {
+    delete record.customer_name;
+    delete record.customer_phone;
+    ({ error } = await supabase.from('abandoned_carts').upsert(record, { onConflict: 'reference' }));
+  }
 
   if (error) {
     console.error('save-cart error:', error);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createHash } from 'crypto';
 import { sendPaymentFailedEmail } from '@/app/lib/email';
+import { confirmWebOrderFromCart } from '@/app/lib/crmOrder';
 
 // Wompi firma el payload con HMAC-SHA256 usando el integrity secret
 function verifySignature(payload: string, receivedSig: string): boolean {
@@ -56,11 +57,19 @@ export async function POST(req: NextRequest) {
   );
 
   if (status === 'APPROVED') {
-    await supabase
-      .from('abandoned_carts')
-      .update({ status: 'completed', updated_at: new Date().toISOString() })
-      .eq('reference', reference);
-    return NextResponse.json({ ok: true });
+    // Registrar el pedido en el CRM (idempotente) y marcar el carrito como completado
+    try {
+      const result = await confirmWebOrderFromCart(reference, tx as Record<string, any>);
+      return NextResponse.json({ ok: true, order_id: result.orderId, already_existed: result.alreadyExisted });
+    } catch (err) {
+      console.error('wompi-webhook: error registrando pedido en CRM', err);
+      // Marcar el carrito de todas formas para no enviar recordatorios de abandono
+      await supabase
+        .from('abandoned_carts')
+        .update({ status: 'completed', updated_at: new Date().toISOString() })
+        .eq('reference', reference);
+      return NextResponse.json({ ok: true });
+    }
   }
 
   if (status === 'DECLINED' || status === 'ERROR') {
