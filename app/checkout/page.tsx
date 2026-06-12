@@ -37,6 +37,8 @@ export default function CheckoutPage() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [email, setEmail] = useState('');
   const [emailSaved, setEmailSaved] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponMsg, setCouponMsg] = useState<{ text: string; ok: boolean } | null>(null);
@@ -112,9 +114,14 @@ export default function CheckoutPage() {
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+  // Para contraentrega y transferencia necesitamos nombre y teléfono
+  // para registrar el pedido en el CRM antes de pasar a WhatsApp
+  const needsContactInfo = selectedMethod === 'cash' || selectedMethod === 'transfer';
+  const contactInfoValid = !needsContactInfo || (fullName.trim().length >= 3 && phone.trim().length >= 7);
+
   const canCheckout = selectedCity && selectedMethod &&
     (selectedMethod !== 'transfer' || selectedSub) &&
-    cart.length > 0 && !hasStockIssues && emailValid;
+    cart.length > 0 && !hasStockIssues && emailValid && contactInfoValid;
 
   const saveCartToDb = async (ref: string) => {
     if (!emailValid) return;
@@ -129,9 +136,37 @@ export default function CheckoutPage() {
           total,
           city: selectedCity,
           method: selectedMethod,
+          customer_name: fullName.trim() || undefined,
+          customer_phone: phone.trim() || undefined,
         }),
       });
     } catch {}
+  };
+
+  // Registra el pedido en el CRM antes de redirigir a WhatsApp
+  // (contraentrega y transferencias quedan ligados al panel /crm)
+  const registerCrmOrder = async (paymentMethod: string) => {
+    try {
+      await fetch('/api/crm/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer: {
+            name: fullName.trim(),
+            phone: phone.trim() || null,
+            email: email || null,
+            city: selectedCity || null,
+          },
+          products: cart.map((i) => ({ id: i.id, quantity: i.qty, price: salePrice(i) })),
+          total,
+          payment_method: paymentMethod,
+          status: 'PENDING',
+          source: 'WHATSAPP',
+        }),
+      });
+    } catch {
+      // No bloquear la compra si falla el registro; el pedido llega por WhatsApp
+    }
   };
 
   const isCash = selectedMethod === 'cash';
@@ -141,9 +176,11 @@ export default function CheckoutPage() {
     setIsProcessing(true);
 
     if (isCash) {
-      // Contra entrega → WhatsApp
+      // Contra entrega → registrar en CRM y luego WhatsApp
+      await registerCrmOrder('CONTRAENTREGA');
       const msg = encodeURIComponent(
         `Hola! Quiero hacer un pedido con pago contra entrega.\n\n` +
+        `Nombre: ${fullName.trim()}\nTeléfono: ${phone.trim()}\n\n` +
         `Pedido:\n${cart.map((i) => `• ${i.name} x${i.qty} — ${fmt(salePrice(i) * i.qty)}`).join('\n')}\n\n` +
         `Subtotal: ${fmt(subtotal)}\nCosto contra entrega: ${fmt(COD_FEE)}\nTotal: ${fmt(total)}\n` +
         `Ciudad: ${selectedCity}`
@@ -279,10 +316,12 @@ export default function CheckoutPage() {
     }
 
     if (selectedMethod === 'transfer') {
-      // Transferencia bancaria → WhatsApp con instrucciones
+      // Transferencia bancaria → registrar en CRM y luego WhatsApp con instrucciones
       const subLabels: Record<string, string> = { nequi: 'Nequi', daviplata: 'Daviplata', bancolombia: 'Bancolombia' };
+      await registerCrmOrder((selectedSub || 'TRANSFERENCIA').toUpperCase());
       const msg = encodeURIComponent(
         `Hola! Quiero pagar por ${subLabels[selectedSub] || 'transferencia bancaria'}.\n\n` +
+        `Nombre: ${fullName.trim()}\nTeléfono: ${phone.trim()}\n\n` +
         `Pedido:\n${cart.map((i) => `• ${i.name} x${i.qty} — ${fmt(salePrice(i) * i.qty)}`).join('\n')}\n\n` +
         `Total: ${fmt(total)}\nCiudad: ${selectedCity}\n\n` +
         `Por favor envíenme los datos para realizar la transferencia.`
@@ -378,6 +417,44 @@ export default function CheckoutPage() {
               Pago contra entrega disponible en {selectedCity}
             </div>
           )}
+
+          {/* Nombre y teléfono */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '2px', textTransform: 'uppercase' }}>
+                Nombre completo{needsContactInfo ? ' *' : ''}
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Tu nombre"
+                style={{
+                  width: '100%', boxSizing: 'border-box', background: 'var(--surface)',
+                  border: `1px solid ${needsContactInfo && fullName.trim().length > 0 && fullName.trim().length < 3 ? '#e55' : 'var(--border)'}`,
+                  color: 'var(--text)', fontFamily: '"DM Mono", monospace', fontSize: '14px',
+                  padding: '12px 16px', outline: 'none', transition: 'border-color 0.2s',
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontFamily: '"DM Mono", monospace', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '2px', textTransform: 'uppercase' }}>
+                Teléfono / WhatsApp{needsContactInfo ? ' *' : ''}
+              </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="3001234567"
+                style={{
+                  width: '100%', boxSizing: 'border-box', background: 'var(--surface)',
+                  border: `1px solid ${needsContactInfo && phone.trim().length > 0 && phone.trim().length < 7 ? '#e55' : 'var(--border)'}`,
+                  color: 'var(--text)', fontFamily: '"DM Mono", monospace', fontSize: '14px',
+                  padding: '12px 16px', outline: 'none', transition: 'border-color 0.2s',
+                }}
+              />
+            </div>
+          </div>
 
           {/* Email */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -532,7 +609,11 @@ export default function CheckoutPage() {
           )}
           {!canCheckout && !hasStockIssues && (
             <p style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', letterSpacing: '1px', marginTop: '-16px' }}>
-              {!selectedCity ? 'Selecciona tu ciudad para continuar' : !selectedMethod ? 'Selecciona un método de pago' : 'Selecciona la plataforma de transferencia'}
+              {!selectedCity ? 'Selecciona tu ciudad para continuar'
+                : !selectedMethod ? 'Selecciona un método de pago'
+                : selectedMethod === 'transfer' && !selectedSub ? 'Selecciona la plataforma de transferencia'
+                : !emailValid ? 'Ingresa tu correo electrónico'
+                : 'Ingresa tu nombre y teléfono para continuar'}
             </p>
           )}
         </div>

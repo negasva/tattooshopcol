@@ -13,6 +13,14 @@ interface Customer {
   city: string;
 }
 
+interface OrderItem {
+  id: string;
+  product_id: string;
+  quantity: number;
+  price_at_purchase: number;
+  products?: { id: string; name: string } | null;
+}
+
 interface Order {
   id: string;
   customer_id: string;
@@ -23,6 +31,22 @@ interface Order {
   total_amount: number;
   created_at: string;
   crm_customers?: Customer;
+  crm_order_items?: OrderItem[];
+}
+
+interface AbandonedCart {
+  id?: string;
+  reference: string;
+  email: string;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  city?: string | null;
+  method?: string | null;
+  total: number;
+  status: string;
+  cart: { id: string; name: string; qty?: number; quantity?: number; price: number }[];
+  updated_at?: string;
+  created_at?: string;
 }
 
 interface Product {
@@ -62,6 +86,8 @@ export default function CrmDashboard() {
   
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [carts, setCarts] = useState<AbandonedCart[]>([]);
+  const [activeTab, setActiveTab] = useState<'PEDIDOS' | 'CLIENTES' | 'CARRITOS'>('PEDIDOS');
   const [loading, setLoading] = useState(true);
   
   const [editingTrackingId, setEditingTrackingId] = useState<string | null>(null);
@@ -123,33 +149,26 @@ export default function CrmDashboard() {
       if (prodErr) throw prodErr;
       setProducts(prods || []);
 
-      // Fetch CRM orders with customer details
-      const { data: ords, error: ordErr } = await supabase
-        .from('crm_orders')
-        .select(`
-          id,
-          customer_id,
-          source,
-          payment_method,
-          status,
-          tracking_number,
-          total_amount,
-          created_at,
-          crm_customers (
-            id,
-            name,
-            phone,
-            email,
-            city
-          )
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (ordErr) throw ordErr;
-      setOrders(((ords as unknown as Order[]) || []).map((order) => ({
+      // Fetch CRM orders (con cliente e items) desde la API del servidor
+      const ordersRes = await fetch('/api/crm/orders');
+      if (!ordersRes.ok) {
+        const d = await ordersRes.json().catch(() => ({}));
+        throw new Error(d.error || 'Error consultando pedidos');
+      }
+      const { orders: ords } = await ordersRes.json();
+      setOrders(((ords as Order[]) || []).map((order) => ({
         ...order,
         status: normalizeStatus(order.status),
       })));
+
+      // Carritos del checkout web (incluye abandonados)
+      try {
+        const cartsRes = await fetch('/api/crm/carts');
+        if (cartsRes.ok) {
+          const { carts: cs } = await cartsRes.json();
+          setCarts(cs || []);
+        }
+      } catch {}
 
     } catch (err: any) {
       console.error(err);
@@ -375,30 +394,27 @@ export default function CrmDashboard() {
     e.preventDefault();
     if (!editingOrder) return;
     try {
-      const supabase = getSupabase();
-      
-      if (editingOrder.crm_customers?.id) {
-        const { error: custErr } = await supabase
-          .from('crm_customers')
-          .update({
+      const res = await fetch('/api/crm/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: editingOrder.id,
+          status: editStatus,
+          tracking_number: editTracking || null,
+          payment_method: editPayMethod,
+          customer: editingOrder.crm_customers?.id ? {
+            id: editingOrder.crm_customers.id,
             name: editCustName,
             phone: editCustPhone || null,
             email: editCustEmail || null,
-            city: editCustCity || null
-          })
-          .eq('id', editingOrder.crm_customers.id);
-        if (custErr) throw custErr;
+            city: editCustCity || null,
+          } : undefined,
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || 'Error al actualizar pedido');
       }
-
-      const { error: orderErr } = await supabase
-        .from('crm_orders')
-        .update({
-          payment_method: editPayMethod,
-          status: editStatus,
-          tracking_number: editTracking || null
-        })
-        .eq('id', editingOrder.id);
-      if (orderErr) throw orderErr;
 
       showToast('Pedido actualizado exitosamente');
       setEditingOrder(null);
@@ -474,6 +490,48 @@ export default function CrmDashboard() {
       return b.month - a.month;
     });
   };
+
+  // Clientes únicos agregados a partir de todos los pedidos (web + WhatsApp)
+  const customersList = (() => {
+    const map = new Map<string, {
+      customer: Customer;
+      orderCount: number;
+      totalSpent: number;
+      lastOrderAt: string;
+      sources: Set<string>;
+    }>();
+    orders.forEach(order => {
+      const c = order.crm_customers;
+      if (!c?.id) return;
+      const entry = map.get(c.id);
+      if (entry) {
+        entry.orderCount += 1;
+        if (order.status !== 'RETURNED') entry.totalSpent += order.total_amount || 0;
+        if (order.created_at > entry.lastOrderAt) entry.lastOrderAt = order.created_at;
+        entry.sources.add(order.source);
+      } else {
+        map.set(c.id, {
+          customer: c,
+          orderCount: 1,
+          totalSpent: order.status !== 'RETURNED' ? (order.total_amount || 0) : 0,
+          lastOrderAt: order.created_at,
+          sources: new Set([order.source]),
+        });
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => b.totalSpent - a.totalSpent);
+  })();
+
+  const filteredCustomers = customersList.filter(({ customer }) => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      (customer.name || '').toLowerCase().includes(term) ||
+      (customer.email || '').toLowerCase().includes(term) ||
+      (customer.phone || '').toLowerCase().includes(term) ||
+      (customer.city || '').toLowerCase().includes(term)
+    );
+  });
 
   const filteredOrders = orders.filter(order => {
     if (selectedMonthKey !== 'ALL') {
@@ -583,6 +641,28 @@ export default function CrmDashboard() {
           </div>
         </div>
 
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6">
+          {([
+            { key: 'PEDIDOS' as const, label: 'PEDIDOS', count: orders.length },
+            { key: 'CLIENTES' as const, label: 'CLIENTES', count: customersList.length },
+            { key: 'CARRITOS' as const, label: 'CARRITOS WEB', count: carts.length },
+          ]).map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-6 py-3 font-display text-lg tracking-wider uppercase transition ${
+                activeTab === tab.key
+                  ? 'bg-[#FFD400] text-black font-bold'
+                  : 'bg-[#1c1c1c] border border-[#2e2e2e] text-[#b0b0b0] hover:border-[#FFD400] hover:text-[#FFD400]'
+              }`}
+            >
+              {tab.label} <span className="font-mono text-xs ml-1">({tab.count})</span>
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'PEDIDOS' && (<>
         {/* Month Selector Filters */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6 border-b border-[#2e2e2e] pb-4">
           <div className="flex flex-wrap gap-2 items-center">
@@ -735,6 +815,17 @@ export default function CrmDashboard() {
                           {order.crm_customers?.city || '—'} · {order.payment_method || '—'}
                         </div>
 
+                        {/* Productos del pedido */}
+                        {(order.crm_order_items?.length ?? 0) > 0 && (
+                          <div className="mb-3 space-y-0.5">
+                            {order.crm_order_items!.map(item => (
+                              <div key={item.id} className="text-[10px] font-mono text-[#888] leading-snug">
+                                • {item.products?.name || 'Producto'} <span className="text-[#555]">×{item.quantity}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
                         {/* Bottom row: total + edit */}
                         <div className="flex justify-between items-center pt-2.5 border-t border-[#2a2a2a]">
                           <span className="text-sm font-black font-mono" style={{ color: col.accent }}>
@@ -770,6 +861,123 @@ export default function CrmDashboard() {
             );
           })}
         </div>
+        </>)}
+
+        {/* CLIENTES — agregados desde pedidos web y WhatsApp */}
+        {activeTab === 'CLIENTES' && (
+          <div>
+            <div className="mb-4 max-w-xs">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar cliente, ciudad, correo..."
+                className="w-full bg-[#1c1c1c] border border-[#2e2e2e] text-[#e8e8e8] font-mono text-xs px-4 py-2.5 outline-none focus:border-[#FFD400] transition rounded-none uppercase placeholder:text-zinc-600"
+              />
+            </div>
+            <div className="overflow-x-auto border border-[#2e2e2e]">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-[#1c1c1c] font-mono text-[10px] uppercase tracking-widest text-[#9a9a9a]">
+                    <th className="p-3">Cliente</th>
+                    <th className="p-3">Contacto</th>
+                    <th className="p-3">Ciudad</th>
+                    <th className="p-3">Canal</th>
+                    <th className="p-3 text-right">Pedidos</th>
+                    <th className="p-3 text-right">Total Comprado</th>
+                    <th className="p-3 text-right">Último Pedido</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredCustomers.length === 0 ? (
+                    <tr><td colSpan={7} className="p-8 text-center font-mono text-xs text-[#555] tracking-widest">
+                      {loading ? 'CARGANDO...' : 'SIN CLIENTES REGISTRADOS'}
+                    </td></tr>
+                  ) : filteredCustomers.map(({ customer, orderCount, totalSpent, lastOrderAt, sources }) => (
+                    <tr key={customer.id} className="border-t border-[#2e2e2e] hover:bg-[#1a1a1a] transition">
+                      <td className="p-3 font-display text-base text-[#e8e8e8] uppercase tracking-wide">{customer.name}</td>
+                      <td className="p-3 font-mono text-xs text-[#b0b0b0]">
+                        {customer.phone && <div>📱 {customer.phone}</div>}
+                        {customer.email && <div className="text-[#777]">{customer.email}</div>}
+                      </td>
+                      <td className="p-3 font-mono text-xs text-[#b0b0b0] uppercase">{customer.city || '—'}</td>
+                      <td className="p-3">
+                        <div className="flex gap-1">
+                          {Array.from(sources).map(s => (
+                            <span key={s} className={`text-[9px] font-mono font-bold px-2 py-0.5 ${s === 'WEB' ? 'bg-[#FFD400] text-black' : 'bg-[#25d366]/20 text-[#25d366] border border-[#25d366]/40'}`}>{s}</span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="p-3 font-mono text-sm text-[#e8e8e8] text-right">{orderCount}</td>
+                      <td className="p-3 font-mono text-sm font-bold text-[#FFD400] text-right">
+                        {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(totalSpent)}
+                      </td>
+                      <td className="p-3 font-mono text-xs text-[#777] text-right">{new Date(lastOrderAt).toLocaleDateString('es-CO')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* CARRITOS WEB — checkout de tattooshopcol.com (incluye abandonados) */}
+        {activeTab === 'CARRITOS' && (
+          <div className="overflow-x-auto border border-[#2e2e2e]">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-[#1c1c1c] font-mono text-[10px] uppercase tracking-widest text-[#9a9a9a]">
+                  <th className="p-3">Fecha</th>
+                  <th className="p-3">Cliente / Correo</th>
+                  <th className="p-3">Ciudad</th>
+                  <th className="p-3">Productos</th>
+                  <th className="p-3">Método</th>
+                  <th className="p-3 text-right">Total</th>
+                  <th className="p-3">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {carts.length === 0 ? (
+                  <tr><td colSpan={7} className="p-8 text-center font-mono text-xs text-[#555] tracking-widest">
+                    {loading ? 'CARGANDO...' : 'SIN CARRITOS REGISTRADOS'}
+                  </td></tr>
+                ) : carts.map(cart => (
+                  <tr key={cart.reference} className="border-t border-[#2e2e2e] hover:bg-[#1a1a1a] transition">
+                    <td className="p-3 font-mono text-xs text-[#777]">
+                      {cart.updated_at ? new Date(cart.updated_at).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }) : '—'}
+                    </td>
+                    <td className="p-3">
+                      {cart.customer_name && <div className="font-display text-sm text-[#e8e8e8] uppercase">{cart.customer_name}</div>}
+                      <div className="font-mono text-xs text-[#b0b0b0]">{cart.email}</div>
+                      {cart.customer_phone && <div className="font-mono text-xs text-[#777]">📱 {cart.customer_phone}</div>}
+                    </td>
+                    <td className="p-3 font-mono text-xs text-[#b0b0b0] uppercase">{cart.city || '—'}</td>
+                    <td className="p-3 font-mono text-[10px] text-[#b0b0b0]">
+                      {(cart.cart || []).map((item, i) => (
+                        <div key={i}>{item.name} ×{item.qty || item.quantity || 1}</div>
+                      ))}
+                    </td>
+                    <td className="p-3 font-mono text-xs text-[#b0b0b0] uppercase">{cart.method || '—'}</td>
+                    <td className="p-3 font-mono text-sm font-bold text-[#FFD400] text-right">
+                      {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(cart.total || 0)}
+                    </td>
+                    <td className="p-3">
+                      <span className={`text-[9px] font-mono font-bold px-2 py-0.5 uppercase ${
+                        cart.status === 'completed'
+                          ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                          : cart.status === 'pending'
+                          ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                          : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                      }`}>
+                        {cart.status === 'completed' ? 'COMPRADO' : cart.status === 'pending' ? 'ABANDONADO' : cart.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
       </div>
 
@@ -910,8 +1118,8 @@ export default function CrmDashboard() {
               {/* Payment Method Group */}
               <div>
                 <h3 className="text-xs font-mono uppercase tracking-wider text-[#9a9a9a] mb-3">Método de Pago</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {['NEQUI', 'BANCOLOMBIA', 'DAVIPLATA', 'MERCADOPAGO'].map(method => (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {['NEQUI', 'BANCOLOMBIA', 'DAVIPLATA', 'MERCADOPAGO', 'CONTRAENTREGA'].map(method => (
                     <button
                       key={method}
                       type="button"
@@ -1055,13 +1263,36 @@ export default function CrmDashboard() {
                     onChange={(e) => setEditPayMethod(e.target.value)}
                     className="w-full bg-[#141414] border border-[#2e2e2e] p-2.5 text-xs text-white outline-none focus:border-[#FFD400] transition rounded-none uppercase"
                   >
+                    {!['NEQUI', 'BANCOLOMBIA', 'DAVIPLATA', 'MERCADOPAGO', 'CONTRAENTREGA', 'CARD', 'PSE'].includes(editPayMethod) && (
+                      <option value={editPayMethod}>{editPayMethod}</option>
+                    )}
                     <option value="NEQUI">NEQUI</option>
                     <option value="BANCOLOMBIA">BANCOLOMBIA</option>
                     <option value="DAVIPLATA">DAVIPLATA</option>
                     <option value="MERCADOPAGO">MERCADOPAGO</option>
+                    <option value="CONTRAENTREGA">CONTRAENTREGA</option>
+                    <option value="CARD">TARJETA (WOMPI)</option>
+                    <option value="PSE">PSE (WOMPI)</option>
                   </select>
                 </div>
               </div>
+
+              {/* Productos del pedido (solo lectura) */}
+              {(editingOrder.crm_order_items?.length ?? 0) > 0 && (
+                <div className="border-b border-[#2e2e2e] pb-4">
+                  <h3 className="text-xs font-mono uppercase tracking-wider text-[#9a9a9a] mb-3">Productos del Pedido</h3>
+                  <div className="bg-[#141414] border border-[#2e2e2e] p-2 space-y-1">
+                    {editingOrder.crm_order_items!.map(item => (
+                      <div key={item.id} className="flex justify-between items-center text-xs p-2 border-b border-[#2e2e2e] last:border-0">
+                        <span className="text-zinc-300 uppercase">{item.products?.name || 'Producto'} <span className="text-[#777] font-mono">×{item.quantity}</span></span>
+                        <span className="font-mono text-[#FFD400]">
+                          ${((item.price_at_purchase || 0) * item.quantity).toLocaleString('es-CO')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Action buttons */}
               <div className="flex gap-2 justify-end">

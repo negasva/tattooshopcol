@@ -114,13 +114,14 @@ function CheckoutSuccessContent() {
           setTx(json.data as WompiTransaction);
           if (json.data.status === 'APPROVED') {
             try { localStorage.removeItem('ts_cart'); } catch {}
-            // Marcar carrito como completado en DB
+            // Confirmar el pedido en el servidor: registra la venta en el CRM
+            // (idempotente, respaldo del webhook de Wompi) y marca el carrito como completado
             const ref = json.data.reference || referenceFromUrl;
             if (ref) {
-              fetch('/api/save-cart', {
-                method: 'PATCH',
+              fetch('/api/orders/confirm', {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reference: ref, status: 'completed' }),
+                body: JSON.stringify({ reference: ref }),
               }).catch(() => {});
             }
           }
