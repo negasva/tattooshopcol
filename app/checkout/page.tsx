@@ -6,6 +6,7 @@ import CitySelector from '../components/CitySelector';
 import PaymentMethods, { COD_FEE } from '../components/PaymentMethods';
 import WhatsAppLogo from '../components/WhatsAppLogo';
 import BrandLogo from '../components/BrandLogo';
+import { track } from '../lib/metaPixel';
 
 const accent = '#FFD400';
 const WHATSAPP = '573000000000';
@@ -174,6 +175,15 @@ export default function CheckoutPage() {
   const handleCheckout = async () => {
     if (!canCheckout) return;
     setIsProcessing(true);
+
+    // Meta Pixel: InitiateCheckout al iniciar el pago.
+    track('InitiateCheckout', {
+      content_ids: cart.map((i) => i.id),
+      content_type: 'product',
+      num_items: cart.reduce((s, i) => s + i.qty, 0),
+      value: total,
+      currency: 'COP',
+    });
 
     if (isCash) {
       // Contra entrega → registrar en CRM y luego WhatsApp

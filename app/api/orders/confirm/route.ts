@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
         currency: tx.currency || 'COP',
         email: tx.customer_email || null,
         phone: tx.customer_data?.phone_number || tx.customer_data?.phoneNumber || null,
-        eventId: result.orderId,
+        eventId: result.orderId || reference,
         clientIp: getIP(req),
         userAgent: req.headers.get('user-agent') || undefined,
       });

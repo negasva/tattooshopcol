@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import BrandLogo from '@/app/components/BrandLogo';
 import WhatsAppLogo from '@/app/components/WhatsAppLogo';
 import ReviewsSection from '@/app/components/ReviewsSection';
+import { track } from '@/app/lib/metaPixel';
 import BoughtTogether from '@/app/components/BoughtTogether';
 
 interface Product {
@@ -185,8 +186,27 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     return () => window.removeEventListener('storage', load);
   }, []);
 
+  // Meta Pixel: ViewContent al ver el producto.
+  useEffect(() => {
+    track('ViewContent', {
+      content_ids: [product.id],
+      content_name: product.name,
+      content_type: 'product',
+      value: salePrice,
+      currency: 'COP',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id]);
+
   const handleAddToCart = () => {
     if (outOfStock) return;
+    track('AddToCart', {
+      content_ids: [product.id],
+      content_name: product.name,
+      content_type: 'product',
+      value: salePrice * qty,
+      currency: 'COP',
+    });
     try {
       const stored = localStorage.getItem('ts_cart');
       const cart: CartItem[] = stored ? JSON.parse(stored) : [];
@@ -207,6 +227,13 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
   const handleBuyNow = () => {
     if (outOfStock) return;
+    track('AddToCart', {
+      content_ids: [product.id],
+      content_name: product.name,
+      content_type: 'product',
+      value: salePrice * qty,
+      currency: 'COP',
+    });
     try {
       const stored = localStorage.getItem('ts_cart');
       const c: CartItem[] = stored ? JSON.parse(stored) : [];

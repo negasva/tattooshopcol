@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import BrandLogo from '../../components/BrandLogo';
 import WhatsAppLogo from '../../components/WhatsAppLogo';
+import { track } from '../../lib/metaPixel';
 
 const accent = '#FFD400';
 const WHATSAPP = '573000000000';
@@ -122,7 +123,23 @@ function CheckoutSuccessContent() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ reference: ref }),
-              }).catch(() => {});
+              })
+                .then((r) => r.json())
+                .then((res) => {
+                  // Meta Pixel: Purchase deduplicado con la CAPI vía order_id.
+                  let contentIds: string[] = [];
+                  try {
+                    const pending = JSON.parse(localStorage.getItem('ts_pending_order') || '{}');
+                    contentIds = Array.isArray(pending.cart) ? pending.cart.map((i: { id: string }) => i.id) : [];
+                  } catch {}
+                  track('Purchase', {
+                    content_ids: contentIds,
+                    content_type: 'product',
+                    value: json.data.amount_in_cents / 100,
+                    currency: json.data.currency || 'COP',
+                  }, res?.order_id || ref);
+                })
+                .catch(() => {});
             }
           }
         } else {
