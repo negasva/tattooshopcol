@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { getSupabase } from '../lib/supabase';
 import { toSlug } from '../lib/utils';
+import { track } from '../lib/metaPixel';
 import WhatsAppLogo from './WhatsAppLogo';
 import BrandLogo from './BrandLogo';
 import BrandLogoFull from './BrandLogoFull';
@@ -616,10 +617,10 @@ export default function TattooShopHome() {
   const compareProducts = products.filter((p) => compareList.includes(p.id));
 
   const addToCart = (product: Product) => {
+    const stock = product.inventory ?? 0;
+    if (stock <= 0) return;
     setCart((prev) => {
       const existing = prev.find((i) => i.id === product.id);
-      const stock = product.inventory ?? 0;
-      if (stock <= 0) return prev;
       if (existing) {
         if (existing.qty >= stock) return prev;
         return prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + 1 } : i));
@@ -627,6 +628,17 @@ export default function TattooShopHome() {
       return [...prev, { ...product, qty: 1 }];
     });
     setCartOpen(true);
+    const hasDiscount = !!(product.discount_percentage && product.discount_percentage > 0);
+    const price = hasDiscount && !(product.original_price && product.original_price > product.price)
+      ? Math.round(product.price - product.price * (product.discount_percentage! / 100))
+      : product.price;
+    track('AddToCart', {
+      content_ids: [product.id],
+      content_name: product.name,
+      content_type: 'product',
+      value: price,
+      currency: 'COP',
+    });
   };
 
   const removeFromCart = (id: string) => setCart((prev) => prev.filter((i) => i.id !== id));

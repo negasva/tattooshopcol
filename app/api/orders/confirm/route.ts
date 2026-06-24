@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { confirmWebOrderFromCart } from '@/app/lib/crmOrder';
 import { rateLimit, getIP, rateLimitResponse } from '@/app/lib/ratelimit';
+import { sendPurchaseEvent } from '@/app/lib/metaCapi';
 
 // Respaldo del webhook de Wompi: la página /checkout/exito llama aquí tras un
 // pago aprobado para garantizar que el pedido quede registrado en el CRM.
@@ -38,6 +39,20 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await confirmWebOrderFromCart(reference, tx);
+
+    // Meta Conversions API: dispara Purchase solo para pedidos nuevos aprobados.
+    if (!result.alreadyExisted) {
+      await sendPurchaseEvent({
+        value: tx.amount_in_cents ? tx.amount_in_cents / 100 : 0,
+        currency: tx.currency || 'COP',
+        email: tx.customer_email || null,
+        phone: tx.customer_data?.phone_number || tx.customer_data?.phoneNumber || null,
+        eventId: result.orderId || reference,
+        clientIp: getIP(req),
+        userAgent: req.headers.get('user-agent') || undefined,
+      });
+    }
+
     return NextResponse.json({ ok: true, order_id: result.orderId, already_existed: result.alreadyExisted });
   } catch (error: any) {
     console.error('orders/confirm error:', error);
