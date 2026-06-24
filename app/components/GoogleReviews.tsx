@@ -2,57 +2,36 @@
 
 const accent = '#FFD400';
 
-// ponytail: static reviews copied from the Google Business profile (no Places API key configured).
-// Replace these with your real Google reviews; upgrade to the Places API when a key is available.
-// Set GOOGLE_PROFILE_URL to your "Ver todas las reseñas" link.
-const GOOGLE_PROFILE_URL = 'https://www.google.com/maps/search/?api=1&query=TattooShop+Colombia+Medellin';
+// Enlace general a tus reseñas en Google (botón "Ver en Google").
+// Reemplázalo por el enlace directo a tu perfil/reseñas si lo tienes.
+const GOOGLE_PROFILE_URL = 'https://www.google.com/search?q=Tattoo+Shop+Colombia';
 
+// Reseñas reales de Google.
+// - photo: deja '' para mostrar un avatar con iniciales (estilo Google sin foto);
+//   pon una URL de imagen para mostrar la foto real del cliente.
+// - link: a dónde lleva al hacer clic en la reseña (idealmente el enlace directo
+//   a esa reseña en Google; por defecto va al perfil general).
 const reviews = [
-  {
-    author: 'Andrés Quintero',
-    photo: 'https://i.pravatar.cc/96?img=12',
-    rating: 5,
-    when: 'hace 2 semanas',
-    text: 'Pedí cartuchos y tintas, llegaron en 2 días a Medellín. Calidad profesional y el pago contraentrega me dio mucha confianza. 100% recomendados.',
-  },
-  {
-    author: 'Valentina Ríos',
-    photo: 'https://i.pravatar.cc/96?img=47',
-    rating: 5,
-    when: 'hace 1 mes',
-    text: 'Las máquinas son originales y el soporte por WhatsApp es excelente. Me asesoraron para armar mi kit completo. Volveré a comprar sin duda.',
-  },
-  {
-    author: 'Camilo Restrepo',
-    photo: 'https://i.pravatar.cc/96?img=33',
-    rating: 5,
-    when: 'hace 1 mes',
-    text: 'Llevo más de un año comprando acá todos mis insumos. Precios justos y envíos rápidos a todo el país. El mejor proveedor para tatuadores en Colombia.',
-  },
-  {
-    author: 'Daniela Gómez',
-    photo: 'https://i.pravatar.cc/96?img=45',
-    rating: 5,
-    when: 'hace 2 meses',
-    text: 'Excelente atención. Tuve una duda con un producto y me respondieron al instante. Las agujas y los grips llegaron sellados y en perfecto estado.',
-  },
-  {
-    author: 'Juan Pablo Méndez',
-    photo: 'https://i.pravatar.cc/96?img=68',
-    rating: 5,
-    when: 'hace 3 meses',
-    text: 'Calidad-precio inmejorable. Pedí tintas de varias marcas y todo original. La garantía de 6 meses dice mucho de la seriedad de la tienda.',
-  },
-  {
-    author: 'Laura Tobón',
-    photo: 'https://i.pravatar.cc/96?img=24',
-    rating: 5,
-    when: 'hace 3 meses',
-    text: 'Primera compra y quedé encantada. El empaque súper cuidado y llegó antes de lo esperado a Bogotá. Ya los recomendé a mis colegas del estudio.',
-  },
+  { id: 'review1', author: 'Yordano Gonzalez',        rating: 5, when: 'hace 1 año',   text: 'Amo la máquina que recibí 🤗',                                              photo: '', link: GOOGLE_PROFILE_URL },
+  { id: 'review2', author: 'Camilo "Camiloni" Tique', rating: 5, when: 'hace 2 años',  text: 'Envíos rápidos y responsables.',                                            photo: '', link: GOOGLE_PROFILE_URL },
+  { id: 'review3', author: 'Felipe Madrid Arenas',    rating: 5, when: 'hace 2 años',  text: 'Súper buena máquina, muy ligera y económica, llegan súper rápido!.',        photo: '', link: GOOGLE_PROFILE_URL },
+  { id: 'review4', author: 'Mar Portela',             rating: 5, when: 'hace 2 años',  text: 'Excelente servicio, calidad total en los productos. Recomendado',           photo: '', link: GOOGLE_PROFILE_URL },
+  { id: 'review5', author: '_eljuanes _',             rating: 5, when: 'hace 8 meses', text: 'Confiables, rápidos y muy buen servicio 👌 recomendados',                   photo: '', link: GOOGLE_PROFILE_URL },
+  { id: 'review6', author: 'Yonny Parra Varela',      rating: 5, when: 'hace 1 año',   text: 'Estoy muy contento con lo que compré 🙏',                                   photo: '', link: GOOGLE_PROFILE_URL },
 ];
 
 const avg = (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1);
+
+const avatarPalette = ['#7E57C2', '#F4511E', '#1E88E5', '#43A047', '#00897B', '#E53935', '#8E24AA', '#FB8C00'];
+function initials(name: string) {
+  const parts = name.replace(/[_"]/g, ' ').trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || '?';
+}
+function avatarColor(name: string) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  return avatarPalette[Math.abs(h) % avatarPalette.length];
+}
 
 function GoogleLogo() {
   return (
@@ -71,6 +50,17 @@ function Stars({ n }: { n: number }) {
       {[1, 2, 3, 4, 5].map((s) => (
         <span key={s} style={{ fontSize: '15px', color: s <= n ? '#FBBC05' : '#444' }}>★</span>
       ))}
+    </div>
+  );
+}
+
+function Avatar({ author, photo }: { author: string; photo: string }) {
+  if (photo) {
+    return <img src={photo} alt={author} width={44} height={44} loading="lazy" style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />;
+  }
+  return (
+    <div style={{ width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0, background: avatarColor(author), color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"DM Sans", sans-serif', fontSize: '17px', fontWeight: 600 }}>
+      {initials(author)}
     </div>
   );
 }
@@ -107,17 +97,18 @@ export default function GoogleReviews() {
 
       {/* Reviews grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
-        {reviews.map((r, i) => (
-          <div key={i} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '8px', padding: '22px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {reviews.map((r) => (
+          <a
+            key={r.id}
+            href={r.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '8px', padding: '22px', display: 'flex', flexDirection: 'column', gap: '12px', textDecoration: 'none', color: 'inherit', cursor: 'pointer', transition: 'border-color 0.2s, transform 0.2s' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.borderColor = accent; (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-3px)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)'; }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <img
-                src={r.photo}
-                alt={r.author}
-                width={44}
-                height={44}
-                loading="lazy"
-                style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-              />
+              <Avatar author={r.author} photo={r.photo} />
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>{r.author}</div>
                 <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)' }}>{r.when}</div>
@@ -126,7 +117,7 @@ export default function GoogleReviews() {
             </div>
             <Stars n={r.rating} />
             <p style={{ margin: 0, fontFamily: '"DM Sans", sans-serif', fontSize: '14px', color: 'var(--text)', lineHeight: 1.6 }}>{r.text}</p>
-          </div>
+          </a>
         ))}
       </div>
     </section>
