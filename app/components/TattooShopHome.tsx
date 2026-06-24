@@ -12,7 +12,6 @@ import BrandLogo from './BrandLogo';
 import BrandLogoFull from './BrandLogoFull';
 import BrandLogoCombined from './BrandLogoCombined';
 // W10: lazy-load reviews — they're below the fold and make an API call
-const ReviewsSection = dynamic(() => import('./ReviewsSection'), { ssr: false });
 const GoogleReviews = dynamic(() => import('./GoogleReviews'), { ssr: false });
 
 interface Product {
@@ -1067,9 +1066,6 @@ export default function TattooShopHome() {
           ))}
         </div>
       </section>
-
-      {/* RESEÑAS */}
-      <ReviewsSection />
 
       {/* FOOTER */}
       <footer style={{ borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
