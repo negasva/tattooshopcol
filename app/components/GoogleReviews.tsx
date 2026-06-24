@@ -7,28 +7,26 @@ const accent = '#FFD400';
 const GOOGLE_PROFILE_URL = 'https://www.google.com/search?q=Tattoo+Shop+Colombia';
 
 // Reseñas reales de Google.
-// - photos: fotos que el cliente adjuntó a la reseña (array de URLs; [] si no hay).
+// - photos: fotos que el cliente adjuntó a la reseña, alojadas en /public/reviews.
 // - link: enlace directo a esa reseña en Google (al hacer clic en la tarjeta).
 const reviews = [
   { id: 'review1', author: 'Yordano Gonzalez',        rating: 5, when: 'hace 1 año',   text: 'Amo la máquina que recibí 🤗',
-    photos: ['https://lh3.googleusercontent.com/gps-cs/ACgwaOuU4jQ4mphbQr52tXuDdoTF3SkfMX7nBZsZptI1tdrT4497vUtWj66CJH2so85K2BLG94mdAPV_YC2AeUf7jnc8KyPFryW9OM-H-PYWIywbsnePtSVmPVsru0Ni4YBea3ZXyS44=w600-h854-p-k-no'],
+    photos: ['/reviews/r1.jpg'],
     link: 'https://maps.app.goo.gl/mqbMXgc88UW2SUw89' },
   { id: 'review2', author: 'Camilo "Camiloni" Tique', rating: 5, when: 'hace 2 años',  text: 'Envíos rápidos y responsables.',
-    photos: ['https://lh3.googleusercontent.com/gps-cs/ACgwaOsXJTWExKYSf29H_IJNO3Us62Ryk-yQey8E8Ls_j00627GckTlMEjf1Rt2kHvDTVoonYuK0jIm9rY3aZ6pm8v4FSOIdTSILrfnQPMrd5-01thWJOQiJMLJ85RjsSEIdXxLBX-s0VA=w600-h854-p-k-no'],
+    photos: ['/reviews/r2.jpg'],
     link: 'https://maps.app.goo.gl/XsUg8jdpFNKrcQas8' },
   { id: 'review3', author: 'Felipe Madrid Arenas',    rating: 5, when: 'hace 2 años',  text: 'Súper buena máquina, muy ligera y económica, llegan súper rápido!.',
-    photos: ['https://lh3.googleusercontent.com/gps-cs/ACgwaOtc6galxMjnfzinI0HvIlPNgvUHzQIQajYmd7kbId9EK_0Rhf_c_dlDQunDU89zil0_JN1CKPyksrIVlZHgzxv-lSUkrFX_hBv3wEuFyZAuvQkqrJgze3hYCqCvul1mc208jFlT=w600-h854-p-k-no',
-             'https://lh3.googleusercontent.com/gps-cs/ACgwaOuYW9WNjlcz9pTFsdBSxOXG9MnoO80QBVImh8bvvdl6ruskIPCmweDtuCCAjnIIaF37EYGt8l9108bJUeHAiIT0ELep4q9rp2FNitEi50JRIieDILtGQP0jsEWvessBvdLbLPxX=w600-h854-p-k-no',
-             'https://lh3.googleusercontent.com/gps-cs/ACgwaOtsi923kp9QmMlchhIHvEQTD0tXxcncCbx52RD96CPh9I8c2ReQZRomiodEzs6CZpGWmYfQ8ZMqTfPV3GAyS9SPVzZjWc1f3Cs821hUaOWgus0xY0oe564NWGO_pz9sKGAPOrdT=w600-h854-p-k-no'],
+    photos: ['/reviews/r3-1.jpg', '/reviews/r3-2.jpg', '/reviews/r3-3.jpg'],
     link: 'https://maps.app.goo.gl/HrsQGhTX7KuRmcjG8' },
   { id: 'review4', author: 'Mar Portela',             rating: 5, when: 'hace 2 años',  text: 'Excelente servicio, calidad total en los productos. Recomendado',
-    photos: ['https://lh3.googleusercontent.com/gps-cs/ACgwaOsVeWVnCmw5K0RR8Q8KdARD1TDdOQ0j0K1882ZhSn4ZpyVXVHy6xdcRWF0JQvsx59XITwLHp0Ld92K-akZ20ULk2EaoL_VEA7K6EMDamSiWs4bpS7MXXiTRDeyx-Lz0_u5breo=w600-h854-p-k-no'],
+    photos: ['/reviews/r4.jpg'],
     link: 'https://maps.app.goo.gl/n9rrMqeMAzTBzZ3B7' },
   { id: 'review5', author: '_eljuanes _',             rating: 5, when: 'hace 8 meses', text: 'Confiables, rápidos y muy buen servicio 👌 recomendados',
     photos: [],
     link: 'https://maps.app.goo.gl/BKEP6LjBWXyt9iC97' },
   { id: 'review6', author: 'Yonny Parra Varela',      rating: 5, when: 'hace 1 año',   text: 'Estoy muy contento con lo que compré 🙏',
-    photos: ['https://lh3.googleusercontent.com/gps-cs/ACgwaOvxJTB6j9SaC_lZeFYY_vy7HDmSlJDngy5Xg5H77BVYr-ApjloE8E1PV563eV4Ob3Kohp8K7XFotVAwJiLbS2fIVbVb2UOwSh2-aiyhrZBZI9Wkjpz5G5VZIZUGmX0_D3xq1pUOfA=w600-h854-p-k-no'],
+    photos: ['/reviews/r6.jpg'],
     link: 'https://maps.app.goo.gl/WxEfMDC1F7eKYGfx5' },
 ];
 
