@@ -13,6 +13,7 @@ import BrandLogoFull from './BrandLogoFull';
 import BrandLogoCombined from './BrandLogoCombined';
 // W10: lazy-load reviews — they're below the fold and make an API call
 const ReviewsSection = dynamic(() => import('./ReviewsSection'), { ssr: false });
+const GoogleReviews = dynamic(() => import('./GoogleReviews'), { ssr: false });
 
 interface Product {
   id: string;
@@ -717,6 +718,13 @@ export default function TattooShopHome() {
             onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLAnchorElement).style.borderBottomColor = 'transparent'; }}>
             Blog
           </Link>
+          <button
+            onClick={() => document.querySelector<HTMLElement>('#resenas')?.scrollIntoView({ behavior: 'smooth' })}
+            style={{ background: 'transparent', color: 'var(--text-muted)', fontFamily: '"DM Mono", monospace', fontSize: '11px', letterSpacing: '1.5px', textTransform: 'uppercase', padding: '4px 0', border: 'none', borderBottom: '1px solid transparent', cursor: 'pointer', transition: 'all 0.2s' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = accent; (e.currentTarget as HTMLButtonElement).style.borderBottomColor = accent; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLButtonElement).style.borderBottomColor = 'transparent'; }}>
+            Reseñas
+          </button>
           {/* Search icon + expandable input */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0', position: 'relative' }}>
             <div style={{
@@ -926,6 +934,9 @@ export default function TattooShopHome() {
           ))}
         </div>
       </div>
+
+      {/* GOOGLE REVIEWS */}
+      <GoogleReviews />
 
       {/* PRODUCTS */}
       <section id="productos" style={{ padding: 'clamp(48px,8vh,96px) clamp(20px,5vw,80px)' }}>
