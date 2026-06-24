@@ -42,9 +42,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`} style={{ fontFeatureSettings: '"cv11" 1' }}>
-      <body>
+      <head>
         {/* Meta Pixel */}
-        <Script id="meta-pixel" strategy="afterInteractive">
+        <Script id="meta-pixel" strategy="beforeInteractive">
           {`!function(f,b,e,v,n,t,s)
           {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
           n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -60,6 +60,8 @@ export default function RootLayout({
           <img height="1" width="1" style={{ display: 'none' }} alt=""
             src="https://www.facebook.com/tr?id=1019528647699315&ev=PageView&noscript=1" />
         </noscript>
+      </head>
+      <body>
         <main>{children}</main>
         <WhatsAppButton />
         <StarburstButton />
