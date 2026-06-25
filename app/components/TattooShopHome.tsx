@@ -946,9 +946,6 @@ export default function TattooShopHome() {
         </div>
       </div>
 
-      {/* GOOGLE REVIEWS */}
-      <GoogleReviews />
-
       {/* PRODUCTS */}
       <section id="productos" style={{ padding: 'clamp(48px,8vh,96px) clamp(20px,5vw,80px)' }}>
         <div
@@ -1041,6 +1038,9 @@ export default function TattooShopHome() {
           </>
         )}
       </section>
+
+      {/* GOOGLE REVIEWS */}
+      <GoogleReviews />
 
       {/* ABOUT */}
       <section style={{ borderTop: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>

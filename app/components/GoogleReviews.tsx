@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
+
 const accent = '#FFD400';
 
 // Enlace general a tus reseñas en Google (botón "Ver en Google").
 // Reemplázalo por el enlace directo a tu perfil/reseñas si lo tienes.
-const GOOGLE_PROFILE_URL = 'https://www.google.com/search?q=Tattoo+Shop+Colombia';
+const GOOGLE_PROFILE_URL = 'https://share.google/cOCwetoEXyOf1XI1O';
 
 // Reseñas reales de Google.
 // - photos: fotos que el cliente adjuntó a la reseña, alojadas en /public/reviews.
@@ -73,6 +75,44 @@ function Avatar({ author }: { author: string }) {
 }
 
 export default function GoogleReviews() {
+  const [showUpload, setShowUpload] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState('');
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    setUploading(true);
+    setUploadStatus('');
+
+    try {
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await fetch('/api/upload-review-image', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!res.ok) {
+          throw new Error('Error al subir imagen');
+        }
+      }
+      setUploadStatus('✓ Imágenes subidas correctamente');
+      setTimeout(() => {
+        setShowUpload(false);
+        setUploadStatus('');
+        window.location.reload();
+      }, 1500);
+    } catch (err) {
+      setUploadStatus('✗ Error al subir las imágenes');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <section id="resenas" style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', background: 'var(--surface)', padding: 'clamp(48px,7vw,88px) clamp(20px,5vw,80px)' }}>
       {/* Header */}
@@ -88,22 +128,70 @@ export default function GoogleReviews() {
             <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '40px', color: 'var(--text)', lineHeight: 1 }}>{avg}</span>
             <div>
               <Stars n={5} />
-              <span style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)' }}>{reviews.length} reseñas en Google</span>
+              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)' }}>25+ reseñas en Google</div>
+              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: 'var(--text-muted)' }}>5 años de recorrido</div>
             </div>
           </div>
         </div>
-        <a
-          href={GOOGLE_PROFILE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ background: accent, color: '#111', border: `1px solid ${accent}`, fontFamily: '"DM Mono", monospace', fontSize: '11px', letterSpacing: '1.5px', padding: '12px 22px', textDecoration: 'none', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}
-        >
-          <GoogleLogo /> Ver en Google
-        </a>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <a
+            href={GOOGLE_PROFILE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ background: accent, color: '#111', border: `1px solid ${accent}`, fontFamily: '"DM Mono", monospace', fontSize: '11px', letterSpacing: '1.5px', padding: '12px 22px', textDecoration: 'none', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}
+          >
+            <GoogleLogo /> Ver en Google
+          </a>
+          <button
+            onClick={() => setShowUpload(!showUpload)}
+            style={{ background: showUpload ? 'var(--surface)' : 'transparent', color: 'var(--text)', border: `1px solid ${accent}`, fontFamily: '"DM Mono", monospace', fontSize: '11px', letterSpacing: '1.5px', padding: '12px 22px', cursor: 'pointer', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap', transition: 'all 0.2s' }}
+            onMouseEnter={(e) => { if (!showUpload) (e.currentTarget as HTMLButtonElement).style.color = accent; }}
+            onMouseLeave={(e) => { if (!showUpload) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)'; }}
+          >
+            + Agregar fotos
+          </button>
+        </div>
       </div>
 
+      {/* Upload form */}
+      {showUpload && (
+        <div style={{ background: 'var(--bg)', border: `1px solid ${accent}33`, padding: '24px', marginBottom: '32px', borderRadius: '4px' }}>
+          <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: accent, letterSpacing: '2px', fontWeight: 700, marginBottom: '12px' }}>
+            AGREGAR FOTOS DE RESEÑAS
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px', border: `2px dashed ${accent}44`, borderRadius: '4px', cursor: 'pointer', transition: 'all 0.2s', background: 'var(--surface)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent + '88'; e.currentTarget.style.background = accent + '08'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = accent + '44'; e.currentTarget.style.background = 'var(--surface)'; }}
+            >
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={uploading}
+                style={{ display: 'none' }}
+              />
+              <div style={{ textAlign: 'center', pointerEvents: 'none' }}>
+                <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '13px', color: 'var(--text)', marginBottom: '4px' }}>
+                  {uploading ? 'Subiendo...' : 'Haz clic para seleccionar o arrastra imágenes'}
+                </div>
+                <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '10px', color: 'var(--text-muted)' }}>
+                  PNG, JPG, WEBP
+                </div>
+              </div>
+            </label>
+            {uploadStatus && (
+              <div style={{ fontFamily: '"DM Mono", monospace', fontSize: '11px', color: uploadStatus.includes('✓') ? '#25d366' : '#e55', textAlign: 'center' }}>
+                {uploadStatus}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Reviews grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
         {reviews.map((r) => (
           <a
             key={r.id}
