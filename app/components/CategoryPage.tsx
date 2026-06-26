@@ -453,7 +453,7 @@ export default function CategoryPage({ category, slug }: CategoryPageProps) {
           </div>
         ) : (
           <>
-            <div style={{
+            <div data-products-grid="" style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(4, 1fr)',
               gap: '1px',
