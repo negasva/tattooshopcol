@@ -5,6 +5,7 @@ import { getSupabase, Product } from '../lib/supabase';
 import { computeOps, COP } from '../lib/analytics';
 import DashboardRentabilidad from './DashboardRentabilidad';
 import KitCostBuilder, { type KitComponent, type ComponentGroup } from './KitCostBuilder';
+import CouponsManager from './CouponsManager';
 
 const accent = '#FFD400';
 
@@ -341,6 +342,7 @@ export default function AdminPageClient() {
   const [simUnidades, setSimUnidades] = useState(10);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [showCoupons, setShowCoupons] = useState(false);
   const [costMode, setCostMode] = useState<'manual' | 'components'>('manual');
   const [kitComponents, setKitComponents] = useState<KitComponent[]>([]);
   const [groups, setGroups] = useState<ComponentGroup[]>([]);
@@ -1185,6 +1187,18 @@ export default function AdminPageClient() {
             <span>{showDashboard ? '−' : '+'}</span>
           </button>
           {showDashboard && <DashboardRentabilidad products={products} />}
+        </div>
+
+        {/* ── CUPONES DE DESCUENTO ─────────────────────────────────────────── */}
+        <div style={{ marginTop: '40px' }}>
+          <button
+            onClick={() => setShowCoupons(!showCoupons)}
+            style={{ width: '100%', padding: '14px 20px', background: showCoupons ? accent : 'var(--surface)', color: showCoupons ? '#111' : 'var(--text)', border: `1px solid ${accent}`, fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', cursor: 'pointer', letterSpacing: '1.5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <span>🏷 CUPONES DE DESCUENTO</span>
+            <span>{showCoupons ? '−' : '+'}</span>
+          </button>
+          {showCoupons && <CouponsManager onToast={showToast} />}
         </div>
       </div>
 
